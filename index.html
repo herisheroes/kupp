@@ -24,7 +24,8 @@
                         neon: {
                             blue: '#00F0FF',
                             purple: '#BC13FE',
-                            green: '#0AFF60'
+                            green: '#0AFF60',
+                            orange: '#FF8A00'
                         }
                     },
                     fontFamily: {
@@ -96,6 +97,13 @@
             opacity: 0;
             pointer-events: none;
         }
+        
+        /* Button disabled style override */
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-space-900 text-white font-body min-h-screen flex flex-col overflow-hidden">
@@ -148,24 +156,11 @@
                     <p class="text-xs text-gray-400 tracking-widest uppercase">Penjaga Pengetahuan</p>
                 </div>
             </div>
-            
-            <!-- Mobile Menu Button -->
-            <button class="md:hidden text-neon-blue text-2xl" onclick="alert('Menu mobile belum aktif di demo ini.')">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-
-            <!-- Desktop Menu -->
-            <div class="hidden md:flex gap-8 text-sm font-semibold">
-                <a href="#" class="text-neon-blue hover:text-white transition-colors">DASHBOARD</a>
-                <a href="#" class="text-gray-400 hover:text-neon-blue transition-colors">MISI</a>
-                <a href="#" class="text-gray-400 hover:text-neon-blue transition-colors">PERINGKAT</a>
-                <a href="#" class="text-gray-400 hover:text-neon-blue transition-colors">PROFIL</a>
-            </div>
         </div>
     </nav>
 
     <!-- HERO SECTION -->
-    <header class="relative w-full h-[400px] md:h-[500px] flex items-center overflow-hidden">
+    <header class="relative w-full h-[350px] md:h-[500px] flex items-center overflow-hidden">
         <!-- Background Image with Overlay -->
         <div class="absolute inset-0 bg-hero-pattern bg-cover bg-center"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-space-900 via-space-900/80 to-transparent"></div>
@@ -175,109 +170,154 @@
                 <span class="inline-block py-1 px-3 rounded-full bg-neon-purple/20 border border-neon-purple/50 text-neon-purple text-xs font-bold mb-4 tracking-widest uppercase">
                     <i class="fa-solid fa-circle-exclamation mr-1 animate-pulse"></i> Misi Baru Tersedia
                 </span>
-                <h2 class="font-display text-4xl md:text-6xl font-black mb-4 leading-tight">
+                <h2 class="font-display text-3xl md:text-6xl font-black mb-4 leading-tight">
                     JELAJAHI GALAXY <br>
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-green text-glow">PENGETAHUAN</span>
                 </h2>
-                <p class="text-gray-300 text-lg mb-8 max-w-xl mx-auto md:mx-0">
-                    Siapkan dirimu, Kadet! Pilih misi edukasimu, taklukkan tantangan, dan kumpulkan poin pengetahuan untuk menyelamatkan alam semesta.
+                <p class="text-gray-300 text-sm md:text-lg mb-8 max-w-xl mx-auto md:mx-0">
+                    Siapkan dirimu, Kadet! Pilih misi edukasimu berdasarkan perangkat dan jenjang kelasmu.
                 </p>
                 <div class="flex flex-col md:flex-row gap-4 justify-center md:justify-start">
                     <button onclick="scrollToGames()" class="bg-neon-blue text-space-900 font-bold py-3 px-8 rounded hover:bg-white transition-all shadow-[0_0_20px_rgba(0,240,255,0.4)]">
                         <i class="fa-solid fa-gamepad mr-2"></i> MULAI MISI
                     </button>
-                    <!-- Tombol LIHAT SKOR Dihapus -->
                 </div>
             </div>
         </div>
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-grow container mx-auto px-4 py-12 relative z-10">
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-12 relative z-10">
         
         <!-- SEARCH & FILTER BAR -->
-        <div class="bg-space-800 border border-white/10 rounded-2xl p-6 mb-12 shadow-2xl backdrop-blur-sm -mt-20 relative">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <!-- Search Input -->
-                <div class="md:col-span-2 relative group">
+        <div class="bg-space-800 border border-white/10 rounded-2xl p-4 md:p-6 mb-12 shadow-2xl backdrop-blur-sm -mt-16 md:-mt-20 relative">
+            <div class="flex flex-col gap-4">
+                <!-- Row 1: Search (Full Width) -->
+                <div class="relative group w-full">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fa-solid fa-search text-gray-500 group-focus-within:text-neon-blue transition-colors"></i>
                     </div>
-                    <input type="text" id="searchInput" placeholder="Cari nama misi, tag, atau game..." 
-                        class="w-full pl-10 pr-4 py-3 bg-space-900 border border-white/10 rounded-lg text-white focus:outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue transition-all placeholder-gray-500">
+                    <input type="text" id="searchInput" placeholder="Cari nama misi atau kata kunci..." 
+                        class="w-full pl-10 pr-4 py-3 bg-space-900 border border-white/10 rounded-lg text-white focus:outline-none focus:border-neon-blue focus:ring-1 focus:ring-neon-blue transition-all placeholder-gray-500 text-sm">
                 </div>
 
-                <!-- Subject Filter -->
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fa-solid fa-book text-gray-500"></i>
+                <!-- Row 2: Filters Grid (4 Columns) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    
+                    <!-- Subject Filter -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-book text-gray-500"></i>
+                        </div>
+                        <select id="subjectFilter" class="w-full pl-10 pr-8 py-2.5 bg-space-900 border border-white/10 rounded-lg text-white appearance-none focus:outline-none focus:border-neon-purple transition-all cursor-pointer text-sm truncate">
+                            <option value="">Semua Pelajaran</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
                     </div>
-                    <select id="subjectFilter" class="w-full pl-10 pr-4 py-3 bg-space-900 border border-white/10 rounded-lg text-white appearance-none focus:outline-none focus:border-neon-purple transition-all cursor-pointer">
-                        <option value="">Semua Pelajaran</option>
-                        <!-- Options will be populated by JS -->
-                    </select>
-                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
-                        <i class="fa-solid fa-chevron-down text-xs"></i>
-                    </div>
-                </div>
 
-                <!-- Type Filter -->
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fa-solid fa-layer-group text-gray-500"></i>
+                    <!-- Class Filter (NEW) -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-graduation-cap text-gray-500"></i>
+                        </div>
+                        <select id="classFilter" class="w-full pl-10 pr-8 py-2.5 bg-space-900 border border-white/10 rounded-lg text-white appearance-none focus:outline-none focus:border-neon-orange transition-all cursor-pointer text-sm truncate">
+                            <option value="">Semua Kelas</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
                     </div>
-                    <select id="typeFilter" class="w-full pl-10 pr-4 py-3 bg-space-900 border border-white/10 rounded-lg text-white appearance-none focus:outline-none focus:border-neon-green transition-all cursor-pointer">
-                        <option value="">Semua Jenis</option>
-                        <!-- Options will be populated by JS -->
-                    </select>
-                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
-                        <i class="fa-solid fa-chevron-down text-xs"></i>
+
+                    <!-- Platform Filter (NEW) -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-laptop-mobile text-gray-500"></i>
+                        </div>
+                        <select id="platformFilter" class="w-full pl-10 pr-8 py-2.5 bg-space-900 border border-white/10 rounded-lg text-white appearance-none focus:outline-none focus:border-neon-blue transition-all cursor-pointer text-sm truncate">
+                            <option value="">Semua Platform</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+
+                    <!-- Type Filter -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-layer-group text-gray-500"></i>
+                        </div>
+                        <select id="typeFilter" class="w-full pl-10 pr-8 py-2.5 bg-space-900 border border-white/10 rounded-lg text-white appearance-none focus:outline-none focus:border-neon-green transition-all cursor-pointer text-sm truncate">
+                            <option value="">Semua Jenis</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-500">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- STATISTICS BAR (Optional visual flair) -->
+        <!-- STATISTICS BAR -->
         <div class="flex justify-between items-end mb-8 border-b border-white/10 pb-4">
             <div>
-                <h3 class="font-display text-2xl font-bold text-white mb-1">DATA MISI</h3>
-                <p class="text-gray-400 text-sm">Menampilkan <span id="gameCount" class="text-neon-blue font-bold">0</span> game tersedia di database pusat.</p>
+                <h3 class="font-display text-xl md:text-2xl font-bold text-white mb-1">DATA MISI</h3>
+                <p class="text-gray-400 text-xs md:text-sm">Menampilkan <span id="gameCount" class="text-neon-blue font-bold">0</span> game tersedia.</p>
             </div>
-            <div class="hidden md:flex gap-2 items-center" id="systemStatus">
+            <div class="flex gap-2 items-center" id="systemStatus">
                 <span id="statusIndicator" class="h-2 w-2 rounded-full bg-neon-blue animate-pulse"></span>
-                <span id="statusText" class="text-xs text-neon-blue uppercase tracking-widest">System Online</span>
+                <span id="statusText" class="text-[10px] md:text-xs text-neon-blue uppercase tracking-widest">Online</span>
             </div>
         </div>
 
-        <!-- LOADING STATE (Small one for internal use) -->
+        <!-- LOADING STATE (Internal) -->
         <div id="loading" class="hidden flex-col items-center justify-center py-20">
-             <div class="relative w-20 h-20">
+             <div class="relative w-16 h-16 md:w-20 md:h-20">
                 <div class="absolute inset-0 border-4 border-white/10 rounded-full"></div>
                 <div class="absolute inset-0 border-4 border-neon-blue border-t-transparent rounded-full animate-spin"></div>
             </div>
-            <p class="mt-6 text-gray-400 font-display tracking-widest animate-pulse">MEMUAT ULANG...</p>
+            <p class="mt-6 text-gray-400 font-display tracking-widest animate-pulse text-sm">MEMUAT ULANG...</p>
         </div>
 
         <!-- ERROR STATE -->
-        <div id="errorState" class="hidden flex-col items-center justify-center py-20 text-center">
-            <i class="fa-solid fa-triangle-exclamation text-5xl text-red-500 mb-4"></i>
-            <h3 class="text-2xl font-display font-bold mb-2">Gagal Menghubungkan</h3>
-            <p class="text-gray-400 mb-6">Sinyal terputus dari markas pusat. Menggunakan data cadangan.</p>
-            <button onclick="loadMockData()" class="px-6 py-2 bg-space-700 hover:bg-space-600 rounded border border-white/20 transition-colors">
+        <div id="errorState" class="hidden flex-col items-center justify-center py-20 text-center px-4">
+            <i class="fa-solid fa-triangle-exclamation text-4xl md:text-5xl text-red-500 mb-4"></i>
+            <h3 class="text-xl md:text-2xl font-display font-bold mb-2">Gagal Menghubungkan</h3>
+            <p class="text-gray-400 mb-6 text-sm">Sinyal terputus dari markas pusat. Menggunakan data cadangan.</p>
+            <button onclick="loadMockData()" class="px-6 py-2 bg-space-700 hover:bg-space-600 rounded border border-white/20 transition-colors text-sm">
                 Muat Data Simulasi
             </button>
         </div>
 
         <!-- GAMES GRID -->
-        <div id="gamesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden">
+        <div id="gamesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 hidden">
             <!-- Cards will be injected here via JS -->
+        </div>
+
+        <!-- PAGINATION CONTROLS -->
+        <div id="paginationControls" class="flex flex-col md:flex-row justify-center items-center gap-4 mt-12 hidden">
+            <div class="flex items-center gap-4">
+                <button id="prevBtn" class="px-5 py-2 rounded-lg bg-space-800 border border-white/10 hover:border-neon-blue text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 group">
+                    <i class="fa-solid fa-chevron-left group-hover:-translate-x-1 transition-transform"></i> Sebelumnya
+                </button>
+                
+                <span id="pageIndicator" class="font-display font-bold text-neon-blue bg-space-800 px-4 py-2 rounded-lg border border-white/10">
+                    1 / 1
+                </span>
+
+                <button id="nextBtn" class="px-5 py-2 rounded-lg bg-space-800 border border-white/10 hover:border-neon-blue text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 group">
+                    Selanjutnya <i class="fa-solid fa-chevron-right group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 font-mono hidden md:block">NAVIGASI HALAMAN</p>
         </div>
 
         <!-- EMPTY STATE (No Search Results) -->
         <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
             <div class="text-6xl mb-4 opacity-50">🪐</div>
             <h3 class="text-xl font-bold mb-2">Tidak Ada Misi Ditemukan</h3>
-            <p class="text-gray-400">Coba ubah kata kunci pencarian atau filter.</p>
+            <p class="text-gray-400 text-sm">Coba ubah kata kunci pencarian atau filter.</p>
         </div>
 
     </main>
@@ -327,65 +367,27 @@
         
         // URL API Apps Script
         const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyLGKA52IYtzqTa8fdqy9W991iIBwI6P0gdXh8TOxxf2bVPX7jaCvc-WNd8hMchRHFW/exec"; 
+        
+        // KONFIGURASI PAGINASI
+        const ITEMS_PER_PAGE = 10;
+        let currentPage = 1;
+        let currentFilteredGames = []; // Menyimpan hasil filter saat ini
 
         // ==========================================
-        // DATA MOCKUP (Cadangan jika gagal fetch)
+        // DATA MOCKUP (Diupdate dengan Kelas & Platform)
         // ==========================================
         const MOCK_DATA = [
-            {
-                id: 1,
-                judul: "Aljabar Galactica",
-                mata_pelajaran: "Matematika, Fisika",
-                jenis: "Kuis, Strategi",
-                gambar: "https://images.unsplash.com/photo-1614726365723-49cfae96a6f6?q=80&w=1000&auto=format&fit=crop",
-                link_game: "#",
-                deskripsi: "Hitung koordinat roket menggunakan persamaan linear sebelum waktu habis!"
-            },
-            {
-                id: 2,
-                judul: "Chronos History",
-                mata_pelajaran: "Sejarah, IPS",
-                jenis: "Puzzle",
-                gambar: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=1000&auto=format&fit=crop",
-                link_game: "#",
-                deskripsi: "Susun artefak kuno untuk membuka gerbang waktu ke masa kemerdekaan."
-            },
-            {
-                id: 3,
-                judul: "Bio-Lab Mutan",
-                mata_pelajaran: "Biologi, Kimia",
-                jenis: "Simulasi, Eksperimen",
-                gambar: "https://images.unsplash.com/photo-1530210124550-912dc1381cb8?q=80&w=1000&auto=format&fit=crop",
-                link_game: "#",
-                deskripsi: "Identifikasi sel hewan dan tumbuhan untuk menciptakan vaksin alien."
-            },
-            {
-                id: 4,
-                judul: "Physics Cannon",
-                mata_pelajaran: "Fisika",
-                jenis: "Arcade, Simulasi",
-                gambar: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=1000&auto=format&fit=crop",
-                link_game: "#",
-                deskripsi: "Tentukan sudut dan kecepatan tembak meriam plasma menggunakan hukum Newton."
-            },
-            {
-                id: 5,
-                judul: "English Voyager",
-                mata_pelajaran: "Bahasa Inggris",
-                jenis: "Word Game",
-                gambar: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000&auto=format&fit=crop",
-                link_game: "#",
-                deskripsi: "Terjemahkan sinyal komunikasi asing untuk bernegosiasi damai."
-            },
-             {
-                id: 6,
-                judul: "Geo-Tracker",
-                mata_pelajaran: "Geografi",
-                jenis: "Kuis",
-                gambar: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000&auto=format&fit=crop",
-                link_game: "#",
-                deskripsi: "Tebak nama benua dan negara dari orbit satelit."
-            }
+            { id: 1, judul: "Aljabar Galactica", mata_pelajaran: "Matematika", jenis: "Kuis", kelas: "Kelas 7, Kelas 8", platform: "HP, Laptop", gambar: "https://images.unsplash.com/photo-1614726365723-49cfae96a6f6?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Hitung koordinat roket menggunakan persamaan linear." },
+            { id: 2, judul: "Chronos History", mata_pelajaran: "Sejarah", jenis: "Puzzle", kelas: "Kelas 9", platform: "Tablet, IFP", gambar: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Susun artefak kuno." },
+            { id: 3, judul: "Bio-Lab Mutan", mata_pelajaran: "Biologi", jenis: "Simulasi", kelas: "Kelas 10, Kelas 11", platform: "Laptop, IFP", gambar: "https://images.unsplash.com/photo-1530210124550-912dc1381cb8?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Identifikasi sel hewan." },
+            { id: 4, judul: "Physics Cannon", mata_pelajaran: "Fisika", jenis: "Arcade", kelas: "Kelas 10", platform: "HP, Tablet", gambar: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Tentukan sudut tembak." },
+            { id: 5, judul: "English Voyager", mata_pelajaran: "Bahasa Inggris", jenis: "Word Game", kelas: "Kelas 7, Kelas 8, Kelas 9", platform: "HP, Laptop, Tablet", gambar: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Terjemahkan sinyal komunikasi asing." },
+            { id: 6, judul: "Geo-Tracker", mata_pelajaran: "Geografi", jenis: "Kuis", kelas: "Kelas 10", platform: "Laptop, IFP", gambar: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Tebak nama benua." },
+            { id: 7, judul: "Chem-Reactor", mata_pelajaran: "Kimia", jenis: "Puzzle", kelas: "Kelas 11, Kelas 12", platform: "Laptop, Tablet", gambar: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Campurkan elemen kimia." },
+            { id: 8, judul: "Astro Math", mata_pelajaran: "Matematika", jenis: "Arcade", kelas: "SD, SMP", platform: "HP", gambar: "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Hindari asteroid dengan hitungan cepat." },
+            { id: 9, judul: "Eco-System", mata_pelajaran: "Biologi", jenis: "Strategi", kelas: "Kelas 10", platform: "IFP, Laptop", gambar: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Bangun ekosistem seimbang." },
+            { id: 10, judul: "Robo Code", mata_pelajaran: "TIK", jenis: "Logika", kelas: "Kelas 8, Kelas 9", platform: "Laptop", gambar: "https://images.unsplash.com/photo-1555255707-c07966088b7b?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Program robot penjelajah." },
+            { id: 11, judul: "Stellar Art", mata_pelajaran: "Seni Budaya", jenis: "Kreativitas", kelas: "SD, SMP, SMA", platform: "Tablet, IFP", gambar: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?q=80&w=600&auto=format&fit=crop", link_game: "#", deskripsi: "Lukis rasi bintang." }
         ];
 
         let allGames = [];
@@ -396,16 +398,21 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initStars();
-            // Panggil fetchGames, dan setelah selesai (sukses/gagal), hilangkan loader
+            
+            // Setup Pagination Buttons
+            document.getElementById('prevBtn').addEventListener('click', () => changePage(-1));
+            document.getElementById('nextBtn').addEventListener('click', () => changePage(1));
+
             fetchGames().finally(() => {
-                // Beri sedikit jeda agar animasi loading terlihat minimal 1.5 detik
                 setTimeout(removeLoader, 1500);
             });
             
-            // Event Listeners untuk Filter
+            // Event Listeners untuk 4 Filter + Search
             document.getElementById('searchInput').addEventListener('input', filterGames);
             document.getElementById('subjectFilter').addEventListener('change', filterGames);
             document.getElementById('typeFilter').addEventListener('change', filterGames);
+            document.getElementById('classFilter').addEventListener('change', filterGames);
+            document.getElementById('platformFilter').addEventListener('change', filterGames);
         });
 
         // Fungsi Menghilangkan Initial Loader
@@ -415,7 +422,6 @@
             
             if (loader) {
                 loader.classList.add('loader-hidden');
-                // Aktifkan scroll pada body
                 body.classList.remove('overflow-hidden');
             }
         }
@@ -424,7 +430,6 @@
             document.querySelector('main').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Efek Bintang Background
         function initStars() {
             const container = document.getElementById('starsContainer');
             const starCount = 50;
@@ -455,24 +460,20 @@
             document.head.appendChild(style);
         }
 
-        // Helper untuk memecah string "Tag1, Tag2" menjadi Array ["Tag1", "Tag2"]
         function parseTags(str) {
             if (!str) return [];
             return str.toString().split(',').map(item => item.trim());
         }
 
-        // Ambil Data dengan Penanganan Error yang Lebih Baik
         async function fetchGames() {
-            const loading = document.getElementById('loading');
             const grid = document.getElementById('gamesGrid');
             const errorState = document.getElementById('errorState');
+            const paginationControls = document.getElementById('paginationControls');
 
-            // Kita sembunyikan loading internal karena sudah ada loading full screen awal
-            // loading.classList.remove('hidden'); 
             grid.classList.add('hidden');
+            paginationControls.classList.add('hidden');
             errorState.classList.add('hidden');
 
-            // Cek apakah URL API sudah diisi
             if (!SHEET_API_URL || SHEET_API_URL.trim() === "") {
                 console.log("URL API kosong, memuat Data Mockup...");
                 loadMockData();
@@ -480,7 +481,6 @@
             }
 
             try {
-                // Menambahkan timestamp untuk menghindari caching browser yang agresif
                 const targetUrl = SHEET_API_URL.includes('?') 
                     ? `${SHEET_API_URL}&t=${new Date().getTime()}`
                     : `${SHEET_API_URL}?t=${new Date().getTime()}`;
@@ -493,20 +493,15 @@
 
                 const data = await response.json();
                 loadData(data);
-                
-                // Reset status ke online jika berhasil
                 setSystemStatus('online');
 
             } catch (error) {
-                console.warn("Gagal mengambil data dari Sheet (CORS/Network Error). Beralih ke Data Mockup.", error);
-                
-                // FALLBACK OTOMATIS: Jangan tampilkan error, langsung muat data cadangan
+                console.warn("Gagal mengambil data dari Sheet. Beralih ke Data Mockup.", error);
                 loadMockData();
                 setSystemStatus('offline');
             }
         }
 
-        // Fungsi untuk mengubah indikator status sistem
         function setSystemStatus(status) {
             const indicator = document.getElementById('statusIndicator');
             const text = document.getElementById('statusText');
@@ -514,13 +509,13 @@
             if (status === 'offline') {
                 indicator.classList.remove('bg-neon-blue');
                 indicator.classList.add('bg-yellow-500');
-                text.textContent = "OFFLINE MODE (DATA CADANGAN)";
+                text.textContent = "OFFLINE MODE";
                 text.classList.remove('text-neon-blue');
                 text.classList.add('text-yellow-500');
             } else {
                 indicator.classList.add('bg-neon-blue');
                 indicator.classList.remove('bg-yellow-500');
-                text.textContent = "SYSTEM ONLINE";
+                text.textContent = "ONLINE";
                 text.classList.add('text-neon-blue');
                 text.classList.remove('text-yellow-500');
             }
@@ -532,64 +527,133 @@
 
         function loadData(data) {
             allGames = data;
+            currentFilteredGames = data; // Inisialisasi data yang akan ditampilkan
             populateFilters(data);
-            renderGames(data);
             
-            // document.getElementById('loading').classList.add('hidden'); // Tidak perlu karena loading fullscreen
+            // Panggil fungsi paginasi, BUKAN renderGames langsung
+            currentPage = 1;
+            updatePagination();
+            
             document.getElementById('errorState').classList.add('hidden');
-            document.getElementById('gamesGrid').classList.remove('hidden');
         }
 
-        // Isi Dropdown Filter secara Otomatis (Support Multiple Tags)
         function populateFilters(data) {
             const subjects = new Set();
             const types = new Set();
+            const classes = new Set();
+            const platforms = new Set();
 
             data.forEach(item => {
-                // Parse mata pelajaran (split by comma)
-                parseTags(item.mata_pelajaran).forEach(tag => {
-                    if(tag) subjects.add(tag);
-                });
-
-                // Parse jenis (split by comma)
-                parseTags(item.jenis).forEach(tag => {
-                    if(tag) types.add(tag);
-                });
+                parseTags(item.mata_pelajaran).forEach(tag => { if(tag) subjects.add(tag); });
+                parseTags(item.jenis).forEach(tag => { if(tag) types.add(tag); });
+                // Tambahkan parsing untuk Kelas dan Platform
+                parseTags(item.kelas).forEach(tag => { if(tag) classes.add(tag); });
+                parseTags(item.platform).forEach(tag => { if(tag) platforms.add(tag); });
             });
 
             const sortedSubjects = [...subjects].sort();
             const sortedTypes = [...types].sort();
+            const sortedClasses = [...classes].sort(); // Bisa disort lebih pintar (misal 7 dulu baru 8) tapi string sort cukup
+            const sortedPlatforms = [...platforms].sort();
 
             const subjectSelect = document.getElementById('subjectFilter');
             const typeSelect = document.getElementById('typeFilter');
+            const classSelect = document.getElementById('classFilter');
+            const platformSelect = document.getElementById('platformFilter');
 
-            // Reset options (keep the first one)
+            // Reset Options
             subjectSelect.innerHTML = '<option value="">Semua Pelajaran</option>';
             typeSelect.innerHTML = '<option value="">Semua Jenis</option>';
+            classSelect.innerHTML = '<option value="">Semua Kelas</option>';
+            platformSelect.innerHTML = '<option value="">Semua Platform</option>';
 
-            sortedSubjects.forEach(sub => {
-                const option = document.createElement('option');
-                option.value = sub;
-                option.textContent = sub;
-                subjectSelect.appendChild(option);
-            });
-
-            sortedTypes.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type;
-                option.textContent = type;
-                typeSelect.appendChild(option);
-            });
+            sortedSubjects.forEach(sub => subjectSelect.add(new Option(sub, sub)));
+            sortedTypes.forEach(type => typeSelect.add(new Option(type, type)));
+            sortedClasses.forEach(cls => classSelect.add(new Option(cls, cls)));
+            sortedPlatforms.forEach(plat => platformSelect.add(new Option(plat, plat)));
         }
 
-        // Render Kartu Game
+        // ==========================================
+        // LOGIKA PAGINASI BARU
+        // ==========================================
+        
+        function changePage(direction) {
+            const totalPages = Math.ceil(currentFilteredGames.length / ITEMS_PER_PAGE);
+            const newPage = currentPage + direction;
+
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                updatePagination();
+                
+                // Scroll sedikit ke atas grid agar user tahu halaman berubah
+                const gridTop = document.getElementById('gamesGrid').offsetTop - 100;
+                window.scrollTo({ top: gridTop, behavior: 'smooth' });
+            }
+        }
+
+        function updatePagination() {
+            // Hitung index start dan end untuk slice array
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            
+            // Ambil data hanya untuk halaman ini
+            const paginatedGames = currentFilteredGames.slice(startIndex, endIndex);
+            
+            // Render game untuk halaman ini
+            renderGames(paginatedGames);
+            
+            // Update UI tombol paginasi
+            renderPaginationControls();
+        }
+
+        function renderPaginationControls() {
+            const totalPages = Math.ceil(currentFilteredGames.length / ITEMS_PER_PAGE);
+            const controls = document.getElementById('paginationControls');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const pageIndicator = document.getElementById('pageIndicator');
+
+            // Sembunyikan kontrol jika tidak ada data atau hanya 1 halaman
+            if (currentFilteredGames.length === 0) {
+                controls.classList.add('hidden');
+                return;
+            } else {
+                controls.classList.remove('hidden');
+            }
+
+            // Update teks indikator
+            pageIndicator.textContent = `${currentPage} / ${totalPages > 0 ? totalPages : 1}`;
+
+            // Atur status disabled tombol
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+            
+            // Styling tambahan untuk status disabled
+            if (prevBtn.disabled) prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            else prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            if (nextBtn.disabled) nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            else nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // Helper untuk icon platform
+        function getPlatformIcon(platform) {
+            const p = platform.toLowerCase();
+            if (p.includes('hp') || p.includes('android') || p.includes('mobile')) return 'fa-mobile-screen';
+            if (p.includes('laptop') || p.includes('pc') || p.includes('desktop')) return 'fa-laptop';
+            if (p.includes('tablet') || p.includes('ipad')) return 'fa-tablet-screen-button';
+            if (p.includes('ifp') || p.includes('pid') || p.includes('tv')) return 'fa-tv';
+            return 'fa-gamepad';
+        }
+
         function renderGames(games) {
             const grid = document.getElementById('gamesGrid');
             const emptyState = document.getElementById('emptyState');
             const countEl = document.getElementById('gameCount');
             
             grid.innerHTML = '';
-            countEl.textContent = games.length;
+            // Tampilkan jumlah TOTAL game hasil filter, bukan cuma yang di page ini
+            countEl.textContent = currentFilteredGames.length; 
 
             if (games.length === 0) {
                 grid.classList.add('hidden');
@@ -605,17 +669,28 @@
             games.forEach(game => {
                 const subjectTags = parseTags(game.mata_pelajaran);
                 const typeTags = parseTags(game.jenis);
+                const classTags = parseTags(game.kelas);
+                const platformTags = parseTags(game.platform);
                 
-                // Buat HTML untuk badge mata pelajaran (di atas gambar)
-                // Kita hanya ambil max 2 tag agar tidak menutupi gambar
-                const subjectBadges = subjectTags.slice(0, 2).map(tag => 
-                    `<span class="bg-space-900/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-neon-blue border border-neon-blue/30">${tag}</span>`
+                const subjectBadges = subjectTags.slice(0, 1).map(tag => 
+                    `<span class="bg-space-900/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] md:text-xs font-bold text-neon-blue border border-neon-blue/30 shadow-lg">${tag}</span>`
                 ).join(' ');
 
-                // Buat HTML untuk badge jenis (di dalam body card)
+                // Badge Kelas (Orange)
+                const classBadges = classTags.slice(0, 1).map(tag =>
+                    `<span class="bg-space-900/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] md:text-xs font-bold text-neon-orange border border-neon-orange/30 shadow-lg"><i class="fa-solid fa-graduation-cap mr-1"></i>${tag}</span>`
+                ).join(' ');
+
                 const typeBadges = typeTags.map(tag => 
-                    `<span class="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
-                        <i class="fa-solid fa-tag text-[10px]"></i> ${tag}
+                    `<span class="text-[10px] md:text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
+                        <i class="fa-solid fa-tag text-[8px] md:text-[10px]"></i> ${tag}
+                    </span>`
+                ).join(' ');
+
+                // Icons untuk Platform
+                const platformIcons = platformTags.map(tag => 
+                    `<span class="text-gray-400 hover:text-neon-blue transition-colors" title="${tag}">
+                        <i class="fa-solid ${getPlatformIcon(tag)} text-sm"></i>
                     </span>`
                 ).join(' ');
 
@@ -623,63 +698,85 @@
                 card.className = `game-card bg-space-800 rounded-xl overflow-hidden border border-white/10 flex flex-col h-full`;
                 
                 card.innerHTML = `
-                    <div class="relative h-48 overflow-hidden group">
+                    <div class="relative h-40 md:h-48 overflow-hidden group">
                         <img src="${game.gambar}" alt="${game.judul}" 
                              onerror="this.src='https://placehold.co/600x400/1e2532/FFF?text=No+Image'"
                              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                        <div class="absolute top-3 left-3 flex gap-2 flex-wrap max-w-[90%]">
+                        <!-- Badges Overlay -->
+                        <div class="absolute top-3 left-3 flex flex-wrap gap-2 max-w-[90%]">
                             ${subjectBadges}
+                            ${classBadges}
                         </div>
                     </div>
                     
-                    <div class="p-6 flex flex-col flex-grow">
+                    <div class="p-4 md:p-6 flex flex-col flex-grow">
+                        <!-- Type Tags -->
                         <div class="flex flex-wrap gap-2 mb-3">
                             ${typeBadges}
                         </div>
                         
-                        <h3 class="font-display text-xl font-bold text-white mb-2 leading-tight group-hover:text-neon-blue transition-colors">
+                        <h3 class="font-display text-lg md:text-xl font-bold text-white mb-2 leading-tight group-hover:text-neon-blue transition-colors">
                             ${game.judul}
                         </h3>
                         
-                        <p class="text-gray-400 text-sm mb-6 line-clamp-2 flex-grow">
+                        <p class="text-gray-400 text-xs md:text-sm mb-4 line-clamp-2 flex-grow">
                             ${game.deskripsi || "Tidak ada deskripsi tersedia."}
                         </p>
-                        
-                        <a href="${game.link_game}" target="_blank" 
-                           class="w-full mt-auto bg-white/5 hover:bg-neon-blue hover:text-space-900 border border-white/10 text-white font-semibold py-3 rounded-lg transition-all text-center flex items-center justify-center gap-2 group-hover:shadow-[0_0_15px_rgba(0,240,255,0.4)]">
-                            MAIN SEKARANG <i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform"></i>
-                        </a>
+
+                        <!-- Platform Support & Button Row -->
+                        <div class="mt-auto pt-4 border-t border-white/5">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-[10px] text-gray-500 uppercase tracking-wider">Platform:</span>
+                                <div class="flex gap-3">
+                                    ${platformIcons}
+                                </div>
+                            </div>
+                            
+                            <a href="${game.link_game}" target="_blank" 
+                               class="w-full bg-white/5 hover:bg-neon-blue hover:text-space-900 border border-white/10 text-white font-semibold py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-2 group-hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] text-sm md:text-base">
+                                MAIN SEKARANG <i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform"></i>
+                            </a>
+                        </div>
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        // Logika Filter (Diperbarui untuk Multi-Tag)
         function filterGames() {
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            const subjectVal = document.getElementById('subjectFilter').value; // Nilai dari dropdown
-            const typeVal = document.getElementById('typeFilter').value; // Nilai dari dropdown
+            const subjectVal = document.getElementById('subjectFilter').value; 
+            const typeVal = document.getElementById('typeFilter').value; 
+            const classVal = document.getElementById('classFilter').value; 
+            const platformVal = document.getElementById('platformFilter').value; 
 
+            // Filter data dari master (allGames)
             const filtered = allGames.filter(game => {
-                const subjectTags = parseTags(game.mata_pelajaran); // Array: ["Matematika", "Fisika"]
-                const typeTags = parseTags(game.jenis); // Array: ["Kuis", "Puzzle"]
+                const subjectTags = parseTags(game.mata_pelajaran); 
+                const typeTags = parseTags(game.jenis); 
+                const classTags = parseTags(game.kelas);
+                const platformTags = parseTags(game.platform);
 
-                // Cek Pencarian Text
                 const matchSearch = (game.judul && game.judul.toLowerCase().includes(searchVal)) || 
                                     (game.deskripsi && game.deskripsi.toLowerCase().includes(searchVal)) ||
                                     (game.mata_pelajaran && game.mata_pelajaran.toLowerCase().includes(searchVal));
 
-                // Cek Filter Mata Pelajaran (Apakah tag di game MENGANDUNG filter yang dipilih?)
                 const matchSubject = subjectVal === "" || subjectTags.includes(subjectVal);
-
-                // Cek Filter Jenis
                 const matchType = typeVal === "" || typeTags.includes(typeVal);
+                const matchClass = classVal === "" || classTags.includes(classVal);
+                const matchPlatform = platformVal === "" || platformTags.includes(platformVal);
 
-                return matchSearch && matchSubject && matchType;
+                return matchSearch && matchSubject && matchType && matchClass && matchPlatform;
             });
 
-            renderGames(filtered);
+            // Update variable global hasil filter
+            currentFilteredGames = filtered;
+            
+            // Reset ke halaman 1 setiap kali filter berubah
+            currentPage = 1;
+            
+            // Render ulang dengan paginasi
+            updatePagination();
         }
 
     </script>
