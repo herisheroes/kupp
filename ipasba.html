@@ -38,7 +38,13 @@
       20%, 40%, 60%, 80% { transform: translate(3px, 2px) rotate(0deg); }
     }
 
-    .slide { display: none; height: 100%; }
+    /* Perbaikan Responsivitas Slide */
+    .slide { 
+      display: none; 
+      width: 100%; 
+      flex: 1; 
+      min-height: 100%;
+    }
     .slide.active { display: flex; }
   </style>
 </head>
@@ -46,13 +52,13 @@
 
   <!-- Loading Overlay -->
   <div id="loading-overlay" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-    <div class="bg-white p-8 rounded-3xl flex flex-col items-center border-4 border-sky-400 shadow-2xl">
+    <div class="bg-white p-8 rounded-3xl flex flex-col items-center border-4 border-sky-400 shadow-2xl mx-4 text-center">
          <div class="animate-spin text-6xl mb-4">⏳</div>
          <p id="loading-text" class="text-xl font-black text-sky-800">Memproses data...</p>
     </div>
   </div>
 
-  <div class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+  <div class="min-h-screen p-4 md:p-8 flex flex-col items-center w-full max-w-full overflow-hidden">
     
     <!-- Header/Nav Info -->
     <div id="top-nav" class="w-full max-w-5xl flex justify-between items-center mb-4 bg-white p-3 rounded-2xl shadow-sm border-2 border-gray-100 hidden">
@@ -60,38 +66,54 @@
       <div id="page-info" class="font-bold text-gray-500 text-sm bg-gray-100 px-4 py-1 rounded-full">Halaman 1 / 11</div>
     </div>
 
-    <!-- Main Presentation Canvas -->
-    <div class="w-full max-w-5xl h-[70vh] min-h-[500px] md:h-[600px] relative">
+    <!-- Main Presentation Canvas (Diperbaiki Responsivitasnya) -->
+    <div class="w-full max-w-5xl flex-1 flex flex-col relative h-auto min-h-[60vh] md:min-h-[600px]">
       
-      <!-- SLIDE 1: LOGIN -->
-      <div id="slide-1" class="slide active flex-col items-center justify-center text-center p-6 bg-gradient-to-b from-sky-300 to-sky-100 rounded-3xl shadow-xl border-4 border-white">
-        <div class="text-6xl mb-4 float-anim">🎒🏫👧👦</div>
-        <h1 class="text-4xl md:text-5xl font-black text-blue-800 mb-2 drop-shadow-md">Aplikasi LKPD Interaktif</h1>
-        <h2 class="text-2xl font-bold text-sky-600 mb-8">Petualangan Belajar Bencana Alam</h2>
+      <!-- SLIDE 0: TOKEN GATEWAY (BARU) -->
+      <div id="slide-0" class="slide active flex-col items-center justify-center text-center p-6 py-12 bg-gradient-to-b from-sky-400 to-sky-200 rounded-3xl shadow-xl border-4 border-white">
+        <div class="text-6xl md:text-7xl mb-6 float-anim">🔐</div>
+        <h1 class="text-3xl md:text-5xl font-black text-white mb-4 drop-shadow-md leading-tight">Akses Masuk LKPD</h1>
+        <p class="text-lg md:text-xl font-bold text-sky-800 mb-8 bg-white/50 py-2 px-6 rounded-full inline-block shadow-sm">Masukkan token rahasia dari gurumu!</p>
         
-        <div class="bg-white p-8 rounded-3xl shadow-lg w-full max-w-md">
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg w-full max-w-md mx-auto">
+          <input type="text" id="app-token-input" class="w-full p-4 border-4 border-gray-200 rounded-xl text-center text-xl font-bold mb-4 focus:outline-none focus:border-blue-500 transition-colors" placeholder="Ketik token..." />
+          <p id="token-error" class="text-red-500 font-bold mb-4 hidden">Ups! Token salah. Coba lagi!</p>
+          
+          <button onclick="verifyToken()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl py-4 rounded-xl kid-shadow transition-transform">
+            Buka Kunci! 🗝️
+          </button>
+        </div>
+      </div>
+
+      <!-- SLIDE 1: LOGIN KELOMPOK -->
+      <div id="slide-1" class="slide flex-col items-center justify-center text-center p-6 py-12 bg-gradient-to-b from-sky-300 to-sky-100 rounded-3xl shadow-xl border-4 border-white">
+        <div class="text-5xl md:text-6xl mb-4 float-anim">🎒🏫👧👦</div>
+        <h1 class="text-3xl md:text-5xl font-black text-blue-800 mb-2 drop-shadow-md leading-tight">LKPD Interaktif</h1>
+        <h2 class="text-xl md:text-2xl font-bold text-sky-600 mb-8">Petualangan Belajar Bencana Alam</h2>
+        
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg w-full max-w-md mx-auto">
           <label class="block text-lg font-bold text-gray-700 mb-4">🔑 Masukkan Nama Kelompok:</label>
           <input type="text" id="login-group-input" class="w-full p-4 border-4 border-gray-200 rounded-xl text-center text-xl font-bold mb-4 focus:outline-none focus:border-blue-500 transition-colors" placeholder="Contoh: Kelompok Garuda" />
-          <p id="login-error" class="text-red-500 font-bold mb-4 hidden"></p>
+          <p id="login-error" class="text-red-500 font-bold mb-4 hidden text-sm md:text-base"></p>
           
           <button onclick="loginGroup()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl py-4 rounded-xl kid-shadow transition-transform mb-6">
             Masuk Sekarang! 🚀
           </button>
           
           <div class="text-center pt-4 border-t-2 border-gray-100">
-            <p class="text-gray-500 font-medium mb-2">Belum mendaftarkan kelompok?</p>
-            <button onclick="showSlide(2)" class="text-blue-600 font-bold underline hover:text-blue-800 text-lg">Daftar Kelompok Baru</button>
+            <p class="text-gray-500 font-medium mb-2 text-sm md:text-base">Belum mendaftarkan kelompok?</p>
+            <button onclick="showSlide(2)" class="text-blue-600 font-bold underline hover:text-blue-800 text-base md:text-lg">Daftar Kelompok Baru</button>
           </div>
         </div>
       </div>
 
       <!-- SLIDE 2: IDENTITAS (DAFTAR) -->
-      <div id="slide-2" class="slide flex-col items-center justify-center p-6 bg-gradient-to-b from-yellow-200 to-orange-100 rounded-3xl shadow-xl border-4 border-white relative">
-        <button onclick="showSlide(1)" class="absolute top-4 left-4 bg-white p-2 rounded-xl kid-shadow font-bold text-gray-600 flex items-center hover:bg-gray-50"><i data-lucide="arrow-left" class="mr-2 w-5 h-5"></i> Kembali</button>
-        <h2 class="text-3xl font-black text-orange-600 mb-2 text-center mt-6">👋 Pendaftaran Kelompok Baru!</h2>
-        <p class="text-lg font-semibold text-gray-700 mb-6 text-center">Isi data kelompok kalian dengan lengkap.</p>
+      <div id="slide-2" class="slide flex-col items-center justify-center p-6 py-12 bg-gradient-to-b from-yellow-200 to-orange-100 rounded-3xl shadow-xl border-4 border-white relative">
+        <button onclick="showSlide(1)" class="absolute top-4 left-4 bg-white p-2 md:px-4 md:py-2 rounded-xl kid-shadow font-bold text-gray-600 flex items-center hover:bg-gray-50 text-sm md:text-base"><i data-lucide="arrow-left" class="mr-2 w-4 h-4 md:w-5 md:h-5"></i> Kembali</button>
+        <h2 class="text-2xl md:text-3xl font-black text-orange-600 mb-2 text-center mt-10 md:mt-6">👋 Pendaftaran Kelompok Baru!</h2>
+        <p class="text-base md:text-lg font-semibold text-gray-700 mb-6 text-center">Isi data kelompok kalian dengan lengkap.</p>
         
-        <div class="bg-white w-full max-w-lg p-6 rounded-3xl shadow-md border-4 border-orange-200 text-left">
+        <div class="bg-white w-full max-w-lg mx-auto p-6 md:p-8 rounded-3xl shadow-md border-4 border-orange-200 text-left">
           <div class="mb-4">
             <label class="block font-bold text-gray-700 mb-2">🏫 Nama Sekolah:</label>
             <input type="text" id="school-input" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 outline-none identity-field" placeholder="Contoh: SDN 3 Sukahurip" />
@@ -101,164 +123,173 @@
             <input type="text" id="group-input" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 outline-none identity-field" placeholder="Contoh: Kelompok Garuda" />
           </div>
           <div class="mb-6">
-            <label class="block font-bold text-gray-700 mb-2">👦👧 Nama Anggota Kelompok:</label>
+            <label class="block font-bold text-gray-700 mb-2">👦👧 Nama Anggota:</label>
             <textarea id="members-input" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-orange-500 outline-none identity-field" rows="3" placeholder="1. Budi&#10;2. Siti&#10;3. Edo"></textarea>
           </div>
           <p id="register-error" class="text-red-500 font-bold mb-4 hidden text-center"></p>
-          <button id="start-btn" disabled onclick="registerGroup()" class="w-full font-bold text-xl py-4 rounded-xl transition-all bg-gray-300 text-gray-500 cursor-not-allowed">
+          <button id="start-btn" disabled onclick="registerGroup()" class="w-full font-bold text-lg md:text-xl py-4 rounded-xl transition-all bg-gray-300 text-gray-500 cursor-not-allowed">
             Daftar & Mulai Belajar! 🎒
           </button>
         </div>
       </div>
 
       <!-- SLIDE 3: JUDUL -->
-      <div id="slide-3" class="slide flex-col items-center justify-center p-6 bg-gradient-to-b from-red-400 to-orange-400 rounded-3xl shadow-xl border-4 border-white text-center relative overflow-hidden">
-        <div class="bg-white/90 backdrop-blur-sm p-10 rounded-3xl shadow-2xl z-10 border-4 border-white max-w-2xl">
-          <h1 class="text-5xl md:text-7xl font-black text-red-600 mb-4 drop-shadow-sm uppercase tracking-wide">Bencana Alam</h1>
-          <div class="w-24 h-2 bg-orange-500 mx-auto mb-6 rounded-full"></div>
-          <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Dampak dan Cara Mengatasinya</h2>
+      <div id="slide-3" class="slide flex-col items-center justify-center p-6 bg-gradient-to-b from-red-400 to-orange-400 rounded-3xl shadow-xl border-4 border-white text-center relative overflow-hidden min-h-[50vh]">
+        <div class="bg-white/90 backdrop-blur-sm p-6 md:p-10 rounded-3xl shadow-2xl z-10 border-4 border-white max-w-2xl w-full">
+          <h1 class="text-4xl md:text-7xl font-black text-red-600 mb-4 drop-shadow-sm uppercase tracking-wide">Bencana Alam</h1>
+          <div class="w-16 md:w-24 h-2 bg-orange-500 mx-auto mb-6 rounded-full"></div>
+          <h2 class="text-xl md:text-3xl font-bold text-gray-800">Dampak dan Cara Mengatasinya</h2>
         </div>
       </div>
 
       <!-- SLIDE 4: TUJUAN -->
-      <div id="slide-4" class="slide flex-col p-8 bg-gradient-to-br from-emerald-100 to-teal-200 rounded-3xl shadow-xl border-4 border-white">
-        <div class="text-center mb-10 mt-4">
-          <h2 class="text-4xl font-black text-emerald-700">🎯 Tujuan Pembelajaran</h2>
+      <div id="slide-4" class="slide flex-col p-6 md:p-8 bg-gradient-to-br from-emerald-100 to-teal-200 rounded-3xl shadow-xl border-4 border-white justify-center">
+        <div class="text-center mb-8 md:mb-10">
+          <h2 class="text-3xl md:text-4xl font-black text-emerald-700">🎯 Tujuan Pembelajaran</h2>
         </div>
-        <div class="space-y-6 max-w-3xl mx-auto w-full">
-          <div class="flex items-center p-6 rounded-2xl border-4 bg-blue-100 border-blue-400 shadow-md">
-            <span class="text-4xl mr-6 bg-white p-3 rounded-full shadow-sm">🔎</span><span class="text-2xl font-bold text-gray-800">Mengetahui jenis-jenis bencana alam.</span>
+        <div class="space-y-4 md:space-y-6 max-w-3xl mx-auto w-full">
+          <div class="flex items-center p-4 md:p-6 rounded-2xl border-4 bg-blue-100 border-blue-400 shadow-md">
+            <span class="text-3xl md:text-4xl mr-4 md:mr-6 bg-white p-2 md:p-3 rounded-full shadow-sm flex-shrink-0">🔎</span><span class="text-lg md:text-2xl font-bold text-gray-800">Mengetahui jenis bencana alam.</span>
           </div>
-          <div class="flex items-center p-6 rounded-2xl border-4 bg-red-100 border-red-400 shadow-md">
-            <span class="text-4xl mr-6 bg-white p-3 rounded-full shadow-sm">💥</span><span class="text-2xl font-bold text-gray-800">Memahami dampak dari bencana.</span>
+          <div class="flex items-center p-4 md:p-6 rounded-2xl border-4 bg-red-100 border-red-400 shadow-md">
+            <span class="text-3xl md:text-4xl mr-4 md:mr-6 bg-white p-2 md:p-3 rounded-full shadow-sm flex-shrink-0">💥</span><span class="text-lg md:text-2xl font-bold text-gray-800">Memahami dampak dari bencana.</span>
           </div>
-          <div class="flex items-center p-6 rounded-2xl border-4 bg-green-100 border-green-400 shadow-md">
-            <span class="text-4xl mr-6 bg-white p-3 rounded-full shadow-sm">🛡️</span><span class="text-2xl font-bold text-gray-800">Mengetahui pencegahan & penanggulangan.</span>
+          <div class="flex items-center p-4 md:p-6 rounded-2xl border-4 bg-green-100 border-green-400 shadow-md">
+            <span class="text-3xl md:text-4xl mr-4 md:mr-6 bg-white p-2 md:p-3 rounded-full shadow-sm flex-shrink-0">🛡️</span><span class="text-lg md:text-2xl font-bold text-gray-800">Mengetahui pencegahan & penanggulangan.</span>
           </div>
         </div>
       </div>
 
       <!-- SLIDE 5: EKSPLORASI -->
-      <div id="slide-5" class="slide flex-col p-6 bg-blue-50 rounded-3xl shadow-xl border-4 border-white relative">
-        <h2 class="text-3xl font-black text-center text-blue-800 mb-8">📚 Mari Bereksplorasi!</h2>
-        <div class="grid grid-cols-2 gap-6 h-full max-w-4xl mx-auto w-full">
-          <div onclick="openModal('Gempa Bumi', '🫨', 'Getaran di permukaan bumi akibat pelepasan energi dari dalam.')" class="bg-gradient-to-br from-amber-200 to-orange-300 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform"><span class="text-6xl mb-4 bg-white/50 p-4 rounded-full">🫨</span><h3 class="text-2xl font-black text-gray-800 text-center">Gempa Bumi</h3></div>
-          <div onclick="openModal('Banjir', '🌊', 'Peristiwa ketika aliran air yang berlebihan merendam daratan.')" class="bg-gradient-to-br from-blue-200 to-cyan-300 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform"><span class="text-6xl mb-4 bg-white/50 p-4 rounded-full">🌊</span><h3 class="text-2xl font-black text-gray-800 text-center">Banjir</h3></div>
-          <div onclick="openModal('Gunung Meletus', '🌋', 'Endapan magma di dalam perut bumi yang didorong keluar oleh gas.')" class="bg-gradient-to-br from-red-200 to-rose-300 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform"><span class="text-6xl mb-4 bg-white/50 p-4 rounded-full">🌋</span><h3 class="text-2xl font-black text-gray-800 text-center">Gunung Meletus</h3></div>
-          <div onclick="openModal('Tanah Longsor', '⛰️', 'Perpindahan material pembentuk lereng bergerak ke bawah.')" class="bg-gradient-to-br from-stone-300 to-amber-600 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform"><span class="text-6xl mb-4 bg-white/50 p-4 rounded-full">⛰️</span><h3 class="text-2xl font-black text-gray-800 text-center">Tanah Longsor</h3></div>
+      <div id="slide-5" class="slide flex-col p-6 md:p-8 bg-blue-50 rounded-3xl shadow-xl border-4 border-white relative justify-center">
+        <h2 class="text-2xl md:text-3xl font-black text-center text-blue-800 mb-6 md:mb-8">📚 Mari Bereksplorasi!</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full max-w-4xl mx-auto">
+          <div onclick="openModal('Gempa Bumi', '🫨', 'Getaran di permukaan bumi akibat pelepasan energi dari dalam secara tiba-tiba yang menciptakan gelombang seismik.')" class="bg-gradient-to-br from-amber-200 to-orange-300 rounded-3xl p-4 md:p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform text-center"><span class="text-5xl md:text-6xl mb-2 md:mb-4 bg-white/50 p-4 rounded-full">🫨</span><h3 class="text-xl md:text-2xl font-black text-gray-800">Gempa Bumi</h3></div>
+          <div onclick="openModal('Banjir', '🌊', 'Peristiwa bencana alam yang terjadi ketika aliran air yang berlebihan merendam daratan.')" class="bg-gradient-to-br from-blue-200 to-cyan-300 rounded-3xl p-4 md:p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform text-center"><span class="text-5xl md:text-6xl mb-2 md:mb-4 bg-white/50 p-4 rounded-full">🌊</span><h3 class="text-xl md:text-2xl font-black text-gray-800">Banjir</h3></div>
+          <div onclick="openModal('Gunung Meletus', '🌋', 'Terjadi akibat endapan magma di dalam perut bumi yang didorong keluar oleh gas yang bertekanan tinggi.')" class="bg-gradient-to-br from-red-200 to-rose-300 rounded-3xl p-4 md:p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform text-center"><span class="text-5xl md:text-6xl mb-2 md:mb-4 bg-white/50 p-4 rounded-full">🌋</span><h3 class="text-xl md:text-2xl font-black text-gray-800">Gunung Meletus</h3></div>
+          <div onclick="openModal('Tanah Longsor', '⛰️', 'Perpindahan material pembentuk lereng berupa batuan, bahan rombakan, tanah, bergerak ke bawah atau keluar lereng.')" class="bg-gradient-to-br from-stone-300 to-amber-600 rounded-3xl p-4 md:p-6 flex flex-col items-center justify-center cursor-pointer kid-shadow border-4 border-white hover:scale-105 transition-transform text-center"><span class="text-5xl md:text-6xl mb-2 md:mb-4 bg-white/50 p-4 rounded-full">⛰️</span><h3 class="text-xl md:text-2xl font-black text-gray-800">Tanah Longsor</h3></div>
         </div>
         <!-- Modal -->
-        <div id="material-modal" class="hidden absolute inset-0 bg-black/60 rounded-3xl flex items-center justify-center z-50 p-6"><div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center relative border-8 border-sky-400"><button onclick="closeModal()" class="absolute -top-4 -right-4 bg-red-500 text-white rounded-full p-2 kid-shadow hover:bg-red-600"><i data-lucide="x" class="w-6 h-6 stroke-[3px]"></i></button><span id="modal-icon" class="text-7xl block mb-4"></span><h3 id="modal-title" class="text-3xl font-black mb-4 text-gray-800"></h3><p id="modal-text" class="text-xl font-medium text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-2xl border-2 border-gray-100"></p></div></div>
+        <div id="material-modal" class="hidden absolute inset-0 bg-black/60 rounded-3xl flex items-center justify-center z-50 p-4 md:p-6">
+          <div class="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full text-center relative border-8 border-sky-400 shadow-2xl transform scale-100 transition-transform">
+            <button onclick="closeModal()" class="absolute -top-4 -right-4 bg-red-500 text-white rounded-full p-2 kid-shadow hover:bg-red-600"><i data-lucide="x" class="w-6 h-6 stroke-[3px]"></i></button>
+            <span id="modal-icon" class="text-6xl md:text-7xl block mb-4"></span>
+            <h3 id="modal-title" class="text-2xl md:text-3xl font-black mb-4 text-gray-800"></h3>
+            <p id="modal-text" class="text-base md:text-xl font-medium text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-2xl border-2 border-gray-100"></p>
+          </div>
+        </div>
       </div>
 
       <!-- SLIDE 6: MATCHING GAME -->
-      <div id="slide-6" class="slide flex-col p-6 bg-purple-50 rounded-3xl shadow-xl border-4 border-white">
-        <h2 class="text-3xl font-black text-center text-purple-800 mb-6">🎮 Aktivitas 1: Mencocokkan!</h2>
-        <div id="match-success" class="hidden bg-green-100 border-4 border-green-400 text-green-700 p-4 rounded-2xl mb-6 text-center font-bold text-xl flex items-center justify-center"><i data-lucide="check-circle" class="mr-2 w-7 h-7"></i> Hebat! Berhasil!</div>
-        <div class="flex justify-between max-w-5xl mx-auto w-full gap-4 flex-1">
-          <div class="flex flex-col gap-4 w-1/2" id="left-col">
-            <button id="l1" onclick="selectLeft('l1')" class="match-btn flex items-center p-4 rounded-2xl font-bold text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-3xl mr-4">🫨</span> Gempa Bumi</button>
-            <button id="l2" onclick="selectLeft('l2')" class="match-btn flex items-center p-4 rounded-2xl font-bold text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-3xl mr-4">🌊</span> Banjir</button>
-            <button id="l3" onclick="selectLeft('l3')" class="match-btn flex items-center p-4 rounded-2xl font-bold text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-3xl mr-4">🌋</span> Gunung Meletus</button>
-            <button id="l4" onclick="selectLeft('l4')" class="match-btn flex items-center p-4 rounded-2xl font-bold text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-3xl mr-4">⛰️</span> Tanah Longsor</button>
+      <div id="slide-6" class="slide flex-col p-4 md:p-6 bg-purple-50 rounded-3xl shadow-xl border-4 border-white">
+        <h2 class="text-2xl md:text-3xl font-black text-center text-purple-800 mb-4 md:mb-6">🎮 Aktivitas 1: Mencocokkan!</h2>
+        <div id="match-success" class="hidden bg-green-100 border-4 border-green-400 text-green-700 p-4 rounded-2xl mb-4 text-center font-bold text-lg md:text-xl flex items-center justify-center"><i data-lucide="check-circle" class="mr-2 w-6 h-6 md:w-7 md:h-7"></i> Hebat! Berhasil!</div>
+        <p class="text-center text-sm md:text-base font-bold text-gray-600 mb-6 bg-white py-2 px-4 rounded-full inline-block mx-auto w-max border-2 border-purple-200">Klik Bencana (kiri) lalu Penyebab (kanan)</p>
+        
+        <div class="flex flex-col md:flex-row justify-between max-w-5xl mx-auto w-full gap-4 md:gap-6 flex-1">
+          <div class="flex flex-col gap-3 md:gap-4 w-full md:w-1/2" id="left-col">
+            <button id="l1" onclick="selectLeft('l1')" class="match-btn flex items-center p-3 md:p-4 rounded-2xl font-bold text-base md:text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-2xl md:text-3xl mr-3 md:mr-4">🫨</span> Gempa Bumi</button>
+            <button id="l2" onclick="selectLeft('l2')" class="match-btn flex items-center p-3 md:p-4 rounded-2xl font-bold text-base md:text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-2xl md:text-3xl mr-3 md:mr-4">🌊</span> Banjir</button>
+            <button id="l3" onclick="selectLeft('l3')" class="match-btn flex items-center p-3 md:p-4 rounded-2xl font-bold text-base md:text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-2xl md:text-3xl mr-3 md:mr-4">🌋</span> Gunung Meletus</button>
+            <button id="l4" onclick="selectLeft('l4')" class="match-btn flex items-center p-3 md:p-4 rounded-2xl font-bold text-base md:text-lg kid-shadow bg-white border-4 border-gray-200 text-left"><span class="text-2xl md:text-3xl mr-3 md:mr-4">⛰️</span> Tanah Longsor</button>
           </div>
-          <div class="flex flex-col gap-4 w-1/2" id="right-col">
-            <button id="r2" onclick="selectRight('r2')" class="match-btn flex items-center justify-center p-4 h-full rounded-2xl font-bold text-lg text-center kid-shadow bg-white border-4 border-gray-200">Membuang sampah di sungai</button>
-            <button id="r4" onclick="selectRight('r4')" class="match-btn flex items-center justify-center p-4 h-full rounded-2xl font-bold text-lg text-center kid-shadow bg-white border-4 border-gray-200">Penebangan hutan tebing</button>
-            <button id="r1" onclick="selectRight('r1')" class="match-btn flex items-center justify-center p-4 h-full rounded-2xl font-bold text-lg text-center kid-shadow bg-white border-4 border-gray-200">Pergeseran lempeng bumi</button>
-            <button id="r3" onclick="selectRight('r3')" class="match-btn flex items-center justify-center p-4 h-full rounded-2xl font-bold text-lg text-center kid-shadow bg-white border-4 border-gray-200">Tekanan magma dari perut bumi</button>
+          <div class="flex flex-col gap-3 md:gap-4 w-full md:w-1/2 mt-4 md:mt-0" id="right-col">
+            <button id="r2" onclick="selectRight('r2')" class="match-btn flex items-center justify-center p-3 md:p-4 min-h-[60px] md:h-full rounded-2xl font-bold text-sm md:text-lg text-center kid-shadow bg-white border-4 border-gray-200">Membuang sampah di sungai</button>
+            <button id="r4" onclick="selectRight('r4')" class="match-btn flex items-center justify-center p-3 md:p-4 min-h-[60px] md:h-full rounded-2xl font-bold text-sm md:text-lg text-center kid-shadow bg-white border-4 border-gray-200">Penebangan hutan tebing</button>
+            <button id="r1" onclick="selectRight('r1')" class="match-btn flex items-center justify-center p-3 md:p-4 min-h-[60px] md:h-full rounded-2xl font-bold text-sm md:text-lg text-center kid-shadow bg-white border-4 border-gray-200">Pergeseran lempeng bumi</button>
+            <button id="r3" onclick="selectRight('r3')" class="match-btn flex items-center justify-center p-3 md:p-4 min-h-[60px] md:h-full rounded-2xl font-bold text-sm md:text-lg text-center kid-shadow bg-white border-4 border-gray-200">Tekanan magma dari perut bumi</button>
           </div>
         </div>
       </div>
 
       <!-- SLIDE 7: DISKUSI -->
-      <div id="slide-7" class="slide flex-col p-8 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-3xl shadow-xl border-4 border-white">
-        <h2 class="text-3xl font-black text-center text-indigo-800 mb-8">💬 Aktivitas 2: Ruang Diskusi</h2>
-        <div class="space-y-6 max-w-4xl mx-auto w-full">
-          <div class="bg-white p-6 rounded-3xl shadow-md border-4 border-indigo-300">
-            <label class="flex items-center text-xl font-bold text-gray-800 mb-3"><span class="bg-blue-100 p-2 rounded-xl mr-3">🧍‍♂️🧍‍♀️</span> 1. Dampak bencana bagi manusia?</label>
-            <textarea id="diskusi-manusia" class="w-full p-4 border-2 border-gray-200 rounded-2xl focus:border-indigo-500 outline-none text-lg resize-none" rows="3" placeholder="Contoh: Kehilangan tempat tinggal..."></textarea>
+      <div id="slide-7" class="slide flex-col p-6 md:p-8 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-3xl shadow-xl border-4 border-white">
+        <h2 class="text-2xl md:text-3xl font-black text-center text-indigo-800 mb-6">💬 Aktivitas 2: Ruang Diskusi</h2>
+        <div class="space-y-4 md:space-y-6 max-w-4xl mx-auto w-full flex-1 flex flex-col justify-center">
+          <div class="bg-white p-4 md:p-6 rounded-3xl shadow-md border-4 border-indigo-300">
+            <label class="flex items-center text-base md:text-xl font-bold text-gray-800 mb-2 md:mb-3"><span class="bg-blue-100 p-2 rounded-xl mr-3">🧍‍♂️🧍‍♀️</span> 1. Dampak bagi manusia?</label>
+            <textarea id="diskusi-manusia" class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-2xl focus:border-indigo-500 outline-none text-base md:text-lg resize-none" rows="3" placeholder="Contoh: Kehilangan tempat tinggal..."></textarea>
           </div>
-          <div class="bg-white p-6 rounded-3xl shadow-md border-4 border-indigo-300">
-            <label class="flex items-center text-xl font-bold text-gray-800 mb-3"><span class="bg-green-100 p-2 rounded-xl mr-3">🌳🏞️</span> 2. Dampak bencana bagi lingkungan?</label>
-            <textarea id="diskusi-lingkungan" class="w-full p-4 border-2 border-gray-200 rounded-2xl focus:border-indigo-500 outline-none text-lg resize-none" rows="3" placeholder="Contoh: Pohon tumbang, sungai kotor..."></textarea>
+          <div class="bg-white p-4 md:p-6 rounded-3xl shadow-md border-4 border-indigo-300">
+            <label class="flex items-center text-base md:text-xl font-bold text-gray-800 mb-2 md:mb-3"><span class="bg-green-100 p-2 rounded-xl mr-3">🌳🏞️</span> 2. Dampak bagi lingkungan?</label>
+            <textarea id="diskusi-lingkungan" class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-2xl focus:border-indigo-500 outline-none text-base md:text-lg resize-none" rows="3" placeholder="Contoh: Pohon tumbang, sungai kotor..."></textarea>
           </div>
         </div>
       </div>
 
       <!-- SLIDE 8: SOLUSI -->
-      <div id="slide-8" class="slide flex-col p-8 bg-gradient-to-br from-green-200 to-emerald-300 rounded-3xl shadow-xl border-4 border-white">
-        <h2 class="text-3xl font-black text-center text-green-900 mb-6">🦸‍♂️ Aktivitas 3: Mencari Solusi</h2>
-        <div class="bg-white flex-1 rounded-3xl p-6 shadow-lg border-4 border-green-500 flex flex-col max-w-4xl mx-auto w-full">
+      <div id="slide-8" class="slide flex-col p-6 md:p-8 bg-gradient-to-br from-green-200 to-emerald-300 rounded-3xl shadow-xl border-4 border-white">
+        <h2 class="text-2xl md:text-3xl font-black text-center text-green-900 mb-4 md:mb-6">🦸‍♂️ Aktivitas 3: Solusi</h2>
+        <div class="bg-white flex-1 rounded-3xl p-4 md:p-6 shadow-lg border-4 border-green-500 flex flex-col max-w-4xl mx-auto w-full">
           <!-- Pilihan Bencana -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <button onclick="selectDisasterSolution('gempa')" id="btn-sol-gempa" class="sol-btn p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-2 kid-shadow"><span class="text-3xl">🫨</span> <span class="text-sm">Gempa Bumi</span></button>
-            <button onclick="selectDisasterSolution('banjir')" id="btn-sol-banjir" class="sol-btn p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-2 kid-shadow"><span class="text-3xl">🌊</span> <span class="text-sm">Banjir</span></button>
-            <button onclick="selectDisasterSolution('gunung')" id="btn-sol-gunung" class="sol-btn p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-2 kid-shadow"><span class="text-3xl">🌋</span> <span class="text-sm">Gunung Meletus</span></button>
-            <button onclick="selectDisasterSolution('longsor')" id="btn-sol-longsor" class="sol-btn p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-2 kid-shadow"><span class="text-3xl">⛰️</span> <span class="text-sm">Tanah Longsor</span></button>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+            <button onclick="selectDisasterSolution('gempa')" id="btn-sol-gempa" class="sol-btn p-2 md:p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-1 md:gap-2 kid-shadow"><span class="text-2xl md:text-3xl">🫨</span> <span class="text-xs md:text-sm text-center">Gempa Bumi</span></button>
+            <button onclick="selectDisasterSolution('banjir')" id="btn-sol-banjir" class="sol-btn p-2 md:p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-1 md:gap-2 kid-shadow"><span class="text-2xl md:text-3xl">🌊</span> <span class="text-xs md:text-sm text-center">Banjir</span></button>
+            <button onclick="selectDisasterSolution('gunung')" id="btn-sol-gunung" class="sol-btn p-2 md:p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-1 md:gap-2 kid-shadow"><span class="text-2xl md:text-3xl">🌋</span> <span class="text-xs md:text-sm text-center">Gunung Meletus</span></button>
+            <button onclick="selectDisasterSolution('longsor')" id="btn-sol-longsor" class="sol-btn p-2 md:p-3 rounded-xl border-4 border-gray-200 font-bold text-gray-600 hover:bg-gray-50 flex flex-col items-center gap-1 md:gap-2 kid-shadow"><span class="text-2xl md:text-3xl">⛰️</span> <span class="text-xs md:text-sm text-center">Tanah Longsor</span></button>
           </div>
           <!-- Area Input -->
           <div id="solution-container" class="hidden flex-1 flex-col">
-            <p id="solution-prompt" class="font-bold text-gray-700 text-lg mb-2">Solusi:</p>
-            <textarea id="solution-textarea" class="w-full flex-1 p-5 border-2 border-gray-200 rounded-2xl focus:border-green-500 outline-none text-lg resize-none bg-gray-50" placeholder="Ketik idemu..."></textarea>
+            <p id="solution-prompt" class="font-bold text-gray-700 text-sm md:text-lg mb-2">Solusi:</p>
+            <textarea id="solution-textarea" class="w-full flex-1 p-3 md:p-5 border-2 border-gray-200 rounded-2xl focus:border-green-500 outline-none text-base md:text-lg resize-none bg-gray-50 min-h-[150px]" placeholder="Ketik idemu..."></textarea>
           </div>
-          <div id="solution-empty-state" class="flex-1 flex flex-col items-center justify-center p-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
-            <p class="text-xl font-bold text-gray-400">Pilih bencana di atas dulu!</p>
+          <div id="solution-empty-state" class="flex-1 flex flex-col items-center justify-center p-6 md:p-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 min-h-[150px]">
+            <p class="text-lg md:text-xl font-bold text-gray-400 text-center">Pilih bencana di atas dulu!</p>
           </div>
         </div>
       </div>
 
       <!-- SLIDE 9: PROYEK -->
-      <div id="slide-9" class="slide flex-col p-8 bg-gradient-to-br from-cyan-100 to-blue-200 rounded-3xl shadow-xl border-4 border-white">
-        <h2 class="text-3xl font-black text-center text-blue-900 mb-6">🎨 Tugas Proyek Canva</h2>
-        <div class="flex flex-col md:flex-row gap-6 max-w-5xl mx-auto w-full flex-1">
-          <div class="bg-white p-6 rounded-3xl shadow-md border-4 border-blue-400 flex-1">
-            <h3 class="text-2xl font-bold mb-4 flex items-center text-blue-800">Instruksi:</h3>
-            <ul class="list-disc pl-6 space-y-3 text-lg font-medium text-gray-700">
+      <div id="slide-9" class="slide flex-col p-6 md:p-8 bg-gradient-to-br from-cyan-100 to-blue-200 rounded-3xl shadow-xl border-4 border-white">
+        <h2 class="text-2xl md:text-3xl font-black text-center text-blue-900 mb-6">🎨 Tugas Proyek Canva</h2>
+        <div class="flex flex-col md:flex-row gap-4 md:gap-6 max-w-5xl mx-auto w-full flex-1">
+          <div class="bg-white p-5 md:p-6 rounded-3xl shadow-md border-4 border-blue-400 flex-1">
+            <h3 class="text-xl md:text-2xl font-bold mb-3 md:mb-4 flex items-center text-blue-800">Instruksi:</h3>
+            <ul class="list-disc pl-5 md:pl-6 space-y-2 md:space-y-3 text-base md:text-lg font-medium text-gray-700">
               <li>Buat ringkasan hari ini di <b class="text-blue-600">Canva</b>.</li>
               <li>Maksimal <b class="text-blue-600">5 Slide</b>.</li>
               <li>Sertakan jenis bencana, dampak, dan solusinya.</li>
             </ul>
           </div>
-          <div class="bg-blue-50 p-6 rounded-3xl shadow-md border-4 border-blue-300 flex-1 flex flex-col justify-center">
-            <h3 class="text-xl font-bold mb-4 text-center text-gray-800">🔗 Kumpulkan Link Canva:</h3>
-            <input type="url" id="link-canva" class="w-full p-4 border-4 border-white rounded-xl shadow-inner focus:border-blue-400 outline-none text-lg mb-4" placeholder="Paste link di sini..." />
-            <button onclick="saveCanva()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl kid-shadow flex items-center justify-center text-lg"><i data-lucide="send" class="mr-2 w-5 h-5"></i> Simpan Tautan</button>
+          <div class="bg-blue-50 p-5 md:p-6 rounded-3xl shadow-md border-4 border-blue-300 flex-1 flex flex-col justify-center">
+            <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4 text-center text-gray-800">🔗 Kumpulkan Link Canva:</h3>
+            <input type="url" id="link-canva" class="w-full p-3 md:p-4 border-4 border-white rounded-xl shadow-inner focus:border-blue-400 outline-none text-base md:text-lg mb-4" placeholder="Paste link di sini..." />
+            <button onclick="saveCanva()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 md:py-4 rounded-xl kid-shadow flex items-center justify-center text-base md:text-lg"><i data-lucide="send" class="mr-2 w-5 h-5"></i> Simpan Tautan</button>
             <p id="canva-success" class="text-green-600 font-bold mt-2 text-center hidden">Tautan Berhasil Disimpan!</p>
           </div>
         </div>
       </div>
 
       <!-- SLIDE 10: PRESENTASI -->
-      <div id="slide-10" class="slide flex-col items-center justify-center p-8 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-3xl shadow-xl border-4 border-white text-center">
-        <div class="text-8xl mb-6 float-anim">👨‍🏫👩‍🏫</div>
-        <h2 class="text-4xl font-black text-amber-800 mb-6">Waktunya Presentasi!</h2>
-        <div class="bg-white p-8 rounded-3xl shadow-lg border-4 border-amber-400 max-w-2xl">
-          <h3 id="presentation-name" class="text-2xl font-bold text-gray-800 mb-4">Bersiaplah, Kelompokmu!</h3>
-          <p class="text-xl text-gray-700 font-medium mb-6">Maju ke depan kelas dan presentasikan karya kalian.</p>
+      <div id="slide-10" class="slide flex-col items-center justify-center p-6 md:p-8 bg-gradient-to-br from-yellow-100 to-amber-200 rounded-3xl shadow-xl border-4 border-white text-center">
+        <div class="text-7xl md:text-8xl mb-6 float-anim">👨‍🏫👩‍🏫</div>
+        <h2 class="text-3xl md:text-4xl font-black text-amber-800 mb-6">Waktunya Presentasi!</h2>
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-4 border-amber-400 max-w-2xl w-full">
+          <h3 id="presentation-name" class="text-xl md:text-2xl font-bold text-gray-800 mb-4">Bersiaplah, Kelompokmu!</h3>
+          <p class="text-lg md:text-xl text-gray-700 font-medium md:mb-6">Maju ke depan kelas dan presentasikan karya kalian dengan percaya diri.</p>
         </div>
       </div>
 
       <!-- SLIDE 11: PENUTUP -->
-      <div id="slide-11" class="slide flex-col items-center justify-center p-8 bg-gradient-to-br from-sky-200 to-indigo-200 rounded-3xl shadow-xl border-4 border-white text-center">
-        <h2 class="text-4xl font-black text-indigo-800 mb-4">🌟 Misi Selesai! 🌟</h2>
-        <div class="bg-white p-8 rounded-3xl shadow-lg border-4 border-indigo-300 w-full max-w-xl mb-8">
-          <h3 class="text-xl font-bold text-gray-700 mb-6">Bagaimana perasaanmu belajar hari ini?</h3>
-          <div class="flex justify-center gap-8">
-            <button onclick="saveEmoji('happy')" id="emoji-happy" class="emoji-btn p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200"><i data-lucide="smile" class="w-16 h-16 text-gray-400"></i></button>
-            <button onclick="saveEmoji('neutral')" id="emoji-neutral" class="emoji-btn p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200"><i data-lucide="meh" class="w-16 h-16 text-gray-400"></i></button>
-            <button onclick="saveEmoji('sad')" id="emoji-sad" class="emoji-btn p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200"><i data-lucide="frown" class="w-16 h-16 text-gray-400"></i></button>
+      <div id="slide-11" class="slide flex-col items-center justify-center p-6 md:p-8 bg-gradient-to-br from-sky-200 to-indigo-200 rounded-3xl shadow-xl border-4 border-white text-center">
+        <h2 class="text-3xl md:text-4xl font-black text-indigo-800 mb-4">🌟 Misi Selesai! 🌟</h2>
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border-4 border-indigo-300 w-full max-w-xl mb-6 md:mb-8">
+          <h3 class="text-lg md:text-xl font-bold text-gray-700 mb-4 md:mb-6">Bagaimana perasaanmu belajar hari ini?</h3>
+          <div class="flex justify-center gap-4 md:gap-8">
+            <button onclick="saveEmoji('happy')" id="emoji-happy" class="emoji-btn p-3 md:p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200"><i data-lucide="smile" class="w-12 h-12 md:w-16 md:h-16 text-gray-400"></i></button>
+            <button onclick="saveEmoji('neutral')" id="emoji-neutral" class="emoji-btn p-3 md:p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200"><i data-lucide="meh" class="w-12 h-12 md:w-16 md:h-16 text-gray-400"></i></button>
+            <button onclick="saveEmoji('sad')" id="emoji-sad" class="emoji-btn p-3 md:p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200"><i data-lucide="frown" class="w-12 h-12 md:w-16 md:h-16 text-gray-400"></i></button>
           </div>
         </div>
-        <button onclick="alert('Kerja bagus! Data kalian sudah aman di database.')" class="bg-indigo-600 text-white font-black text-2xl py-4 px-12 rounded-2xl kid-shadow">Selesai 👋</button>
+        <button onclick="alert('Kerja bagus! Data kalian sudah aman di database.')" class="bg-indigo-600 text-white font-black text-xl md:text-2xl py-3 md:py-4 px-8 md:px-12 rounded-2xl kid-shadow">Selesai 👋</button>
       </div>
 
     </div>
 
     <!-- Navigation Controls -->
     <div id="bottom-nav" class="w-full max-w-5xl flex justify-between items-center mt-6 hidden">
-      <button onclick="prevSlide()" class="flex items-center bg-white border-4 border-gray-300 text-gray-600 font-bold py-3 px-6 rounded-2xl kid-shadow hover:bg-gray-50"><i data-lucide="arrow-left" class="mr-2"></i> Sebelumnya</button>
-      <button onclick="goNextAndSave()" class="flex items-center bg-sky-500 border-4 border-sky-600 text-white font-bold py-3 px-6 rounded-2xl kid-shadow hover:bg-sky-400">Selanjutnya <i data-lucide="arrow-right" class="ml-2"></i></button>
+      <button onclick="prevSlide()" class="flex items-center bg-white border-4 border-gray-300 text-gray-600 font-bold py-2 px-4 md:py-3 md:px-6 rounded-2xl kid-shadow hover:bg-gray-50 text-sm md:text-base"><i data-lucide="arrow-left" class="mr-1 md:mr-2 w-4 h-4 md:w-5 md:h-5"></i> Sblmnya</button>
+      <button onclick="goNextAndSave()" class="flex items-center bg-sky-500 border-4 border-sky-600 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-2xl kid-shadow hover:bg-sky-400 text-sm md:text-base">Selanjutnya <i data-lucide="arrow-right" class="ml-1 md:ml-2 w-4 h-4 md:w-5 md:h-5"></i></button>
     </div>
 
   </div>
@@ -271,22 +302,19 @@
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydeqCaPDRiqH8Fu3wj1I5D1ENJFoLqvCt54Xt0Btm9dkmxE3NHMnd1va8iagywL6jA/exec'; 
     // ==========================================
 
-    let currentSlide = 1;
+    let currentSlide = 0; // Mulai dari slide 0 (Gerbang Token)
     const totalSlides = 11;
-    let loggedInGroup = ''; // Menyimpan nama kelompok yang aktif
+    let loggedInGroup = ''; 
 
-    // Data lokal untuk Aktivitas 3
     let solutionsData = { gempa: '', banjir: '', gunung: '', longsor: '' };
     let currentDisasterSol = null;
 
-    // Loading Overlay
     function showLoading(text) {
       document.getElementById('loading-text').innerText = text || 'Memproses data...';
       document.getElementById('loading-overlay').classList.remove('hidden');
     }
     function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
 
-    // API Helper
     async function callAppsScript(payload) {
       try {
         const response = await fetch(SCRIPT_URL, {
@@ -301,6 +329,26 @@
         return { status: 'error', message: 'Gagal terhubung ke database. Cek internet/URL Web App.' };
       }
     }
+
+    // --- 0. TOKEN GATEWAY ---
+    function verifyToken() {
+      const input = document.getElementById('app-token-input');
+      const errorMsg = document.getElementById('token-error');
+      
+      if (input.value.trim().toLowerCase() === 'sdn3sukahurip') {
+        errorMsg.classList.add('hidden');
+        showSlide(1); // Lanjut ke halaman Login Kelompok
+      } else {
+        errorMsg.classList.remove('hidden');
+        input.classList.add('border-red-500', 'bg-red-50', 'shake-anim');
+        setTimeout(() => input.classList.remove('border-red-500', 'bg-red-50', 'shake-anim'), 800);
+      }
+    }
+
+    // Memungkinkan tekan Enter di input token
+    document.getElementById('app-token-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') verifyToken();
+    });
 
     // --- 1. LOGIN & REGISTER ---
 
@@ -321,25 +369,21 @@
         loggedInGroup = result.data.groupName;
         errorMsg.classList.add('hidden');
         
-        // Isi Form Header
         document.getElementById('group-info').innerText = `🎓 ${loggedInGroup} - ${result.data.school}`;
         document.getElementById('presentation-name').innerText = `Bersiaplah, ${loggedInGroup}!`;
         
-        // Isi Jawaban Diskusi yang sudah pernah disimpan
         document.getElementById('diskusi-manusia').value = result.data.dampakManusia || '';
         document.getElementById('diskusi-lingkungan').value = result.data.dampakLingkungan || '';
         
-        // Isi Solusi
         solutionsData.gempa = result.data.solusiGempa || '';
         solutionsData.banjir = result.data.solusiBanjir || '';
         solutionsData.gunung = result.data.solusiGunung || '';
         solutionsData.longsor = result.data.solusiLongsor || '';
 
-        // Isi Canva & Refleksi
         document.getElementById('link-canva').value = result.data.linkCanva || '';
         if(result.data.refleksi) renderEmojiUI(result.data.refleksi);
 
-        showSlide(3); // Langsung ke judul jika sukses
+        showSlide(3); 
       } else {
         errorMsg.innerText = result.message;
         errorMsg.classList.remove('hidden');
@@ -354,10 +398,10 @@
       
       if (sc && gr && mem) {
         startBtn.disabled = false;
-        startBtn.className = "w-full font-bold text-xl py-4 rounded-xl transition-all bg-green-500 hover:bg-green-600 text-white kid-shadow cursor-pointer";
+        startBtn.className = "w-full font-bold text-lg md:text-xl py-4 rounded-xl transition-all bg-green-500 hover:bg-green-600 text-white kid-shadow cursor-pointer";
       } else {
         startBtn.disabled = true;
-        startBtn.className = "w-full font-bold text-xl py-4 rounded-xl transition-all bg-gray-300 text-gray-500 cursor-not-allowed";
+        startBtn.className = "w-full font-bold text-lg md:text-xl py-4 rounded-xl transition-all bg-gray-300 text-gray-500 cursor-not-allowed";
       }
     };
     document.querySelectorAll('.identity-field').forEach(el => el.addEventListener('input', checkIdentity));
@@ -386,7 +430,6 @@
     // --- 2. NAVIGATION & AUTO SAVE ---
 
     async function goNextAndSave() {
-      // Simpan Diskusi saat mau pindah dari slide 7
       if (currentSlide === 7) {
         showLoading('Menyimpan diskusi...');
         await callAppsScript({
@@ -396,7 +439,6 @@
         });
         hideLoading();
       }
-      // Simpan Solusi saat mau pindah dari slide 8
       else if (currentSlide === 8) {
         if(currentDisasterSol) solutionsData[currentDisasterSol] = document.getElementById('solution-textarea').value;
         showLoading('Menyimpan solusi...');
@@ -430,11 +472,11 @@
     // --- UI HELPER FUNCTIONS ---
 
     function showSlide(n) {
-      document.querySelectorAll('.slide').forEach((el, index) => {
-        el.classList.toggle('active', index + 1 === n);
+      document.querySelectorAll('.slide').forEach((el) => {
+        el.classList.toggle('active', el.id === 'slide-' + n);
       });
       
-      const inPresentation = (n > 2);
+      const inPresentation = (n > 2); // Navigasi atas bawah hanya muncul di slide 3 dst.
       document.getElementById('top-nav').classList.toggle('hidden', !inPresentation);
       document.getElementById('bottom-nav').classList.toggle('hidden', !inPresentation || n === totalSlides);
       if (inPresentation) document.getElementById('page-info').innerText = `Halaman ${n} / ${totalSlides}`;
@@ -442,7 +484,7 @@
     }
 
     function nextSlide() { if (currentSlide < totalSlides) showSlide(currentSlide + 1); }
-    function prevSlide() { if (currentSlide > 3) showSlide(currentSlide - 1); } // Tidak bisa mundur ke form login
+    function prevSlide() { if (currentSlide > 3) showSlide(currentSlide - 1); } 
 
     function openModal(title, icon, text) {
       document.getElementById('modal-title').innerText = title;
@@ -460,16 +502,26 @@
       document.querySelectorAll('.match-btn').forEach(btn => {
         const isMatched = matches.includes(btn.id);
         const isSel = (selectedLeft === btn.id || selectedRight === btn.id);
-        btn.className = "match-btn flex items-center p-4 rounded-2xl font-bold text-lg kid-shadow text-gray-700 bg-white border-4 border-gray-200";
-        if (btn.id.startsWith('r')) btn.classList.add('justify-center', 'h-full', 'text-center'); else btn.classList.add('text-left');
+        // Reset base classes except layout details maintained in HTML
+        if (isMatched) { 
+          btn.classList.add('bg-green-100', 'border-green-500', 'text-green-700', 'opacity-70'); 
+          btn.classList.remove('bg-white', 'border-gray-200', 'text-gray-700', 'bg-purple-100', 'border-purple-500', 'transform', 'scale-105', 'shadow-lg');
+        } else if (isSel) { 
+          btn.classList.add('bg-purple-100', 'border-purple-500', 'transform', 'scale-105', 'shadow-lg'); 
+          btn.classList.remove('bg-white', 'border-gray-200', 'bg-green-100', 'border-green-500', 'text-green-700', 'opacity-70');
+        } else {
+          btn.classList.add('bg-white', 'border-gray-200');
+          if (!btn.id.startsWith('r')) btn.classList.add('text-gray-700');
+          btn.classList.remove('bg-green-100', 'border-green-500', 'text-green-700', 'opacity-70', 'bg-purple-100', 'border-purple-500', 'transform', 'scale-105', 'shadow-lg');
+        }
         btn.disabled = isMatched;
-        if (isMatched) { btn.classList.replace('bg-white', 'bg-green-100'); btn.classList.replace('border-gray-200', 'border-green-500'); btn.classList.replace('text-gray-700', 'text-green-700'); btn.classList.add('opacity-70'); }
-        else if (isSel) { btn.classList.replace('bg-white', 'bg-purple-100'); btn.classList.replace('border-gray-200', 'border-purple-500'); btn.classList.add('transform', 'scale-105', 'shadow-lg'); }
       });
       document.querySelectorAll('#right-col .match-btn').forEach(btn => btn.disabled = (!matches.includes(btn.id) && !selectedLeft));
       if (matches.length === 8) document.getElementById('match-success').classList.remove('hidden');
     }
+    
     function selectLeft(id) { if(matches.includes(id)) return; selectedLeft = id; renderMatchUI(); }
+    
     function selectRight(id) {
       if(matches.includes(id) || !selectedLeft) return;
       if (correctPairs[selectedLeft] === id) { matches.push(selectedLeft, id); selectedLeft = null; renderMatchUI(); }
@@ -479,7 +531,14 @@
           let b = document.getElementById(bid);
           b.classList.replace('bg-purple-100', 'bg-red-100'); b.classList.replace('border-purple-500', 'border-red-500'); b.classList.add('shake-anim');
         });
-        setTimeout(() => { selectedLeft = null; selectedRight = null; renderMatchUI(); }, 800);
+        setTimeout(() => { 
+          [''+selectedLeft, ''+selectedRight].forEach(bid => {
+            let b = document.getElementById(bid);
+            b.classList.remove('shake-anim');
+            b.classList.replace('bg-red-100', 'bg-purple-100'); b.classList.replace('border-red-500', 'border-purple-500');
+          });
+          selectedLeft = null; selectedRight = null; renderMatchUI(); 
+        }, 800);
       }
     }
     renderMatchUI();
@@ -505,12 +564,12 @@
       const b = { 'happy': 'green', 'neutral': 'yellow', 'sad': 'red' };
       Object.keys(b).forEach(k => {
         let btn = document.getElementById(`emoji-${k}`); let ic = btn.querySelector('svg');
-        btn.className = "emoji-btn p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200";
-        ic.setAttribute('class', `lucide lucide-${ic.getAttribute('data-lucide')} w-16 h-16 text-gray-400`);
+        btn.className = "emoji-btn p-3 md:p-4 rounded-full border-4 transition-all bg-gray-50 border-gray-200";
+        ic.setAttribute('class', `lucide lucide-${ic.getAttribute('data-lucide')} w-12 h-12 md:w-16 md:h-16 text-gray-400`);
       });
       let ab = document.getElementById(`emoji-${type}`); let aic = ab.querySelector('svg');
-      ab.className = `emoji-btn p-4 rounded-full border-4 transition-all bg-${b[type]}-100 border-${b[type]}-500 scale-110`;
-      aic.setAttribute('class', `lucide lucide-${aic.getAttribute('data-lucide')} w-16 h-16 text-${b[type]}-600`);
+      ab.className = `emoji-btn p-3 md:p-4 rounded-full border-4 transition-all bg-${b[type]}-100 border-${b[type]}-500 scale-110`;
+      aic.setAttribute('class', `lucide lucide-${aic.getAttribute('data-lucide')} w-12 h-12 md:w-16 md:h-16 text-${b[type]}-600`);
     }
   </script>
 </body>
