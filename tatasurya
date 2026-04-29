@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Antariksa - IPAS Kelas 6</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #0f172a; /* Dark space background */
+            color: #e2e8f0;
+        }
+        .materi-card {
+            background-color: #1e293b;
+            border-left: 4px solid #3b82f6;
+        }
+        .quiz-card {
+            background-color: #1e293b;
+        }
+        .radio-custom:checked + label {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .radio-custom:disabled + label {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        /* Hide sections initially */
+        #quiz-section, #result-section, #answer-key-section, #leaderboard-section {
+            display: none;
+        }
+        /* Style untuk gambar agar selalu rapi */
+        .img-materi {
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            height: auto;
+            margin: 1.5rem auto;
+            border: 2px solid #475569;
+            background-color: #334155; 
+            min-height: 200px;
+            object-fit: cover;
+        }
+        .img-scheme {
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+            border-radius: 0.75rem;
+        }
+        /* Styling scrollbar untuk tab bar */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Animasi pop-up lucu */
+        .animate-pop { 
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
+        }
+        @keyframes pop { 
+            0% { transform: scale(0.5); opacity: 0; } 
+            100% { transform: scale(1); opacity: 1; } 
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen pb-20">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-6 shadow-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+            <div>
+                <h1 class="text-3xl font-bold">🚀 Petualangan Antariksa 🌍</h1>
+                <p class="mt-2 text-blue-100 font-semibold">Media Pembelajaran IPAS Kelas 6</p>
+            </div>
+            <button onclick="showLeaderboard()" class="mt-4 md:mt-0 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-2 px-6 rounded-xl shadow-lg transition transform hover:scale-105">
+                🏆 Papan Peringkat
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto mt-8 px-4">
+        
+        <!-- BAGIAN 1: MATERI PEMBELAJARAN -->
+        <section id="materi-section" class="space-y-8">
+            <div class="bg-slate-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-2xl font-bold text-yellow-400 mb-4">Halo, Anak-anak Hebat Kelas 6! 👋</h2>
+                <p class="text-lg leading-relaxed mb-4">
+                    Selamat datang di stasiun luar angkasa kita! Hari ini kita akan menjelajahi misteri alam semesta yang sangat luas. Kita akan mengamati Matahari kita yang bersinar terang, planet-planet yang menari mengelilinginya, dan keajaiban Bulan kita. Sabuk pengamannya sudah dipasang? Mari kita mulai! 🛸
+                </p>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex overflow-x-auto space-x-3 mb-6 pb-2 scrollbar-hide border-b border-slate-700">
+                <button id="btn-tab-1" onclick="openTab(1)" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-bold bg-blue-600 text-white transition-colors">1. Tata Surya</button>
+                <button id="btn-tab-2" onclick="openTab(2)" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">2. Matahari</button>
+                <button id="btn-tab-3" onclick="openTab(3)" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">3. Planet & Sabuk Asteroid</button>
+                <button id="btn-tab-4" onclick="openTab(4)" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">4. Komet</button>
+                <button id="btn-tab-5" onclick="openTab(5)" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">5. Gerak Bumi</button>
+                <button id="btn-tab-6" onclick="openTab(6)" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">6. Bulan</button>
+                <button id="btn-tab-7" onclick="openTab(7)" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">7. Gerhana</button>
+            </div>
+
+            <!-- Konten Tab 1 -->
+            <div id="tab-content-1" class="tab-content block">
+                <div class="materi-card rounded-xl p-6 shadow-md">
+                    <h3 class="text-xl font-bold text-blue-300 mb-3">1. Galaksi dan Sistem Tata Surya 🌌</h3>
+                    <p class="mb-3">Tahukah kamu di mana rumah kosmik kita berada? Bumi dan seluruh tata surya kita berada di dalam sebuah galaksi yang bernama <strong>Galaksi Bima Sakti</strong> (atau <em>Milky Way</em>).</p>
+                    <p class="mb-3">Di pusat tata surya kita ada Matahari. Mengapa semua planet, asteroid, dan komet terus bergerak memutar mengelilingi Matahari dan tidak terbang menjauh? Jawabannya adalah <strong>Gaya Gravitasi</strong>! Matahari sangat besar, sehingga memiliki gaya tarik (gravitasi) yang luar biasa kuat yang menahan benda-benda langit agar tetap berada di jalur orbitnya.</p>
+                    
+                    <div class="text-center">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/The_Milky_Way_Galaxy_%28NASA%29.jpg" alt="Galaksi Bima Sakti" class="img-materi max-h-64 object-cover w-full" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=800&auto=format&fit=crop';">
+                        <p class="text-sm text-slate-400 italic">Ilustrasi: Galaksi Bima Sakti (Milky Way) tempat tata surya kita berada.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Konten Tab 2 -->
+            <div id="tab-content-2" class="tab-content hidden">
+                <div class="materi-card rounded-xl p-6 shadow-md border-orange-500">
+                    <h3 class="text-xl font-bold text-orange-400 mb-3">2. Matahari Kita yang Panas ☀️</h3>
+                    <p class="mb-3">Matahari adalah bintang yang menjadi pusat tata surya. Matahari itu bagaikan bola gas raksasa yang sangat panas. Mari kita bedah bagian-bagian Matahari dari dalam ke luar:</p>
+                    <ul class="list-disc list-inside space-y-2 ml-4">
+                        <li><strong>Inti Matahari:</strong> Bagian paling dalam dan paling panas! Suhunnya bisa mencapai jutaan derajat Celcius. Di sinilah energi matahari dihasilkan.</li>
+                        <li><strong>Fotosfer:</strong> Ini adalah lapisan "permukaan" Matahari yang memancarkan cahaya dan yang sehari-hari bisa kita lihat (tapi jangan ditatap langsung ya!).</li>
+                        <li><strong>Kromosfer:</strong> Lapisan atmosfer bawah Matahari, biasanya terlihat berwarna kemerahan saat terjadi gerhana matahari total.</li>
+                        <li><strong>Korona:</strong> Lapisan atmosfer terluar Matahari. Warnanya putih berkilau dan bentuknya seperti mahkota.</li>
+                    </ul>
+                    
+                    <div class="text-center">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b4/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg" alt="Matahari" class="img-materi max-h-72 object-cover w-full" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1532669046713-7d2d385f09cb?w=800&auto=format&fit=crop';">
+                        <p class="text-sm text-slate-400 italic">Ilustrasi: Penampakan Matahari, bola gas raksasa yang memancarkan panas dan cahaya.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Konten Tab 3 -->
+            <div id="tab-content-3" class="tab-content hidden">
+                <div class="materi-card rounded-xl p-6 shadow-md border-green-500">
+                    <h3 class="text-xl font-bold text-green-400 mb-3">3. Planet dan Sabuk Asteroid 🪐</h3>
+                    <p class="mb-3">Ada 8 planet di tata surya kita. Urutannya dari yang terdekat dengan matahari adalah: <strong>Merkurius, Venus, Bumi, Mars, Jupiter, Saturnus, Uranus, dan Neptunus</strong>.</p>
+                    <p class="mb-3">Planet-planet ini dibagi menjadi dua kelompok:</p>
+                    <ul class="list-disc list-inside space-y-2 ml-4 mb-3">
+                        <li><strong>Planet Dalam:</strong> Merkurius, Venus, Bumi, Mars. (Ukurannya lebih kecil dan berbatu).</li>
+                        <li><strong>Planet Luar:</strong> Jupiter, Saturnus, Uranus, Neptunus. (Ukurannya raksasa dan terbentuk dari gas).</li>
+                    </ul>
+                    <p class="mb-3">Nah, pembatas antara Planet Dalam dan Planet Luar adalah bongkahan batu-batu angkasa yang disebut <strong>Sabuk Asteroid</strong>. Sabuk Asteroid ini terletak di antara orbit planet <strong>Mars dan Jupiter</strong>.</p>
+                    <p>Berbicara tentang Mars, si planet merah ini ternyata memiliki 2 satelit alam (bulan) kecil lho, namanya adalah <strong>Phobos</strong> dan <strong>Deimos</strong>.</p>
+                    
+                    <div class="text-center bg-white p-4 rounded-xl mt-4">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Planets2013.svg/1024px-Planets2013.svg.png" alt="Sistem Tata Surya" class="img-scheme" loading="lazy">
+                    </div>
+                    <p class="text-sm text-slate-400 italic text-center mt-2">Ilustrasi: Deretan 8 planet dalam tata surya kita.</p>
+                </div>
+            </div>
+
+            <!-- Konten Tab 4 -->
+            <div id="tab-content-4" class="tab-content hidden">
+                <div class="materi-card rounded-xl p-6 shadow-md border-gray-400">
+                    <h3 class="text-xl font-bold text-gray-300 mb-3">4. Si Bintang Berekor: Komet ☄️</h3>
+                    <p>Pernah mendengar bintang berekor? Sebenarnya itu bukan bintang lho, melainkan <strong>Komet</strong>. Komet adalah benda langit yang terbuat dari debu, es, dan gas yang membeku. Ketika komet bergerak mendekati Matahari, esnya menguap dan membentuk ekor gas dan debu yang sangat panjang dan bercahaya. Arah ekor komet ini selalu <strong>menjauhi Matahari</strong> akibat dorongan angin matahari.</p>
+                </div>
+            </div>
+
+            <!-- Konten Tab 5 -->
+            <div id="tab-content-5" class="tab-content hidden">
+                <div class="materi-card rounded-xl p-6 shadow-md border-cyan-500">
+                    <h3 class="text-xl font-bold text-cyan-400 mb-3">5. Gerak Bumi Kita 🌍</h3>
+                    <p class="mb-3">Bumi kita tidak pernah diam! Ia melakukan dua gerakan penting sekaligus:</p>
+                    <ul class="list-none space-y-4">
+                        <li class="bg-slate-700 p-4 rounded-lg">
+                            <strong>A. Rotasi Bumi 🔄</strong><br>
+                            Rotasi adalah perputaran Bumi pada porosnya (seperti gasing). Sekali berputar butuh waktu 24 jam.<br>
+                            <em>Akibat dari Rotasi Bumi:</em><br>
+                            1. Terjadinya <strong>Siang dan Malam</strong>.<br>
+                            2. Terjadinya <strong>Gerak Semu Harian Matahari</strong> (Matahari seolah-olah terbit di timur dan tenggelam di barat, padahal bumilah yang berputar).
+                        </li>
+                        <li class="bg-slate-700 p-4 rounded-lg">
+                            <strong>B. Revolusi Bumi 🔁</strong><br>
+                            Revolusi adalah perputaran Bumi mengelilingi Matahari. Butuh waktu 1 tahun (365 ¼ hari) untuk satu putaran penuh.<br>
+                            <em>Akibat dari Revolusi Bumi:</em><br>
+                            1. Terjadinya pergantian <strong>Musim</strong> (musim semi, panas, gugur, dingin di negara subtropis).<br>
+                            2. Terjadinya Gerak Semu Tahunan Matahari.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Konten Tab 6 -->
+            <div id="tab-content-6" class="tab-content hidden">
+                <div class="materi-card rounded-xl p-6 shadow-md border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-100 mb-3">6. Bulan dan Pergerakannya 🌕</h3>
+                    <p class="mb-3">Bulan adalah satelit alami Bumi. Bulan sangat sibuk, ia melakukan <strong>3 gerakan sekaligus</strong>:</p>
+                    <ol class="list-decimal list-inside space-y-1 ml-4 mb-3">
+                        <li>Berputar pada porosnya sendiri (Rotasi Bulan).</li>
+                        <li>Berputar mengelilingi Bumi (Revolusi Bulan terhadap Bumi).</li>
+                        <li>Bersama-sama Bumi berputar mengelilingi Matahari.</li>
+                    </ol>
+                    <p class="mb-3">Karena posisinya yang terus berubah saat mengelilingi bumi, bentuk bulan yang kita lihat dari bumi juga tampak berubah-ubah. Perubahan bentuk bulan yang tampak dari bumi inilah yang disebut <strong>Fase Bulan</strong> (misalnya: bulan sabit, bulan separuh, bulan purnama).</p>
+                    <p>Tahukah kamu? Gerakan bulan mengelilingi bumi (revolusi bulan) dijadikan dasar perhitungan penanggalan umat Islam, yaitu <strong>Sistem Penanggalan Hijriyah</strong> (Komariyah).</p>
+                    
+                    <div class="text-center mt-4">
+                        <img src="https://i.ytimg.com/vi/RBDWWOl362Q/sddefault.jpg" alt="Fase Bulan" class="img-materi max-w-lg mx-auto p-1" loading="lazy">
+                        <p class="text-sm text-slate-400 italic mt-2">Ilustrasi: Perubahan Fase Bulan yang tampak dari Bumi.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Konten Tab 7 -->
+            <div id="tab-content-7" class="tab-content hidden">
+                <div class="materi-card rounded-xl p-6 shadow-md border-indigo-500">
+                    <h3 class="text-xl font-bold text-indigo-400 mb-3">7. Fenomena Gerhana 🌑</h3>
+                    <p class="mb-3">Kadang-kadang, Matahari, Bumi, dan Bulan berada dalam satu garis lurus. Inilah yang menyebabkan gerhana!</p>
+                    
+                    <!-- Penjelasan Umbra dan Penumbra -->
+                    <div class="mb-6 bg-slate-700 p-5 rounded-lg border-l-4 border-yellow-400">
+                        <h4 class="font-bold text-yellow-400 mb-2">Penting: Umbra dan Penumbra 🌓</h4>
+                        <p class="mb-2 text-sm md:text-base">Saat terjadi gerhana, bayangan yang terbentuk oleh benda langit yang menghalangi cahaya akan terbagi menjadi dua daerah:</p>
+                        <ul class="list-disc list-inside ml-2 text-sm md:text-base space-y-2">
+                            <li><strong>Umbra:</strong> Merupakan daerah bayangan inti yang sangat gelap. Jika suatu wilayah berada di daerah yang tertutup umbra, maka akan mengalami <em>Gerhana Total</em>.</li>
+                            <li><strong>Penumbra:</strong> Merupakan daerah bayangan kabur (sebagian) di sekitar umbra. Jika suatu wilayah berada di daerah yang tertutup penumbra, maka akan mengalami <em>Gerhana Sebagian</em>.</li>
+                        </ul>
+                    </div>
+
+                    <ul class="space-y-8">
+                        <li>
+                            <strong>A. Gerhana Bulan 🌝</strong><br>
+                            Terjadi jika urutan posisinya adalah: <strong>Matahari – Bumi – Bulan</strong> dalam satu garis lurus.<br>
+                            <em>Akibatnya:</em> Cahaya matahari yang seharusnya menuju ke Bulan terhalang oleh Bumi. Bulan masuk ke dalam bayangan Bumi sehingga bulan tampak gelap atau kemerahan.
+                            
+                            <div class="text-center mt-3 p-4 rounded-xl">
+                                <img src="https://www.mtsassalafiyah.sch.id/media_library/posts/large/ddbff6a053a9d07c4a3760d0ef463453.jpg" alt="Skema Gerhana Bulan" class="img-scheme shadow-lg" loading="lazy">
+                            </div>
+                            <p class="text-sm text-slate-400 italic text-center mt-2">Ilustrasi: Skema Posisi Gerhana Bulan (Bumi berada di tengah).</p>
+                        </li>
+                        <li>
+                            <strong>B. Gerhana Matahari 🌞</strong><br>
+                            Terjadi jika urutan posisinya adalah: <strong>Matahari – Bulan – Bumi</strong> dalam satu garis lurus.<br>
+                            <em>Akibatnya:</em> Cahaya matahari yang menuju ke Bumi terhalang oleh Bulan. Akibatnya, pada siang hari, sebagian wilayah di Bumi tiba-tiba menjadi gelap sesaat.
+                            
+                            <div class="text-center mt-3 p-4 rounded-xl">
+                                <img src="https://i.ytimg.com/vi/AwFhtMuzp_4/maxresdefault.jpg" alt="Skema Gerhana Matahari" class="img-scheme shadow-lg" loading="lazy">
+                            </div>
+                            <p class="text-sm text-slate-400 italic text-center mt-2">Ilustrasi: Skema Posisi Gerhana Matahari (Bulan berada di tengah).</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tombol Navigasi Bawah Tab -->
+            <div class="flex justify-between items-center mt-6">
+                <button onclick="changeTab(-1)" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-5 rounded-lg shadow transition">
+                    ⬅️ Sebelumnya
+                </button>
+                <button onclick="changeTab(1)" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-5 rounded-lg shadow transition">
+                    Selanjutnya ➡️
+                </button>
+            </div>
+
+            <!-- Button Lanjut Kuis -->
+            <div class="text-center mt-12 border-t border-slate-700 pt-8">
+                <button onclick="startQuiz()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition hover:scale-105 text-xl">
+                    📝 Saya Sudah Paham, Mulai Kuis! 🚀
+                </button>
+            </div>
+        </section>
+
+        <!-- BAGIAN 2: KUIS INTERAKTIF -->
+        <section id="quiz-section" class="space-y-6 max-w-2xl mx-auto">
+            <div class="bg-blue-900 rounded-xl p-6 text-center border-b-4 border-blue-500 shadow-xl mb-4">
+                <h2 class="text-3xl font-bold text-white">Kuis Misi Antariksa! 🧑‍🚀</h2>
+                <p class="text-blue-200 mt-2">Buktikan kamu adalah astronot sejati!</p>
+            </div>
+
+            <!-- Container Pertanyaan Aktif -->
+            <div id="questions-container" class="space-y-6">
+                <!-- Pertanyaan akan di-generate oleh JavaScript di sini (Satu per satu) -->
+            </div>
+        </section>
+
+        <!-- MODAL FEEDBACK JAWABAN BENAR/SALAH -->
+        <div id="feedback-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] hidden opacity-0 transition-opacity duration-300">
+            <div id="feedback-box" class="bg-slate-800 p-8 rounded-2xl text-center shadow-2xl border-4 max-w-md w-full mx-4">
+                <div id="feedback-icon" class="text-7xl mb-4 animate-bounce"></div>
+                <h3 id="feedback-title" class="text-2xl font-bold mb-2"></h3>
+                <p id="feedback-text" class="text-slate-300 mb-6 bg-slate-900/50 p-4 rounded-lg text-sm md:text-base leading-relaxed"></p>
+                <button onclick="nextQuestion()" id="next-btn-modal" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 w-full text-lg">
+                    Lanjut 🚀
+                </button>
+            </div>
+        </div>
+
+        <!-- HASIL & FORM SIMPAN -->
+        <section id="result-section" class="bg-slate-800 rounded-2xl p-8 shadow-xl mt-8 text-center border-4 border-yellow-500">
+            <h2 class="text-3xl font-bold text-white mb-2">Misi Selesai! 🎉</h2>
+            <p class="text-lg text-gray-300">Skor kamu adalah:</p>
+            <div class="text-6xl font-extrabold text-yellow-400 my-4" id="final-score">0</div>
+            
+            <div class="max-w-md mx-auto mt-8 bg-slate-700 p-6 rounded-xl border border-slate-600">
+                <h3 class="text-xl font-bold text-white mb-4">Simpan Nilaimu ke Pusat Kendali 📡</h3>
+                <form id="save-score-form" class="space-y-4">
+                    <input type="text" id="student-name" required placeholder="Masukkan Nama Lengkap Kamu" class="w-full px-4 py-3 rounded-lg text-gray-900 font-bold focus:outline-none focus:ring-4 focus:ring-blue-500">
+                    <button type="submit" id="submit-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow transition">
+                        💾 Simpan Nilai ke Spreadsheet
+                    </button>
+                    <p id="status-message" class="text-sm font-semibold mt-2 hidden"></p>
+                </form>
+            </div>
+
+            <button onclick="showAnswerKey()" class="mt-8 text-blue-400 underline hover:text-blue-300">
+                Lihat Kunci Jawaban & Pembahasan 📖
+            </button>
+        </section>
+
+        <!-- KUNCI JAWABAN (SPOILER) -->
+        <section id="answer-key-section" class="mt-10 bg-slate-800 rounded-xl p-8 border border-slate-700">
+            <h3 class="text-xl font-bold text-yellow-400 mb-6 border-b border-slate-600 pb-2">Kunci Jawaban & Pembahasan</h3>
+            <div id="answer-key-container" class="space-y-4 text-sm text-gray-300">
+                <!-- Akan di-generate via JS -->
+            </div>
+            <button onclick="window.location.reload()" class="mt-8 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded shadow">
+                🔄 Kembali ke Materi (Ulangi)
+            </button>
+        </section>
+
+        <!-- BAGIAN 3: PAPAN PERINGKAT / DASHBOARD -->
+        <section id="leaderboard-section" class="bg-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-center border-b border-slate-700 pb-4">
+                <h2 class="text-3xl font-bold text-yellow-400 mb-4 md:mb-0">🏆 Papan Peringkat</h2>
+                <button onclick="backToMateri()" class="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg shadow transition flex items-center">
+                    🏠 Kembali ke Materi
+                </button>
+            </div>
+
+            <!-- Kontrol Paginasi Atas -->
+            <div class="flex justify-between items-center bg-slate-900 p-4 rounded-lg border border-slate-700">
+                <div class="flex items-center space-x-3">
+                    <label for="items-per-page" class="text-slate-300 font-semibold">Tampilkan:</label>
+                    <select id="items-per-page" onchange="updateItemsPerPage()" class="bg-slate-700 text-white rounded-lg p-2 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-slate-300 hidden md:inline">Data per halaman</span>
+                </div>
+            </div>
+
+            <!-- Tabel Peringkat -->
+            <div class="overflow-x-auto rounded-lg border border-slate-700">
+                <table class="w-full text-left text-slate-200">
+                    <thead class="bg-slate-700 text-slate-300 uppercase text-sm">
+                        <tr>
+                            <th class="py-4 px-4 text-center w-24">Posisi</th>
+                            <th class="py-4 px-4">Nama Astronot</th>
+                            <th class="py-4 px-4 text-center w-32">Skor Kuis</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-tbody" class="text-base">
+                        <!-- Data akan di-generate via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Kontrol Paginasi Bawah -->
+            <div class="flex flex-col md:flex-row justify-between items-center mt-6 text-slate-400">
+                <div id="pagination-info" class="mb-4 md:mb-0 font-medium">Halaman 1 dari 1</div>
+                <div class="flex space-x-2">
+                    <button id="btn-prev" onclick="changePage(-1)" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold">
+                        &laquo; Sebelumnya
+                    </button>
+                    <button id="btn-next" onclick="changePage(1)" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold">
+                        Selanjutnya &raquo;
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // FUNGSI NAVIGASI SECTION
+        function hideAllSections() {
+            document.getElementById('materi-section').style.display = 'none';
+            document.getElementById('quiz-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'none';
+            document.getElementById('answer-key-section').style.display = 'none';
+            document.getElementById('leaderboard-section').style.display = 'none';
+        }
+
+        function backToMateri() {
+            hideAllSections();
+            document.getElementById('materi-section').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        // TAB LOGIC
+        let currentTab = 1;
+        const totalTabs = 7;
+
+        function openTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('block');
+                el.classList.add('hidden');
+            });
+            document.getElementById('tab-content-' + tabId).classList.remove('hidden');
+            document.getElementById('tab-content-' + tabId).classList.add('block');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-slate-700', 'text-slate-300');
+            });
+            
+            const activeBtn = document.getElementById('btn-tab-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.remove('bg-slate-700', 'text-slate-300');
+                activeBtn.classList.add('bg-blue-600', 'text-white');
+                activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        function changeTab(direction) {
+            let nextTab = currentTab + direction;
+            if (nextTab >= 1 && nextTab <= totalTabs) {
+                openTab(nextTab);
+            }
+        }
+
+        // DATA KUIS
+        const quizData = [
+            {
+                q: "1. Bumi dan tata surya kita berada di dalam sebuah galaksi. Apa nama galaksi tempat tata surya kita berada?",
+                options: ["A. Galaksi Andromeda", "B. Galaksi Bima Sakti", "C. Galaksi Magellan", "D. Galaksi Sombrero"],
+                answer: 1,
+                explanation: "Galaksi tempat bumi dan tata surya berada disebut Galaksi Bima Sakti (Milky Way)."
+            },
+            {
+                q: "2. Seluruh planet dan benda langit lainnya bergerak mengelilingi Matahari. Gaya apakah yang dimiliki Matahari sehingga mampu menarik benda-benda langit tersebut?",
+                options: ["A. Gaya Gesek", "B. Gaya Magnet", "C. Gaya Gravitasi", "D. Gaya Pegas"],
+                answer: 2,
+                explanation: "Gaya gravitasi matahari yang sangat besar menahan planet-planet tetap di orbitnya."
+            },
+            {
+                q: "3. Di bagian manakah energi panas Matahari pertama kali dihasilkan, dengan suhu yang mencapai jutaan derajat Celcius?",
+                options: ["A. Korona", "B. Kromosfer", "C. Fotosfer", "D. Inti Matahari"],
+                answer: 3,
+                explanation: "Inti matahari adalah bagian paling dalam dan paling panas tempat energi dihasilkan."
+            },
+            {
+                q: "4. Lapisan atmosfer terluar dari Matahari yang berbentuk seperti mahkota berwarna putih berkilau disebut...",
+                options: ["A. Inti", "B. Kromosfer", "C. Korona", "D. Fotosfer"],
+                answer: 2,
+                explanation: "Korona adalah lapisan terluar (seperti mahkota)."
+            },
+            {
+                q: "5. Urutan planet dari yang paling dekat dengan Matahari hingga yang paling jauh adalah...",
+                options: [
+                    "A. Venus, Merkurius, Bumi, Mars, Jupiter, Saturnus, Uranus, Neptunus", 
+                    "B. Merkurius, Venus, Bumi, Mars, Jupiter, Saturnus, Uranus, Neptunus", 
+                    "C. Merkurius, Bumi, Venus, Mars, Saturnus, Jupiter, Uranus, Neptunus", 
+                    "D. Bumi, Venus, Merkurius, Mars, Jupiter, Saturnus, Neptunus, Uranus"
+                ],
+                answer: 1,
+                explanation: "Urutan yang benar: Me - Ve - Bu - Ma - Ju - Sa - Ur - Nep."
+            },
+            {
+                q: "6. Di bawah ini yang merupakan kelompok 'Planet Luar' (planet raksasa gas) adalah...",
+                options: ["A. Bumi, Mars, Jupiter, Saturnus", "B. Merkurius, Venus, Bumi, Mars", "C. Jupiter, Saturnus, Uranus, Neptunus", "D. Mars, Jupiter, Saturnus, Uranus"],
+                answer: 2,
+                explanation: "Planet luar adalah planet gas raksasa: Jupiter, Saturnus, Uranus, Neptunus."
+            },
+            {
+                q: "7. Sabuk Asteroid merupakan kumpulan batuan luar angkasa yang memisahkan planet dalam dan planet luar. Letak Sabuk Asteroid ini berada di antara orbit planet...",
+                options: ["A. Bumi dan Mars", "B. Mars dan Jupiter", "C. Jupiter dan Saturnus", "D. Saturnus dan Uranus"],
+                answer: 1,
+                explanation: "Sabuk asteroid memisahkan planet dalam dan luar, letaknya di antara Mars dan Jupiter."
+            },
+            {
+                q: "8. Planet Mars memiliki 2 satelit alami (bulan) yang berukuran kecil. Nama kedua satelit tersebut adalah...",
+                options: ["A. Titan dan Europa", "B. Ganymede dan Callisto", "C. Bulan dan Io", "D. Phobos dan Deimos"],
+                answer: 3,
+                explanation: "Satelit alami milik planet Mars adalah Phobos dan Deimos."
+            },
+            {
+                q: "9. Benda langit yang tersusun dari debu, gas, dan es yang membeku, serta memiliki ekor yang bercahaya saat mendekati matahari disebut...",
+                options: ["A. Meteor", "B. Asteroid", "C. Komet", "D. Satelit"],
+                answer: 2,
+                explanation: "Komet sering juga disebut sebagai Bintang Berekor."
+            },
+            {
+                q: "10. Kemanakah arah ekor komet saat sedang bergerak mendekati Matahari?",
+                options: ["A. Selalu menjauhi Matahari", "B. Selalu menuju ke arah Matahari", "C. Menuju ke arah Bumi", "D. Berputar-putar secara acak"],
+                answer: 0,
+                explanation: "Ekor komet selalu menjauhi Matahari karena tertiup oleh dorongan angin matahari."
+            },
+            {
+                q: "11. Perputaran Bumi pada porosnya sendiri (seperti gasing) dinamakan...",
+                options: ["A. Revolusi Bumi", "B. Rotasi Bumi", "C. Gravitasi Bumi", "D. Orbit Bumi"],
+                answer: 1,
+                explanation: "Perputaran bumi pada porosnya disebut Rotasi Bumi."
+            },
+            {
+                q: "12. Salah satu akibat utama dari terjadinya Rotasi Bumi adalah...",
+                options: ["A. Terjadinya pergantian musim", "B. Perubahan bentuk fase bulan", "C. Terjadinya siang dan malam", "D. Terjadinya gerhana bulan"],
+                answer: 2,
+                explanation: "Rotasi bumi mengakibatkan wilayah bumi bergantian menghadap matahari (siang) dan membelakangi matahari (malam)."
+            },
+            {
+                q: "13. Gerakan Bumi memutari (mengelilingi) Matahari selama kurang lebih 365 ¼ hari disebut...",
+                options: ["A. Rotasi Bumi", "B. Revolusi Bumi", "C. Gerak Semu Bumi", "D. Evolusi Bumi"],
+                answer: 1,
+                explanation: "Gerakan mengelilingi matahari disebut Revolusi Bumi."
+            },
+            {
+                q: "14. Di negara subtropis, terdapat pergantian musim (semi, panas, gugur, dingin). Hal ini merupakan akibat langsung dari...",
+                options: ["A. Revolusi Bumi", "B. Rotasi Bumi", "C. Revolusi Bulan", "D. Rotasi Bulan"],
+                answer: 0,
+                explanation: "Pergantian musim di bumi terjadi karena Revolusi Bumi dan kemiringan poros bumi."
+            },
+            {
+                q: "15. Bulan adalah satelit yang aktif. Berikut ini adalah gerakan yang dilakukan oleh bulan, <b>kecuali</b>...",
+                options: ["A. Berputar pada porosnya", "B. Mengelilingi Bumi", "C. Bersama Bumi mengelilingi Matahari", "D. Mengelilingi planet Mars"],
+                answer: 3,
+                explanation: "Bulan adalah satelit Bumi, jadi tidak mengelilingi planet Mars."
+            },
+            {
+                q: "16. Bentuk bulan yang terlihat dari bumi seolah-olah berubah-ubah. Perubahan bentuk bulan yang tampak ini disebut...",
+                options: ["A. Gerhana Bulan", "B. Fase Bulan", "C. Orbit Bulan", "D. Kawah Bulan"],
+                answer: 1,
+                explanation: "Perubahan bentuk bulan yang tampak dari bumi disebut Fase Bulan."
+            },
+            {
+                q: "17. Gerakan revolusi Bulan (Bulan mengelilingi Bumi) dimanfaatkan oleh manusia untuk membuat kalender...",
+                options: ["A. Masehi", "B. Hijriyah (Komariyah)", "C. Syamsiyah", "D. Internasional"],
+                answer: 1,
+                explanation: "Sistem penanggalan Hijriyah (Komariyah) didasarkan pada revolusi bulan mengelilingi bumi."
+            },
+            {
+                q: "18. Gerhana Bulan terjadi ketika letak benda langit berada dalam satu garis lurus dengan susunan...",
+                options: ["A. Matahari - Bulan - Bumi", "B. Bumi - Matahari - Bulan", "C. Matahari - Bumi - Bulan", "D. Bulan - Bumi - Matahari"],
+                answer: 2,
+                explanation: "Gerhana Bulan terjadi saat Bumi berada di antara Matahari dan Bulan (Matahari-Bumi-Bulan)."
+            },
+            {
+                q: "19. Saat terjadi susunan Matahari – Bulan – Bumi pada satu garis lurus, maka fenomena alam yang terjadi adalah...",
+                options: ["A. Gerhana Matahari", "B. Gerhana Bulan", "C. Fase Bulan Purnama", "D. Terjadinya siang hari sangat panjang"],
+                answer: 0,
+                explanation: "Jika bulan di tengah, bayangannya menutupi sebagian bumi, menyebabkan Gerhana Matahari."
+            },
+            {
+                q: "20. Apa akibat langsung yang dirasakan di wilayah Bumi yang terkena jalur Gerhana Matahari total?",
+                options: ["A. Cuaca menjadi sangat panas secara mendadak", "B. Terjadi banjir rob yang sangat besar", "C. Suasana pada siang hari tiba-tiba menjadi gelap sesaat", "D. Bulan terlihat berwarna merah darah"],
+                answer: 2,
+                explanation: "Saat gerhana matahari total, cahaya matahari terhalang bulan sehingga siang hari mendadak gelap."
+            }
+        ];
+
+        let finalScoreValue = 0;
+        let currentQuestionIndex = 0;
+
+        function startQuiz() {
+            hideAllSections();
+            document.getElementById('quiz-section').style.display = 'block';
+            window.scrollTo(0, 0);
+            
+            // Reset state
+            currentQuestionIndex = 0;
+            finalScoreValue = 0;
+            
+            renderQuiz();
+            renderAnswerKey();
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('questions-container');
+            const q = quizData[currentQuestionIndex];
+            
+            let html = `
+            <div class="flex justify-between items-center mb-2 px-2">
+                <span class="text-slate-400 font-bold text-sm uppercase tracking-wider">Soal ${currentQuestionIndex + 1} dari ${quizData.length}</span>
+                <span class="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-bold shadow">Skor: ${finalScoreValue}</span>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-700 rounded-full h-2 mb-6">
+              <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: ${((currentQuestionIndex) / quizData.length) * 100}%"></div>
+            </div>
+
+            <div class="quiz-card p-6 rounded-xl shadow-md border border-slate-700 animate-pop" id="quiz-card-element">
+                <p class="text-xl font-semibold text-white mb-6">${q.q}</p>
+                <div class="space-y-3">
+                    ${q.options.map((opt, optIndex) => `
+                        <div>
+                            <input type="radio" id="opt${optIndex}" name="q_option" value="${optIndex}" class="hidden radio-custom" onchange="checkAnswer(${optIndex})">
+                            <label for="opt${optIndex}" class="block w-full p-4 rounded-lg border border-slate-600 text-slate-200 cursor-pointer hover:bg-slate-700 transition duration-200 ease-in-out font-medium">
+                                ${opt}
+                            </label>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+            
+            container.innerHTML = html;
+        }
+
+        function checkAnswer(selectedIndex) {
+            const q = quizData[currentQuestionIndex];
+            const isCorrect = (selectedIndex === q.answer);
+            
+            // Disable semua pilihan agar tidak bisa diubah
+            const inputs = document.querySelectorAll('input[name="q_option"]');
+            inputs.forEach(input => input.disabled = true);
+            
+            // Tambah skor jika benar
+            if (isCorrect) {
+                finalScoreValue += 5; 
+            }
+
+            // Tampilkan Modal
+            showFeedbackModal(isCorrect, q.explanation);
+        }
+
+        function showFeedbackModal(isCorrect, explanation) {
+            const modal = document.getElementById('feedback-modal');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const text = document.getElementById('feedback-text');
+            const modalBox = document.getElementById('feedback-box');
+            const btn = document.getElementById('next-btn-modal');
+            
+            // Reset animasi pop
+            modalBox.classList.remove('animate-pop');
+            void modalBox.offsetWidth; // trigger reflow
+            modalBox.classList.add('animate-pop');
+
+            if (isCorrect) {
+                icon.innerHTML = '🌟🤩🌟';
+                title.innerHTML = 'Wah, Benar Sekali!';
+                title.className = 'text-3xl font-extrabold text-green-400 mb-2';
+                modalBox.className = 'bg-slate-800 p-8 rounded-3xl text-center shadow-[0_0_40px_rgba(74,222,128,0.3)] border-4 border-green-500 max-w-md w-full mx-4 relative';
+            } else {
+                icon.innerHTML = '😅❌';
+                title.innerHTML = 'Kurang Tepat, Astronot!';
+                title.className = 'text-3xl font-extrabold text-red-400 mb-2';
+                modalBox.className = 'bg-slate-800 p-8 rounded-3xl text-center shadow-[0_0_40px_rgba(248,113,113,0.3)] border-4 border-red-500 max-w-md w-full mx-4 relative';
+            }
+
+            text.innerHTML = `<strong>Pembahasan:</strong><br>${explanation}`;
+            
+            // Ubah teks tombol jika ini soal terakhir
+            if (currentQuestionIndex === quizData.length - 1) {
+                btn.innerHTML = 'Lihat Hasil Akhir 🏆';
+                btn.className = 'bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 w-full text-lg mt-2';
+            } else {
+                btn.innerHTML = 'Soal Selanjutnya 🚀';
+                btn.className = 'bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 w-full text-lg mt-2';
+            }
+
+            // Tampilkan modal dengan transisi
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function nextQuestion() {
+            const modal = document.getElementById('feedback-modal');
+            
+            // Sembunyikan modal
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                
+                // Lanjut ke soal berikutnya atau selesaikan
+                if (currentQuestionIndex < quizData.length - 1) {
+                    currentQuestionIndex++;
+                    renderQuiz();
+                } else {
+                    finishQuiz();
+                }
+            }, 300); // Sesuaikan dengan durasi transition opacity
+        }
+
+        function finishQuiz() {
+            hideAllSections();
+            document.getElementById('result-section').style.display = 'block';
+            document.getElementById('final-score').innerText = finalScoreValue;
+            window.scrollTo(0, 0);
+        }
+
+        function renderAnswerKey() {
+            const container = document.getElementById('answer-key-container');
+            let html = '';
+            quizData.forEach((q, index) => {
+                html += `
+                <div class="mb-4 bg-slate-700 p-4 rounded-lg">
+                    <p class="font-bold text-white mb-1">Soal ${index + 1}:</p>
+                    <p class="text-blue-300 font-semibold mb-1">Jawaban Benar: ${q.options[q.answer]}</p>
+                    <p class="italic">Pembahasan: ${q.explanation}</p>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function showAnswerKey() {
+            document.getElementById('answer-key-section').style.display = 'block';
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // --- SISTEM PAPAN PERINGKAT ---
+        let leaderboardData = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxYqcLR101slpCHlROKDwywNNLaFof-UbWpynKO3jL5D3C2y8Zzd8tbT4d-BO80BeBB/exec';
+
+        async function showLeaderboard() {
+            hideAllSections();
+            document.getElementById('leaderboard-section').style.display = 'block';
+            window.scrollTo(0, 0);
+            
+            const tbody = document.getElementById('leaderboard-tbody');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-8 text-yellow-400 font-semibold animate-pulse">📡 Sedang menghubungi satelit untuk mengambil data...</td></tr>';
+            
+            try {
+                const response = await fetch(scriptURL);
+                if (!response.ok) throw new Error("Gagal terhubung");
+                
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    leaderboardData = data;
+                } else {
+                    throw new Error("Format data tidak sesuai");
+                }
+            } catch (error) {
+                console.warn('Gagal memuat data dari Spreadsheet. Menggunakan data simulasi (Mock Data) untuk demo.', error);
+                leaderboardData = generateMockData();
+            }
+
+            leaderboardData.sort((a, b) => b.nilai - a.nilai);
+            currentPage = 1;
+            renderLeaderboard();
+        }
+
+        function generateMockData() {
+            const namaSiswa = ["Andi", "Budi", "Citra", "Dewi", "Eka", "Fajar", "Gita", "Hadi", "Iwan", "Joko", "Rina", "Sari", "Tono", "Wati", "Yudi", "Zaki", "Ayu", "Bagas", "Caca", "Deni", "Erna", "Fikri", "Gilang", "Hana", "Indra", "Kiki", "Lia", "Mila", "Nina", "Oka", "Putra", "Qori", "Rama", "Sinta", "Tika"];
+            let mockData = [];
+            for(let i=0; i < 55; i++) {
+                const randomScore = Math.floor(Math.random() * 13) * 5 + 40; 
+                mockData.push({
+                    nama: namaSiswa[Math.floor(Math.random() * namaSiswa.length)] + " " + String.fromCharCode(65 + Math.floor(Math.random()*26)),
+                    nilai: randomScore
+                });
+            }
+            return mockData;
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboard-tbody');
+            tbody.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedData = leaderboardData.slice(startIndex, endIndex);
+
+            if (paginatedData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-400">Belum ada data astronot yang tersimpan.</td></tr>';
+                renderPagination();
+                return;
+            }
+
+            paginatedData.forEach((item, index) => {
+                const rank = startIndex + index + 1;
+                let rankDisplay = rank;
+                let rowClass = "border-b border-slate-700 hover:bg-slate-700 transition";
+                
+                if (rank === 1) { rankDisplay = '🥇 1'; rowClass = "bg-yellow-900/40 border-b border-yellow-700"; }
+                else if (rank === 2) { rankDisplay = '🥈 2'; rowClass = "bg-slate-700/60 border-b border-slate-500"; }
+                else if (rank === 3) { rankDisplay = '🥉 3'; rowClass = "bg-orange-900/30 border-b border-orange-800"; }
+
+                tbody.innerHTML += `
+                    <tr class="${rowClass}">
+                        <td class="py-4 px-4 text-center font-bold text-lg">${rankDisplay}</td>
+                        <td class="py-4 px-4 font-semibold text-slate-100">${item.nama}</td>
+                        <td class="py-4 px-4 text-center text-yellow-400 font-bold text-lg">${item.nilai}</td>
+                    </tr>
+                `;
+            });
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(leaderboardData.length / itemsPerPage) || 1;
+            document.getElementById('pagination-info').innerText = `Halaman ${currentPage} dari ${totalPages} (Total ${leaderboardData.length} data)`;
+
+            document.getElementById('btn-prev').disabled = (currentPage === 1);
+            document.getElementById('btn-next').disabled = (currentPage === totalPages || totalPages === 0);
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(leaderboardData.length / itemsPerPage);
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            renderLeaderboard();
+        }
+
+        function updateItemsPerPage() {
+            itemsPerPage = parseInt(document.getElementById('items-per-page').value);
+            currentPage = 1;
+            renderLeaderboard();
+        }
+
+        // Handle Form Submission to Google Apps Script
+        const form = document.getElementById('save-score-form');
+        const btn = document.getElementById('submit-btn');
+        const statusMsg = document.getElementById('status-message');
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            
+            const namaSiswa = document.getElementById('student-name').value;
+            
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Sedang Menyimpan Data...';
+            statusMsg.classList.remove('hidden', 'text-red-400', 'text-green-400');
+            statusMsg.classList.add('text-yellow-400');
+            statusMsg.innerText = 'Mengirim data ke pusat kendali...';
+
+            const formData = new FormData();
+            formData.append('nama', namaSiswa);
+            formData.append('nilai', finalScoreValue);
+
+            fetch(scriptURL, { method: 'POST', body: formData})
+                .then(response => {
+                    btn.innerHTML = '✅ Berhasil Disimpan!';
+                    btn.classList.replace('bg-green-500', 'bg-slate-600');
+                    statusMsg.classList.replace('text-yellow-400', 'text-green-400');
+                    statusMsg.innerText = 'Selamat! Nilaimu berhasil tercatat di Spreadsheet guru.';
+                    document.getElementById('student-name').disabled = true;
+                })
+                .catch(error => {
+                    console.error('Error!', error.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '💾 Coba Simpan Lagi';
+                    statusMsg.classList.replace('text-yellow-400', 'text-red-400');
+                    statusMsg.innerText = 'Gagal menyimpan! Pastikan koneksi internet lancar dan link script benar.';
+                });
+        });
+
+    </script>
+</body>
+</html>
