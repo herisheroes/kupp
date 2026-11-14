@@ -1,0 +1,2654 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ART BATTLE — DRAW & COLOR</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Nunito for playful, legible PID elementary school typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Tone.js for Procedural Sound Effects & Music -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --font-title: 'Fredoka', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+        }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body {
+            font-family: var(--font-body);
+            overflow: hidden;
+            background: #1e1b4b;
+            touch-action: manipulation;
+        }
+        h1, h2, h3, .font-title {
+            font-family: var(--font-title);
+        }
+
+        /* Animated Colorful Art Background */
+        .art-bg {
+            background: radial-gradient(circle at 15% 20%, #4f46e5 0%, #312e81 45%, #1e1b4b 100%);
+            position: relative;
+        }
+        .paint-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(45px);
+            opacity: 0.35;
+            pointer-events: none;
+            animation: floatBlob 12s infinite alternate ease-in-out;
+        }
+        @keyframes floatBlob {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, -30px) scale(1.15); }
+        }
+
+        /* PID 3D Game Button Styles */
+        .btn-3d {
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            top: 0;
+        }
+        .btn-3d:active {
+            top: 4px;
+            box-shadow: 0 2px 0 0 rgba(0,0,0,0.3) !important;
+        }
+        .btn-yellow {
+            background: linear-gradient(180deg, #fde047 0%, #eab308 100%);
+            box-shadow: 0 6px 0 0 #a16207, 0 10px 15px -3px rgba(0,0,0,0.3);
+            color: #422006;
+        }
+        .btn-blue {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            box-shadow: 0 6px 0 0 #075985, 0 10px 15px -3px rgba(0,0,0,0.3);
+            color: #ffffff;
+        }
+        .btn-purple {
+            background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%);
+            box-shadow: 0 6px 0 0 #581c87, 0 10px 15px -3px rgba(0,0,0,0.3);
+            color: #ffffff;
+        }
+        .btn-green {
+            background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+            box-shadow: 0 6px 0 0 #14532d, 0 10px 15px -3px rgba(0,0,0,0.3);
+            color: #ffffff;
+        }
+        .btn-orange {
+            background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%);
+            box-shadow: 0 6px 0 0 #9a3412, 0 10px 15px -3px rgba(0,0,0,0.3);
+            color: #ffffff;
+        }
+
+        /* Tool Active States */
+        .tool-btn {
+            transition: all 0.15s ease;
+        }
+        .tool-btn.active {
+            transform: translateY(-2px) scale(1.06);
+            box-shadow: 0 0 0 3px #facc15, 0 4px 10px rgba(0,0,0,0.25);
+            background-color: #1e293b !important;
+            color: #facc15 !important;
+        }
+        .color-swatch {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .color-swatch.active {
+            transform: scale(1.22);
+            box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #0f172a;
+            z-index: 10;
+        }
+
+        /* Canvas Touch Optimization for Simultaneous Multi-touch */
+        .drawing-canvas {
+            touch-action: none;
+            cursor: crosshair;
+            background-color: #ffffff;
+        }
+
+        /* Magnifying Glass Animation for AI Judge */
+        @keyframes scanArt {
+            0% { transform: translate(-60px, -30px) rotate(-10deg); }
+            25% { transform: translate(60px, -20px) rotate(10deg); }
+            50% { transform: translate(40px, 40px) rotate(5deg); }
+            75% { transform: translate(-50px, 30px) rotate(-8deg); }
+            100% { transform: translate(-60px, -30px) rotate(-10deg); }
+        }
+        .animate-scan {
+            animation: scanArt 4s infinite ease-in-out;
+        }
+
+        /* Custom Scrollbar for Modals and Results */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen art-bg text-white select-none flex flex-col justify-between overflow-hidden">
+
+    <!-- Decorative Paint Blobs -->
+    <div class="paint-blob w-96 h-96 bg-pink-500 top-[-5%] left-[-5%]"></div>
+    <div class="paint-blob w-96 h-96 bg-yellow-400 bottom-[-10%] right-[10%]" style="animation-delay: -4s;"></div>
+    <div class="paint-blob w-80 h-80 bg-cyan-400 top-[30%] right-[-5%]" style="animation-delay: -8s;"></div>
+
+    <!-- TOP GLOBAL BAR (Audio & Fullscreen Controls) -->
+    <header id="globalHeader" class="w-full px-6 py-2.5 flex items-center justify-between z-30 bg-slate-900/50 backdrop-blur-md border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 via-orange-500 to-pink-500 flex items-center justify-center shadow-md">
+                <i class="fa-solid fa-palette text-xl text-white"></i>
+            </div>
+            <div>
+                <span class="font-title text-xl tracking-wide text-yellow-300">ART BATTLE</span>
+                <span class="hidden sm:inline-block text-xs bg-indigo-600/80 px-2.5 py-0.5 rounded-full ml-2 font-bold text-indigo-100 border border-indigo-400/30">PID INTERACTIVE EDITION • KELAS 6 SD</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+            <button onclick="UI.openModal('modalReference')" id="btnQuickRef" class="hidden px-3.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-200 hover:bg-amber-500/30 font-bold text-sm flex items-center gap-2">
+                <i class="fa-solid fa-lightbulb text-amber-300"></i> Inspirasi Bentuk
+            </button>
+            <button onclick="SoundFX.toggleMute()" id="btnMute" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition" title="Suara">
+                <i class="fa-solid fa-volume-high" id="iconVolume"></i>
+            </button>
+            <button onclick="UI.openModal('modalSettings')" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition" title="Pengaturan">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button onclick="UI.toggleFullscreen()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-xs flex items-center gap-1.5 shadow" title="Layar Penuh PID">
+                <i class="fa-solid fa-expand" id="iconFullscreen"></i>
+                <span class="hidden md:inline">FULLSCREEN</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         1. OPENING SCREEN
+    =========================================== -->
+    <main id="screenOpening" class="flex-1 flex flex-col items-center justify-center p-6 z-20 relative overflow-y-auto">
+        <div class="max-w-4xl w-full text-center flex flex-col items-center">
+            
+            <!-- Floating Art Icons Banner -->
+            <div class="flex items-center justify-center gap-4 mb-3">
+                <span class="px-4 py-1.5 rounded-full bg-pink-500/20 border border-pink-400/40 text-pink-200 font-bold text-sm flex items-center gap-2 animate-bounce">
+                    <i class="fa-solid fa-paintbrush"></i> Kompetisi 2 Pemain Split-Screen
+                </span>
+                <span class="px-4 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-robot"></i> Penilaian Juri AI Vision
+                </span>
+            </div>
+
+            <!-- Main Logo Card -->
+            <div class="relative my-2 px-10 py-8 rounded-3xl bg-gradient-to-b from-indigo-900/80 to-slate-900/90 border-4 border-yellow-400/80 shadow-2xl backdrop-blur-xl">
+                <!-- Decorative Corner Art Elements -->
+                <div class="absolute -top-6 -left-6 w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg transform -rotate-12 border-2 border-white">
+                    <i class="fa-solid fa-pencil text-3xl text-white"></i>
+                </div>
+                <div class="absolute -top-6 -right-6 w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg transform rotate-12 border-2 border-white">
+                    <i class="fa-solid fa-fill-drip text-3xl text-white"></i>
+                </div>
+
+                <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 drop-shadow">
+                    ART BATTLE
+                </h1>
+                <p class="font-title text-2xl sm:text-3xl text-cyan-300 tracking-wider mt-1">
+                    DRAW & COLOR CHALLENGE
+                </p>
+                <div class="mt-4 inline-block bg-white/10 px-6 py-2 rounded-2xl border border-white/15">
+                    <p class="text-base sm:text-lg text-yellow-100 font-bold italic">
+                        "Gambar Kreasimu, Warnai Imajinasimu, Jadilah Juara!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- Main PID Action Buttons -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mt-6">
+                <button onclick="Game.goToRegistration()" class="sm:col-span-2 btn-3d btn-yellow py-5 px-8 rounded-3xl font-title text-2xl sm:text-3xl flex items-center justify-center gap-4">
+                    <i class="fa-solid fa-play text-3xl"></i>
+                    START BATTLE
+                </button>
+
+                <button onclick="UI.openModal('modalHowToPlay')" class="btn-3d btn-blue py-4 px-6 rounded-2xl font-title text-xl flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-book-open"></i>
+                    CARA BERMAIN
+                </button>
+
+                <button onclick="UI.openModal('modalSettings')" class="btn-3d btn-purple py-4 px-6 rounded-2xl font-title text-xl flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-sliders"></i>
+                    PENGATURAN
+                </button>
+
+                <button onclick="UI.openModal('modalAbout')" class="sm:col-span-2 py-3 px-6 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 font-bold text-base flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-circle-info text-yellow-300"></i>
+                    TENTANG GAME & RUBRIK PENILAIAN AI
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         2. PLAYER REGISTRATION SCREEN
+    =========================================== -->
+    <main id="screenRegistration" class="hidden flex-1 flex flex-col justify-between p-4 sm:p-6 z-20 overflow-y-auto">
+        <div class="text-center mb-2">
+            <h2 class="text-3xl sm:text-4xl font-title text-yellow-300">REGISTRASI SENIMAN MUDA</h2>
+            <p class="text-sm sm:text-base text-indigo-200">Masukkan nama panggilan, pilih avatar, dan warna identitasmu sebelum bertanding!</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl w-full mx-auto my-auto">
+            <!-- PLAYER 1 CARD -->
+            <div id="p1RegCard" class="bg-slate-900/85 border-4 border-sky-400 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div id="p1PreviewBadge" class="w-16 h-16 rounded-2xl bg-sky-500 flex items-center justify-center text-4xl shadow-lg border-2 border-white">
+                                🎨
+                            </div>
+                            <div>
+                                <span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-500/30 text-sky-300 border border-sky-400/30">Area Kiri PID</span>
+                                <h3 id="p1PreviewName" class="text-2xl font-title text-white mt-0.5">PEMAIN 1</h3>
+                            </div>
+                        </div>
+                        <span class="text-3xl font-title text-sky-400">#P1</span>
+                    </div>
+
+                    <!-- Name Input + Quick Preset Names for PID without Keyboard -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold uppercase text-indigo-200 mb-1.5">Nama Pemain 1:</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="p1NameInput" value="Seniman Biru" maxlength="18" oninput="Game.updatePlayerPreview(1)"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-800 border-2 border-slate-600 focus:border-sky-400 text-white font-bold text-lg outline-none">
+                            <button onclick="Game.randomPlayerName(1)" class="px-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 font-bold text-sm shrink-0 flex items-center gap-1.5" title="Nama Acak">
+                                <i class="fa-solid fa-dice"></i> Acak
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Avatar Picker -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold uppercase text-indigo-200 mb-1.5">Pilih Avatar:</label>
+                        <div id="p1AvatarGrid" class="grid grid-cols-6 gap-2"></div>
+                    </div>
+
+                    <!-- Identity Color Picker -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-indigo-200 mb-1.5">Warna Identitas:</label>
+                        <div id="p1ColorGrid" class="flex items-center gap-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLAYER 2 CARD -->
+            <div id="p2RegCard" class="bg-slate-900/85 border-4 border-rose-400 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div id="p2PreviewBadge" class="w-16 h-16 rounded-2xl bg-rose-500 flex items-center justify-center text-4xl shadow-lg border-2 border-white">
+                                🚀
+                            </div>
+                            <div>
+                                <span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-500/30 text-rose-300 border border-rose-400/30">Area Kanan PID</span>
+                                <h3 id="p2PreviewName" class="text-2xl font-title text-white mt-0.5">PEMAIN 2</h3>
+                            </div>
+                        </div>
+                        <span class="text-3xl font-title text-rose-400">#P2</span>
+                    </div>
+
+                    <!-- Name Input -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold uppercase text-indigo-200 mb-1.5">Nama Pemain 2:</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="p2NameInput" value="Seniman Merah" maxlength="18" oninput="Game.updatePlayerPreview(2)"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-800 border-2 border-slate-600 focus:border-rose-400 text-white font-bold text-lg outline-none">
+                            <button onclick="Game.randomPlayerName(2)" class="px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 font-bold text-sm shrink-0 flex items-center gap-1.5" title="Nama Acak">
+                                <i class="fa-solid fa-dice"></i> Acak
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Avatar Picker -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold uppercase text-indigo-200 mb-1.5">Pilih Avatar:</label>
+                        <div id="p2AvatarGrid" class="grid grid-cols-6 gap-2"></div>
+                    </div>
+
+                    <!-- Identity Color Picker -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-indigo-200 mb-1.5">Warna Identitas:</label>
+                        <div id="p2ColorGrid" class="flex items-center gap-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="flex items-center justify-between max-w-6xl w-full mx-auto mt-4">
+            <button onclick="UI.showScreen('screenOpening')" class="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 font-bold text-lg flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Kembali
+            </button>
+            <button onclick="Game.goToWheelScreen()" class="btn-3d btn-green px-10 py-4 rounded-2xl font-title text-2xl flex items-center gap-3">
+                LANJUT KE UNDIAN TANTANGAN <i class="fa-solid fa-dharmachakra"></i>
+            </button>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         3. RANDOM DRAWING CHALLENGE (WHEEL)
+    =========================================== -->
+    <main id="screenWheel" class="hidden flex-1 flex flex-col justify-between p-4 sm:p-6 z-20 overflow-y-auto">
+        <div class="text-center">
+            <h2 class="text-3xl sm:text-4xl font-title text-yellow-300">RODA UNDIAN TANTANGAN</h2>
+            <p class="text-sm sm:text-base text-indigo-200">Pilih kategori atau gunakan Semua Kategori, lalu tekan <b>KOCOK TANTANGAN</b>!</p>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div id="categoryFilterBar" class="flex flex-wrap items-center justify-center gap-2 max-w-5xl mx-auto my-2"></div>
+
+        <!-- Center Wheel & Result Showcase -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl w-full mx-auto items-center my-auto">
+            
+            <!-- Left: Interactive Spinning Wheel Canvas -->
+            <div class="lg:col-span-6 flex flex-col items-center justify-center relative">
+                <div class="relative w-72 h-72 sm:w-88 sm:h-88 flex items-center justify-center">
+                    <!-- Pointer Triangle Top -->
+                    <div class="absolute -top-4 z-20 text-yellow-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)]">
+                        <i class="fa-solid fa-caret-down text-5xl"></i>
+                    </div>
+                    <canvas id="wheelCanvas" width="380" height="380" class="w-full h-full rounded-full shadow-2xl border-8 border-yellow-400 bg-slate-900"></canvas>
+                    <!-- Center Spin Cap -->
+                    <button id="btnCenterSpin" onclick="Wheel.spin()" class="absolute w-20 h-20 rounded-full bg-gradient-to-b from-yellow-300 to-amber-500 border-4 border-white shadow-xl flex flex-col items-center justify-center text-slate-900 font-title text-sm hover:scale-105 active:scale-95 transition">
+                        <i class="fa-solid fa-rotate text-xl"></i>
+                        <span>PUTAR</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Selected Challenge Display & Simple Visual Inspiration -->
+            <div class="lg:col-span-6 bg-slate-900/85 border-4 border-indigo-400/60 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center">
+                <span id="challengeCategoryBadge" class="px-4 py-1 rounded-full bg-indigo-600 text-indigo-100 font-bold text-xs uppercase tracking-widest">
+                    MENUNGGU UNDIAN...
+                </span>
+
+                <h3 id="challengeTitleDisplay" class="font-title text-4xl sm:text-5xl text-yellow-300 mt-3 mb-2 tracking-wide">
+                    ???
+                </h3>
+
+                <p id="challengeHintDisplay" class="text-sm text-indigo-200 max-w-md mb-4">
+                    Tekan tombol "KOCOK TANTANGAN" untuk mengundi objek gambar yang akan dilombakan oleh kedua pemain!
+                </p>
+
+                <!-- Simple Reference SVG Illustration Box -->
+                <div class="w-full max-w-md bg-white/95 rounded-2xl p-4 border-4 border-dashed border-indigo-300 flex flex-col items-center justify-center min-h-[170px] shadow-inner">
+                    <div id="challengeReferenceSvg" class="w-32 h-32 flex items-center justify-center text-slate-700">
+                        <i class="fa-solid fa-wand-magic-sparkles text-6xl text-indigo-300 animate-pulse"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 mt-2">
+                        *Ilustrasi di atas hanya referensi dasar. Kembangkan bentuk, detail, dan warna sesuai imajinasimu!
+                    </span>
+                </div>
+
+                <!-- Spin & Ready Buttons -->
+                <div class="flex flex-wrap items-center justify-center gap-4 w-full mt-5">
+                    <button id="btnSpinChallenge" onclick="Wheel.spin()" class="btn-3d btn-orange px-7 py-4 rounded-2xl font-title text-xl flex items-center gap-3">
+                        <i class="fa-solid fa-dice-d20 text-2xl"></i>
+                        KOCOK TANTANGAN
+                    </button>
+
+                    <button id="btnReadyBattle" onclick="Game.enterBattleArena()" disabled
+                        class="btn-3d btn-green px-8 py-4 rounded-2xl font-title text-xl flex items-center gap-3 opacity-40 pointer-events-none">
+                        <i class="fa-solid fa-bolt text-2xl"></i>
+                        SIAP BERTANDING!
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="flex items-center justify-between max-w-6xl w-full mx-auto">
+            <button onclick="UI.showScreen('screenRegistration')" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 font-bold text-base flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Ubah Pemain
+            </button>
+            <div class="text-sm text-indigo-200 font-bold">
+                Durasi Pertandingan: <span id="wheelDurationLabel" class="text-yellow-300">5 Menit</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         4. SPLIT-SCREEN DRAWING BATTLE ARENA
+    =========================================== -->
+    <main id="screenArena" class="hidden flex-1 flex flex-col w-full h-full z-20 overflow-hidden bg-slate-950">
+        
+        <!-- Top Arena HUD: Player 1 Info | Central Timer & Challenge | Player 2 Info -->
+        <div class="w-full px-3 py-1.5 bg-slate-900 border-b border-slate-700 flex items-center justify-between gap-2 shrink-0">
+            
+            <!-- Player 1 Identity Header -->
+            <div id="arenaP1Header" class="flex items-center gap-2.5 bg-sky-500/20 border-2 border-sky-400 px-3 py-1 rounded-2xl min-w-[180px]">
+                <span id="arenaP1Avatar" class="text-2xl">🎨</span>
+                <div class="leading-tight">
+                    <div id="arenaP1Name" class="font-title text-base text-white truncate max-w-[140px]">Pemain 1</div>
+                    <div class="text-[11px] font-bold text-sky-300">KANVAS KIRI</div>
+                </div>
+            </div>
+
+            <!-- Center Challenge & Countdown Timer -->
+            <div class="flex-1 max-w-2xl flex flex-col items-center">
+                <div class="flex items-center gap-4">
+                    <div class="hidden sm:flex items-center gap-2 bg-indigo-950 border border-indigo-500/40 px-3 py-1 rounded-xl">
+                        <span class="text-xs font-bold uppercase text-indigo-300">TUGAS:</span>
+                        <span id="arenaChallengeName" class="font-title text-lg text-yellow-300">KUPU-KUPU</span>
+                    </div>
+
+                    <!-- Digital Timer Pill -->
+                    <div id="timerContainer" class="flex items-center gap-2.5 bg-slate-800 border-2 border-yellow-400 px-4 py-1 rounded-2xl shadow-lg">
+                        <i class="fa-solid fa-clock text-yellow-400 text-lg animate-pulse"></i>
+                        <span id="timerText" class="font-title text-2xl sm:text-3xl tracking-wider text-white">05:00</span>
+                    </div>
+
+                    <!-- Start Battle Button (Visible before countdown starts) -->
+                    <button id="btnStartCountdown" onclick="Game.startBattleTimer()" class="btn-3d btn-green px-4 py-1.5 rounded-xl font-title text-base flex items-center gap-2 animate-bounce">
+                        <i class="fa-solid fa-play"></i> MULAI BATTLE
+                    </button>
+
+                    <!-- Finish Early Button (Teacher/Players Agree) -->
+                    <button id="btnFinishEarly" onclick="UI.openModal('modalConfirmFinish')" class="hidden px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-flag-checkered"></i> SELESAI & NILAI
+                    </button>
+                </div>
+
+                <!-- Timer Progress Bar -->
+                <div class="w-full max-w-md h-2 bg-slate-800 rounded-full overflow-hidden mt-1 border border-slate-700">
+                    <div id="timerProgressBar" class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-rose-500 w-full transition-all duration-500"></div>
+                </div>
+            </div>
+
+            <!-- Player 2 Identity Header -->
+            <div id="arenaP2Header" class="flex items-center justify-end gap-2.5 bg-rose-500/20 border-2 border-rose-400 px-3 py-1 rounded-2xl min-w-[180px]">
+                <div class="leading-tight text-right">
+                    <div id="arenaP2Name" class="font-title text-base text-white truncate max-w-[140px]">Pemain 2</div>
+                    <div class="text-[11px] font-bold text-rose-300">KANVAS KANAN</div>
+                </div>
+                <span id="arenaP2Avatar" class="text-2xl">🚀</span>
+            </div>
+        </div>
+
+        <!-- SPLIT-SCREEN ARENA BODY (50% Left Player 1 | 50% Right Player 2) -->
+        <div class="flex-1 grid grid-cols-2 gap-2 p-2 overflow-hidden bg-slate-900 relative">
+
+            <!-- Overlay Lock before MULAI BATTLE is pressed or after TIME'S UP -->
+            <div id="arenaLockOverlay" class="
+                absolute inset-0 z-30 bg-slate-950/75 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                <div class="bg-slate-900 border-4 border-yellow-400 rounded-3xl p-8 max-w-xl shadow-2xl">
+                    <div class="w-20 h-20 rounded-3xl bg-yellow-400/20 border-2 border-yellow-400 flex items-center justify-center mx-auto mb-4 text-4xl">
+                        🎨
+                    </div>
+                    <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-indigo-600 text-white">TANTANGAN MENGGAMBAR</span>
+                    <h3 id="overlayChallengeTitle" class="font-title text-4xl text-yellow-300 mt-2">GAMBAR KUPU-KUPU</h3>
+                    <p class="text-indigo-200 text-sm mt-2 mb-6">
+                        Kedua pemain siap di depan layar PID masing-masing. Waktu akan berjalan bersama saat tombol di bawah ditekan!
+                    </p>
+                    <button onclick="Game.startBattleTimer()" class="btn-3d btn-green px-10 py-4 rounded-2xl font-title text-2xl flex items-center justify-center gap-3 mx-auto">
+                        <i class="fa-solid fa-play"></i> MULAI BATTLE SEKARANG!
+                    </button>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 LEFT PANEL: PLAYER 1 INDEPENDENT WORKSPACE
+            =========================================== -->
+            <section id="p1Workspace" class="flex flex-col h-full bg-slate-800/90 rounded-2xl border-2 border-sky-500/60 p-2 overflow-hidden">
+                
+                <!-- Top Tools Row (Brushes, Shapes, Fill, Eraser, Undo/Redo/Clear) -->
+                <div class="flex flex-wrap items-center justify-between gap-1 pb-1.5 mb-1.5 border-b border-slate-700 shrink-0">
+                    <!-- Drawing Tools -->
+                    <div class="flex items-center gap-1" id="p1ToolsGroup">
+                        <button onclick="CanvasEngine.setTool(1, 'pencil')" data-tool="pencil" class="tool-btn active px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Pensil">
+                            <i class="fa-solid fa-pencil"></i><span class="hidden xl:inline">Pensil</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'brush')" data-tool="brush" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Kuas Halus">
+                            <i class="fa-solid fa-paintbrush"></i><span class="hidden xl:inline">Kuas</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'marker')" data-tool="marker" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Spidol">
+                            <i class="fa-solid fa-highlighter"></i><span class="hidden xl:inline">Spidol</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'crayon')" data-tool="crayon" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Krayon Tekstur">
+                            <i class="fa-solid fa-wand-sparkles"></i><span class="hidden xl:inline">Krayon</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'bucket')" data-tool="bucket" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Cat Siram (Fill)">
+                            <i class="fa-solid fa-fill-drip"></i><span class="hidden xl:inline">Cat</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'line')" data-tool="line" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Garis Lurus">
+                            <i class="fa-solid fa-slash"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'rect')" data-tool="rect" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Persegi">
+                            <i class="fa-regular fa-square"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'circle')" data-tool="circle" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Lingkaran">
+                            <i class="fa-regular fa-circle"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'triangle')" data-tool="triangle" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Segitiga">
+                            <i class="fa-solid fa-play -rotate-90 text-[10px]"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(1, 'eraser')" data-tool="eraser" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-rose-200 text-xs font-bold flex items-center gap-1" title="Penghapus">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
+                    </div>
+
+                    <!-- Undo / Redo / Clear -->
+                    <div class="flex items-center gap-1">
+                        <button onclick="CanvasEngine.undo(1)" class="px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold" title="Undo">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                        <button onclick="CanvasEngine.redo(1)" class="px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold" title="Redo">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button onclick="CanvasEngine.requestClear(1)" class="px-2.5 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold" title="Bersihkan Kanvas">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Canvas Area (Player 1) -->
+                <div id="p1CanvasWrapper" class="relative flex-1 w-full rounded-xl overflow-hidden shadow-inner border-2 border-slate-600 bg-white">
+                    <canvas id="canvasP1" class="drawing-canvas w-full h-full block"></canvas>
+                    <!-- Inline Clear Confirmation for P1 -->
+                    <div id="p1ClearConfirm" class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 z-20">
+                        <p class="font-title text-xl text-white mb-3">Hapus seluruh gambar Pemain 1?</p>
+                        <div class="flex gap-3">
+                            <button onclick="CanvasEngine.confirmClear(1, true)" class="px-5 py-2.5 rounded-xl bg-rose-600 font-bold text-white">Ya, Bersihkan</button>
+                            <button onclick="CanvasEngine.confirmClear(1, false)" class="px-5 py-2.5 rounded-xl bg-slate-600 font-bold text-white">Batal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Controls: Color Swatches & Brush Size/Opacity -->
+                <div class="pt-2 flex flex-col gap-1.5 shrink-0">
+                    <!-- Color Swatches Row -->
+                    <div class="flex items-center justify-between gap-1">
+                        <div id="p1PaletteContainer" class="flex flex-wrap items-center gap-1.5 flex-1"></div>
+                        <label class="flex items-center gap-1 bg-slate-700 px-2 py-1 rounded-lg cursor-pointer text-xs font-bold shrink-0" title="Variasi Warna Bebas">
+                            <input type="color" id="p1CustomColor" value="#ef4444" onchange="CanvasEngine.setColor(1, this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                            <span class="hidden sm:inline">Gradasi</span>
+                        </label>
+                    </div>
+
+                    <!-- Size & Opacity Presets Row -->
+                    <div class="flex items-center justify-between gap-2 bg-slate-900/70 px-3 py-1 rounded-xl">
+                        <div class="flex items-center gap-2 flex-1">
+                            <span class="text-[11px] font-bold text-slate-300">UKURAN:</span>
+                            <input type="range" id="p1SizeSlider" min="2" max="48" value="8" oninput="CanvasEngine.setSize(1, this.value)" class="w-24 sm:w-32 accent-sky-400">
+                            <span id="p1SizeLabel" class="text-xs font-extrabold text-sky-300 w-7">8px</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-slate-300">TRANSPARANSI:</span>
+                            <input type="range" id="p1AlphaSlider" min="20" max="100" value="100" oninput="CanvasEngine.setAlpha(1, this.value)" class="w-20 sm:w-24 accent-sky-400">
+                            <span id="p1AlphaLabel" class="text-xs font-extrabold text-sky-300 w-9">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 RIGHT PANEL: PLAYER 2 INDEPENDENT WORKSPACE
+            =========================================== -->
+            <section id="p2Workspace" class="flex flex-col h-full bg-slate-800/90 rounded-2xl border-2 border-rose-500/60 p-2 overflow-hidden">
+                
+                <!-- Top Tools Row -->
+                <div class="flex flex-wrap items-center justify-between gap-1 pb-1.5 mb-1.5 border-b border-slate-700 shrink-0">
+                    <div class="flex items-center gap-1" id="p2ToolsGroup">
+                        <button onclick="CanvasEngine.setTool(2, 'pencil')" data-tool="pencil" class="tool-btn active px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Pensil">
+                            <i class="fa-solid fa-pencil"></i><span class="hidden xl:inline">Pensil</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'brush')" data-tool="brush" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Kuas Halus">
+                            <i class="fa-solid fa-paintbrush"></i><span class="hidden xl:inline">Kuas</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'marker')" data-tool="marker" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Spidol">
+                            <i class="fa-solid fa-highlighter"></i><span class="hidden xl:inline">Spidol</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'crayon')" data-tool="crayon" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Krayon Tekstur">
+                            <i class="fa-solid fa-wand-sparkles"></i><span class="hidden xl:inline">Krayon</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'bucket')" data-tool="bucket" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold flex items-center gap-1" title="Cat Siram (Fill)">
+                            <i class="fa-solid fa-fill-drip"></i><span class="hidden xl:inline">Cat</span>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'line')" data-tool="line" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Garis Lurus">
+                            <i class="fa-solid fa-slash"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'rect')" data-tool="rect" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Persegi">
+                            <i class="fa-regular fa-square"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'circle')" data-tool="circle" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Lingkaran">
+                            <i class="fa-regular fa-circle"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'triangle')" data-tool="triangle" class="tool-btn px-2 py-1.5 rounded-xl bg-slate-700 text-white text-xs font-bold" title="Segitiga">
+                            <i class="fa-solid fa-play -rotate-90 text-[10px]"></i>
+                        </button>
+                        <button onclick="CanvasEngine.setTool(2, 'eraser')" data-tool="eraser" class="tool-btn px-2.5 py-1.5 rounded-xl bg-slate-700 text-rose-200 text-xs font-bold flex items-center gap-1" title="Penghapus">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
+                    </div>
+
+                    <!-- Undo / Redo / Clear -->
+                    <div class="flex items-center gap-1">
+                        <button onclick="CanvasEngine.undo(2)" class="px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold" title="Undo">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                        <button onclick="CanvasEngine.redo(2)" class="px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold" title="Redo">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button onclick="CanvasEngine.requestClear(2)" class="px-2.5 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold" title="Bersihkan Kanvas">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Canvas Area (Player 2) -->
+                <div id="p2CanvasWrapper" class="relative flex-1 w-full rounded-xl overflow-hidden shadow-inner border-2 border-slate-600 bg-white">
+                    <canvas id="canvasP2" class="drawing-canvas w-full h-full block"></canvas>
+                    <!-- Inline Clear Confirmation for P2 -->
+                    <div id="p2ClearConfirm" class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 z-20">
+                        <p class="font-title text-xl text-white mb-3">Hapus seluruh gambar Pemain 2?</p>
+                        <div class="flex gap-3">
+                            <button onclick="CanvasEngine.confirmClear(2, true)" class="px-5 py-2.5 rounded-xl bg-rose-600 font-bold text-white">Ya, Bersihkan</button>
+                            <button onclick="CanvasEngine.confirmClear(2, false)" class="px-5 py-2.5 rounded-xl bg-slate-600 font-bold text-white">Batal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Controls: Color Swatches & Brush Size/Opacity -->
+                <div class="pt-2 flex flex-col gap-1.5 shrink-0">
+                    <div class="flex items-center justify-between gap-1">
+                        <div id="p2PaletteContainer" class="flex flex-wrap items-center gap-1.5 flex-1"></div>
+                        <label class="flex items-center gap-1 bg-slate-700 px-2 py-1 rounded-lg cursor-pointer text-xs font-bold shrink-0" title="Variasi Warna Bebas">
+                            <input type="color" id="p2CustomColor" value="#3b82f6" onchange="CanvasEngine.setColor(2, this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                            <span class="hidden sm:inline">Gradasi</span>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 bg-slate-900/70 px-3 py-1 rounded-xl">
+                        <div class="flex items-center gap-2 flex-1">
+                            <span class="text-[11px] font-bold text-slate-300">UKURAN:</span>
+                            <input type="range" id="p2SizeSlider" min="2" max="48" value="8" oninput="CanvasEngine.setSize(2, this.value)" class="w-24 sm:w-32 accent-rose-400">
+                            <span id="p2SizeLabel" class="text-xs font-extrabold text-rose-300 w-7">8px</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-slate-300">TRANSPARANSI:</span>
+                            <input type="range" id="p2AlphaSlider" min="20" max="100" value="100" oninput="CanvasEngine.setAlpha(2, this.value)" class="w-20 sm:w-24 accent-rose-400">
+                            <span id="p2AlphaLabel" class="text-xs font-extrabold text-rose-300 w-9">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         5. AI JUDGE EVALUATION SCREEN
+    =========================================== -->
+    <main id="screenJudging" class="hidden flex-1 flex flex-col items-center justify-center p-6 z-20 overflow-y-auto">
+        <div class="max-w-5xl w-full bg-slate-900/90 border-4 border-indigo-400 rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
+            
+            <div class="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-indigo-600/40 border border-indigo-400 text-indigo-200 font-bold text-sm mb-3">
+                <i class="fa-solid fa-microchip animate-spin"></i>
+                <span id="judgeModeBadge">AI VISION JUDGE ENGINE</span>
+            </div>
+
+            <h2 id="judgingHeaderTitle" class="font-title text-3xl sm:text-5xl text-yellow-300 tracking-wide">
+                AI JUDGE IS EVALUATING...
+            </h2>
+            <p id="judgingStatusText" class="text-indigo-200 text-base mt-1">
+                Menganalisis kesesuaian tema, kelengkapan bentuk, kreativitas, pewarnaan, dan komposisi kedua karya...
+            </p>
+
+            <!-- Side-by-Side Artwork Preview Being Scanned -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6 relative">
+                <!-- Animated Magnifying Glass & Robot Overlay -->
+                <div id="judgeScannerVisual" class="
+                    pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                    <div class="animate-scan bg-amber-400/20 border-4 border-amber-300 w-28 h-28 rounded-full flex items-center justify-center shadow-2xl backdrop-blur-xs">
+                        <i class="fa-solid fa-magnifying-glass text-5xl text-yellow-300 drop-shadow"></i>
+                    </div>
+                </div>
+
+                <!-- P1 Artwork Card -->
+                <div class="bg-slate-800 p-4 rounded-2xl border-2 border-sky-400">
+                    <div class="flex items-center justify-between mb-2">
+                        <span id="judgeP1Name" class="font-title text-lg text-sky-300">Pemain 1</span>
+                        <span class="text-xs bg-sky-500/20 px-2.5 py-0.5 rounded-full text-sky-200 font-bold">Karya #1</span>
+                    </div>
+                    <img id="judgeImgP1" alt="Karya Pemain 1" class="w-full h-52 object-contain bg-white rounded-xl border border-slate-600">
+                </div>
+
+                <!-- P2 Artwork Card -->
+                <div class="bg-slate-800 p-4 rounded-2xl border-2 border-rose-400">
+                    <div class="flex items-center justify-between mb-2">
+                        <span id="judgeP2Name" class="font-title text-lg text-rose-300">Pemain 2</span>
+                        <span class="text-xs bg-rose-500/20 px-2.5 py-0.5 rounded-full text-rose-200 font-bold">Karya #2</span>
+                    </div>
+                    <img id="judgeImgP2" alt="Karya Pemain 2" class="w-full h-52 object-contain bg-white rounded-xl border border-slate-600">
+                </div>
+            </div>
+
+            <!-- Real-time Progress Bar -->
+            <div id="judgingProgressSection" class="max-w-xl mx-auto">
+                <div class="w-full h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-600">
+                    <div id="judgingProgressBar" class="h-full bg-gradient-to-r from-cyan-400 via-indigo-400 to-pink-500 w-1/4 transition-all duration-300"></div>
+                </div>
+                <div class="flex justify-center gap-2 mt-3 text-yellow-300 text-xl">
+                    <i class="fa-solid fa-star animate-bounce"></i>
+                    <i class="fa-solid fa-star animate-bounce" style="animation-delay:0.15s"></i>
+                    <i class="fa-solid fa-star animate-bounce" style="animation-delay:0.3s"></i>
+                </div>
+            </div>
+
+            <!-- Fallback Options if AI Vision Connection Fails (Strict Rule: Never fabricate random AI scores silently) -->
+            <div id="judgingFallbackBox" class="hidden mt-4 bg-rose-950/80 border-2 border-rose-400 rounded-2xl p-5 text-left">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-3xl text-amber-300 mt-1"></i>
+                    <div class="flex-1">
+                        <h4 class="font-title text-xl text-white">Koneksi AI Vision Tidak Tersedia Saat Ini</h4>
+                        <p id="judgingErrorReason" class="text-sm text-rose-200 mt-1">
+                            Sesuai aturan kejujuran kompetisi, sistem tidak mengarang skor acak. Silakan pilih salah satu metode penilaian di bawah ini:
+                        </p>
+                        <div class="flex flex-wrap gap-3 mt-4">
+                            <button onclick="AIJudge.evaluateArtworks()" class="btn-3d btn-blue px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-rotate"></i> Coba Analisis Ulang (AI Vision)
+                            </button>
+                            <button onclick="UI.openModal('modalManualJudge')" class="btn-3d btn-green px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-chalkboard-user"></i> Penilaian Manual oleh Guru (Rubrik Resmi)
+                            </button>
+                            <button onclick="AIJudge.runHeuristicDemoAnalysis()" class="btn-3d btn-orange px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-flask"></i> Mode DEMO (Analisis Piksel Kanvas)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         6. WINNER ANNOUNCEMENT SCREEN
+    =========================================== -->
+    <main id="screenWinner" class="hidden flex-1 flex flex-col justify-between p-4 sm:p-6 z-20 overflow-y-auto">
+        <div class="max-w-6xl w-full mx-auto my-auto flex flex-col items-center text-center">
+            
+            <!-- Mode Tag (AI Vision vs Guru vs DEMO) -->
+            <span id="winnerEvaluationBadge" class="px-4 py-1 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-200 font-bold text-xs uppercase tracking-widest mb-2">
+                HASIL RESMI AI VISION JUDGE
+            </span>
+
+            <!-- Trophy & Champion Banner -->
+            <div class="flex items-center justify-center gap-3">
+                <i class="fa-solid fa-trophy text-4xl sm:text-5xl text-yellow-400 drop-shadow animate-bounce"></i>
+                <h2 id="winnerMainHeading" class="font-title text-4xl sm:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-500">
+                    ART BATTLE CHAMPION
+                </h2>
+                <i class="fa-solid fa-trophy text-4xl sm:text-5xl text-yellow-400 drop-shadow animate-bounce"></i>
+            </div>
+
+            <!-- Podium & Both Artworks Showcase -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full mt-4 items-stretch">
+                
+                <!-- Player 1 Result Card -->
+                <div id="winnerCardP1" class="lg:col-span-5 bg-slate-900/90 border-4 border-sky-400 rounded-3xl p-5 flex flex-col justify-between shadow-2xl relative">
+                    <div id="winnerRankBadgeP1" class="absolute -top-4 left-6 px-4 py-1 rounded-full bg-sky-500 text-white font-title text-sm shadow">
+                        JUARA 1
+                    </div>
+                    <div class="flex items-center justify-between border-b border-white/10 pb-3 mt-1">
+                        <div class="flex items-center gap-3">
+                            <span id="winnerAvatarP1" class="text-4xl">🎨</span>
+                            <div class="text-left">
+                                <h3 id="winnerNameP1" class="font-title text-2xl text-white">Pemain 1</h3>
+                                <span class="text-xs text-sky-300 font-bold">Tantangan: <b class="winnerTaskLabel">Kupu-kupu</b></span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="winnerScoreP1" class="font-title text-4xl text-yellow-300">88</span>
+                            <span class="block text-[10px] font-bold text-slate-400">POIN / 100</span>
+                        </div>
+                    </div>
+                    <img id="winnerImgP1" alt="Karya P1" class="w-full h-48 object-contain bg-white rounded-2xl my-3 border-2 border-slate-700">
+                    <button onclick="Game.downloadArtwork(1)" class="w-full py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i> Simpan Karya Pemain 1 (PNG)
+                    </button>
+                </div>
+
+                <!-- Center VS & Score Diff Summary -->
+                <div class="lg:col-span-2 flex flex-col items-center justify-center bg-slate-900/75 border-2 border-white/15 rounded-3xl p-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 font-title text-3xl shadow-lg mb-2">
+                        🏆
+                    </div>
+                    <span class="text-xs font-bold uppercase text-indigo-300">PEMENANG</span>
+                    <div id="winnerChampionName" class="font-title text-2xl text-yellow-300 mt-1">PEMAIN 2</div>
+                    <div id="winnerScoreDiff" class="mt-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-white">
+                        Selisih: 4 Poin
+                    </div>
+                </div>
+
+                <!-- Player 2 Result Card -->
+                <div id="winnerCardP2" class="lg:col-span-5 bg-slate-900/90 border-4 border-rose-400 rounded-3xl p-5 flex flex-col justify-between shadow-2xl relative">
+                    <div id="winnerRankBadgeP2" class="absolute -top-4 right-6 px-4 py-1 rounded-full bg-yellow-400 text-slate-950 font-title text-sm shadow">
+                        🏆 JUARA 1
+                    </div>
+                    <div class="flex items-center justify-between border-b border-white/10 pb-3 mt-1">
+                        <div class="flex items-center gap-3">
+                            <span id="winnerAvatarP2" class="text-4xl">🚀</span>
+                            <div class="text-left">
+                                <h3 id="winnerNameP2" class="font-title text-2xl text-white">Pemain 2</h3>
+                                <span class="text-xs text-rose-300 font-bold">Tantangan: <b class="winnerTaskLabel">Kupu-kupu</b></span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="winnerScoreP2" class="font-title text-4xl text-yellow-300">92</span>
+                            <span class="block text-[10px] font-bold text-slate-400">POIN / 100</span>
+                        </div>
+                    </div>
+                    <img id="winnerImgP2" alt="Karya P2" class="w-full h-48 object-contain bg-white rounded-2xl my-3 border-2 border-slate-700">
+                    <button onclick="Game.downloadArtwork(2)" class="w-full py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i> Simpan Karya Pemain 2 (PNG)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Judge General Comment Box -->
+            <div class="w-full bg-indigo-950/90 border-2 border-indigo-400/50 rounded-2xl p-4 mt-4 flex items-center gap-4 text-left">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl shrink-0">
+                    🤖
+                </div>
+                <div>
+                    <div class="text-xs font-extrabold uppercase text-indigo-300">KOMENTAR JURI ART BATTLE:</div>
+                    <p id="winnerJudgeQuote" class="text-sm sm:text-base text-white font-semibold italic">
+                        "Selamat! Kedua pemain telah menunjukkan kreativitas yang luar biasa. Teruslah berkarya dan jangan takut bereksperimen dengan warna!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navigation Actions -->
+            <div class="flex flex-wrap items-center justify-center gap-4 mt-5">
+                <button onclick="UI.showScreen('screenResultDetail')" class="btn-3d btn-blue px-7 py-3.5 rounded-2xl font-title text-xl flex items-center gap-2.5">
+                    <i class="fa-solid fa-clipboard-list"></i> LIHAT DETAIL RAPOR PENILAIAN
+                </button>
+                <button onclick="Game.goToWheelScreen()" class="btn-3d btn-green px-7 py-3.5 rounded-2xl font-title text-xl flex items-center gap-2.5">
+                    <i class="fa-solid fa-dice"></i> UNDI TANTANGAN BARU
+                </button>
+                <button onclick="UI.showScreen('screenOpening')" class="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i> MENU UTAMA
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         7. RESULT DETAIL (FULL RUBRIC BREAKDOWN)
+    =========================================== -->
+    <main id="screenResultDetail" class="hidden flex-1 flex flex-col justify-between p-4 sm:p-6 z-20 overflow-y-auto">
+        <div class="max-w-6xl w-full mx-auto">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div>
+                    <h2 class="font-title text-3xl text-yellow-300">DETAIL EVALUASI & RUBRIK JURI</h2>
+                    <p class="text-sm text-indigo-200">Rincian nilai berdasarkan 5 kriteria resmi Art Battle (Total Maksimal 100 Poin)</p>
+                </div>
+                <button onclick="UI.showScreen('screenWinner')" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-yellow-300"></i> Kembali ke Podium Juara
+                </button>
+            </div>
+
+            <!-- Two Column Detailed Rubric Breakdown -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Player 1 Detail Column -->
+                <div class="bg-slate-900/90 border-2 border-sky-400 rounded-3xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <span id="detailAvatarP1" class="text-3xl">🎨</span>
+                                <div>
+                                    <h3 id="detailNameP1" class="font-title text-2xl text-white">Pemain 1</h3>
+                                    <span class="text-xs text-sky-300 font-bold">Area Kiri</span>
+                                </div>
+                            </div>
+                            <div class="bg-sky-500/20 border border-sky-400 px-4 py-1.5 rounded-2xl text-right">
+                                <span class="text-xs font-bold text-sky-200 block">TOTAL SKOR</span>
+                                <span id="detailTotalP1" class="font-title text-3xl text-yellow-300">88/100</span>
+                            </div>
+                        </div>
+
+                        <img id="detailImgP1" alt="Karya P1" class="w-full h-44 object-contain bg-white rounded-2xl mb-4 border border-slate-700">
+
+                        <!-- 5 Criteria Bars -->
+                        <div id="detailRubricBarsP1" class="space-y-2.5 mb-4"></div>
+
+                        <!-- Feedback Cards -->
+                        <div class="space-y-2 text-sm">
+                            <div class="bg-emerald-950/60 border border-emerald-500/40 rounded-xl p-3">
+                                <div class="font-extrabold text-emerald-300 text-xs uppercase mb-0.5"><i class="fa-solid fa-thumbs-up mr-1"></i> Kelebihan Karya:</div>
+                                <p id="detailStrengthP1" class="text-emerald-100"></p>
+                            </div>
+                            <div class="bg-amber-950/60 border border-amber-500/40 rounded-xl p-3">
+                                <div class="font-extrabold text-amber-300 text-xs uppercase mb-0.5"><i class="fa-solid fa-lightbulb mr-1"></i> Saran Pengembangan:</div>
+                                <p id="detailImproveP1" class="text-amber-100"></p>
+                            </div>
+                            <div class="bg-slate-800/90 border border-slate-600 rounded-xl p-3">
+                                <div class="font-extrabold text-indigo-300 text-xs uppercase mb-0.5"><i class="fa-solid fa-comment-dots mr-1"></i> Alasan Penilaian Juri:</div>
+                                <p id="detailReasonP1" class="text-slate-200"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player 2 Detail Column -->
+                <div class="bg-slate-900/90 border-2 border-rose-400 rounded-3xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <span id="detailAvatarP2" class="text-3xl">🚀</span>
+                                <div>
+                                    <h3 id="detailNameP2" class="font-title text-2xl text-white">Pemain 2</h3>
+                                    <span class="text-xs text-rose-300 font-bold">Area Kanan</span>
+                                </div>
+                            </div>
+                            <div class="bg-rose-500/20 border border-rose-400 px-4 py-1.5 rounded-2xl text-right">
+                                <span class="text-xs font-bold text-rose-200 block">TOTAL SKOR</span>
+                                <span id="detailTotalP2" class="font-title text-3xl text-yellow-300">92/100</span>
+                            </div>
+                        </div>
+
+                        <img id="detailImgP2" alt="Karya P2" class="w-full h-44 object-contain bg-white rounded-2xl mb-4 border border-slate-700">
+
+                        <!-- 5 Criteria Bars -->
+                        <div id="detailRubricBarsP2" class="space-y-2.5 mb-4"></div>
+
+                        <!-- Feedback Cards -->
+                        <div class="space-y-2 text-sm">
+                            <div class="bg-emerald-950/60 border border-emerald-500/40 rounded-xl p-3">
+                                <div class="font-extrabold text-emerald-300 text-xs uppercase mb-0.5"><i class="fa-solid fa-thumbs-up mr-1"></i> Kelebihan Karya:</div>
+                                <p id="detailStrengthP2" class="text-emerald-100"></p>
+                            </div>
+                            <div class="bg-amber-950/60 border border-amber-500/40 rounded-xl p-3">
+                                <div class="font-extrabold text-amber-300 text-xs uppercase mb-0.5"><i class="fa-solid fa-lightbulb mr-1"></i> Saran Pengembangan:</div>
+                                <p id="detailImproveP2" class="text-amber-100"></p>
+                            </div>
+                            <div class="bg-slate-800/90 border border-slate-600 rounded-xl p-3">
+                                <div class="font-extrabold text-indigo-300 text-xs uppercase mb-0.5"><i class="fa-solid fa-comment-dots mr-1"></i> Alasan Penilaian Juri:</div>
+                                <p id="detailReasonP2" class="text-slate-200"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="flex flex-wrap items-center justify-center gap-4 mt-6 pb-4">
+                <button onclick="Game.replaySameChallenge()" class="btn-3d btn-yellow px-7 py-3.5 rounded-2xl font-title text-xl flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> MAIN LAGI (OBJEK SAMA)
+                </button>
+                <button onclick="Game.goToWheelScreen()" class="btn-3d btn-green px-7 py-3.5 rounded-2xl font-title text-xl flex items-center gap-2">
+                    <i class="fa-solid fa-dharmachakra"></i> UNDI TANTANGAN BARU
+                </button>
+                <button onclick="UI.openModal('modalManualJudge')" class="px-5 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai (Mode Guru)
+                </button>
+                <button onclick="UI.showScreen('screenOpening')" class="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i> MENU UTAMA
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         MODALS (HOW TO PLAY, SETTINGS, ABOUT, REFERENCE, MANUAL TEACHER JUDGE)
+    =========================================== -->
+
+    <!-- MODAL: HOW TO PLAY -->
+    <div id="modalHowToPlay" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-4 border-sky-400 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-4">
+                <h3 class="font-title text-3xl text-yellow-300"><i class="fa-solid fa-book-open mr-2"></i> CARA BERMAIN ART BATTLE</h3>
+                <button onclick="UI.closeModal('modalHowToPlay')" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-xl">✕</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm sm:text-base">
+                <div class="bg-slate-800/90 p-4 rounded-2xl border border-white/10">
+                    <span class="font-title text-xl text-sky-300">1. Registrasi 2 Pemain</span>
+                    <p class="text-slate-200 mt-1">Masukkan nama panggilan, pilih avatar keren, dan warna identitas untuk Pemain 1 (Kiri) dan Pemain 2 (Kanan).</p>
+                </div>
+                <div class="bg-slate-800/90 p-4 rounded-2xl border border-white/10">
+                    <span class="font-title text-xl text-amber-300">2. Putar Roda Tantangan</span>
+                    <p class="text-slate-200 mt-1">Tekan tombol <b>KOCOK TANTANGAN</b>. Sistem akan mengundi satu objek gambar yang sama untuk kedua pemain.</p>
+                </div>
+                <div class="bg-slate-800/90 p-4 rounded-2xl border border-white/10">
+                    <span class="font-title text-xl text-emerald-300">3. Gambar & Warnai Bersama</span>
+                    <p class="text-slate-200 mt-1">Gunakan jari atau stylus di layar PID secara bersamaan! Pakai pensil, kuas, spidol, krayon, bentuk geometri, dan cat siram (fill bucket).</p>
+                </div>
+                <div class="bg-slate-800/90 p-4 rounded-2xl border border-white/10">
+                    <span class="font-title text-xl text-pink-300">4. Penilaian Juri AI Vision</span>
+                    <p class="text-slate-200 mt-1">Saat waktu habis, kanvas otomatis terkunci. Juri AI akan menganalisis karya berdasarkan 5 kriteria rubrik hingga 100 poin!</p>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                <button onclick="UI.closeModal('modalHowToPlay')" class="btn-3d btn-yellow px-8 py-3 rounded-2xl font-title text-xl">MENGERTI, AYO MULAI!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SETTINGS -->
+    <div id="modalSettings" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-4 border-purple-400 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-5">
+                <h3 class="font-title text-3xl text-yellow-300"><i class="fa-solid fa-sliders mr-2"></i> PENGATURAN GAME</h3>
+                <button onclick="UI.closeModal('modalSettings')" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-xl">✕</button>
+            </div>
+
+            <div class="space-y-5">
+                <!-- Match Duration -->
+                <div>
+                    <label class="block text-sm font-bold text-indigo-200 mb-2">Durasi Waktu Menggambar:</label>
+                    <div class="grid grid-cols-4 gap-2" id="settingsDurationGroup">
+                        <button onclick="Game.setDuration(180)" data-sec="180" class="py-3 rounded-xl bg-slate-800 border-2 border-slate-600 font-title text-lg">3 Menit</button>
+                        <button onclick="Game.setDuration(300)" data-sec="300" class="py-3 rounded-xl bg-indigo-600 border-2 border-yellow-400 font-title text-lg">5 Menit</button>
+                        <button onclick="Game.setDuration(420)" data-sec="420" class="py-3 rounded-xl bg-slate-800 border-2 border-slate-600 font-title text-lg">7 Menit</button>
+                        <button onclick="Game.setDuration(600)" data-sec="600" class="py-3 rounded-xl bg-slate-800 border-2 border-slate-600 font-title text-lg">10 Menit</button>
+                    </div>
+                </div>
+
+                <!-- Sound & Music Volume -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-800 p-4 rounded-2xl">
+                        <label class="block text-xs font-bold uppercase text-indigo-300 mb-2">Volume Musik Latar</label>
+                        <input type="range" id="musicVolSlider" min="0" max="100" value="60" oninput="SoundFX.setMusicVolume(this.value)" class="w-full accent-purple-400">
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-2xl">
+                        <label class="block text-xs font-bold uppercase text-indigo-300 mb-2">Volume Efek Suara (SFX)</label>
+                        <input type="range" id="sfxVolSlider" min="0" max="100" value="85" oninput="SoundFX.setSfxVolume(this.value)" class="w-full accent-purple-400">
+                    </div>
+                </div>
+
+                <!-- Default Category Filter -->
+                <div>
+                    <label class="block text-sm font-bold text-indigo-200 mb-2">Kategori Tantangan Default:</label>
+                    <select id="settingsCategorySelect" onchange="Wheel.setCategory(this.value)" class="w-full px-4 py-3 rounded-xl bg-slate-800 border-2 border-slate-600 text-white font-bold">
+                        <option value="ALL">SEMUA KATEGORI (51 Tantangan)</option>
+                        <option value="HEWAN">A. HEWAN</option>
+                        <option value="TUMBUHAN">B. TUMBUHAN DAN BUNGA</option>
+                        <option value="KENDARAAN">C. KENDARAAN</option>
+                        <option value="BANGUNAN">D. BANGUNAN</option>
+                        <option value="BENDA">E. BENDA SEHARI-HARI</option>
+                        <option value="MAKANAN">F. MAKANAN DAN BUAH</option>
+                        <option value="PEMANDANGAN">G. PEMANDANGAN</option>
+                    </select>
+                </div>
+
+                <!-- Fullscreen & Language -->
+                <div class="flex items-center justify-between bg-slate-800 p-4 rounded-2xl">
+                    <div>
+                        <div class="font-bold text-white">Mode Layar Penuh PID & Bahasa</div>
+                        <div class="text-xs text-slate-400">Bahasa Aktif: Bahasa Indonesia (Kelas 6 SD)</div>
+                    </div>
+                    <button onclick="UI.toggleFullscreen()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-sm">
+                        Toggle Fullscreen
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-6 text-right">
+                <button onclick="UI.closeModal('modalSettings')" class="btn-3d btn-green px-8 py-3 rounded-2xl font-title text-xl">SIMPAN PENGATURAN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ABOUT & RUBRIC -->
+    <div id="modalAbout" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-4 border-yellow-400 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-4">
+                <h3 class="font-title text-3xl text-yellow-300">TENTANG ART BATTLE & RUBRIK AI</h3>
+                <button onclick="UI.closeModal('modalAbout')" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-xl">✕</button>
+            </div>
+            <p class="text-slate-200 text-sm sm:text-base mb-4">
+                <b>ART BATTLE — DRAW & COLOR</b> dirancang khusus untuk siswa Kelas 6 SD menggunakan Papan Interaktif Digital (PID). Game ini melatih motorik halus, kreativitas visual, ekspresi warna, serta sportivitas dalam berkompetisi.
+            </p>
+            <h4 class="font-title text-xl text-cyan-300 mb-2">Rubrik Penilaian Juri AI (Total 100 Poin):</h4>
+            <div class="space-y-2 text-sm">
+                <div class="bg-slate-800 p-3 rounded-xl flex justify-between"><span><b>1. Kesesuaian Tema:</b> Objek sesuai tugas & karakteristik utama dikenali</span><b class="text-yellow-300">30 Poin</b></div>
+                <div class="bg-slate-800 p-3 rounded-xl flex justify-between"><span><b>2. Kelengkapan Gambar:</b> Bagian penting objek terlihat & struktur jelas</span><b class="text-yellow-300">20 Poin</b></div>
+                <div class="bg-slate-800 p-3 rounded-xl flex justify-between"><span><b>3. Kreativitas:</b> Keunikan ide, detail tambahan & imajinasi anak</span><b class="text-yellow-300">20 Poin</b></div>
+                <div class="bg-slate-800 p-3 rounded-xl flex justify-between"><span><b>4. Pewarnaan:</b> Kombinasi warna, variasi, dan kerapian warna</span><b class="text-yellow-300">20 Poin</b></div>
+                <div class="bg-slate-800 p-3 rounded-xl flex justify-between"><span><b>5. Komposisi & Kerapian:</b> Penempatan proporsional & keseimbangan kanvas</span><b class="text-yellow-300">10 Poin</b></div>
+            </div>
+            <div class="mt-6 text-center">
+                <button onclick="UI.closeModal('modalAbout')" class="btn-3d btn-blue px-8 py-3 rounded-2xl font-title text-lg">TUTUP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: QUICK REFERENCE INSPIRATION DURING BATTLE -->
+    <div id="modalReference" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-4 border-amber-400 rounded-3xl max-w-md w-full p-6 text-center shadow-2xl">
+            <span class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-amber-500/20 text-amber-300">Inspirasi Bentuk Dasar</span>
+            <h3 id="modalRefTitle" class="font-title text-3xl text-yellow-300 mt-2 mb-3">KUPU-KUPU</h3>
+            <div id="modalRefSvg" class="w-40 h-40 mx-auto bg-white rounded-2xl p-4 flex items-center justify-center border-4 border-amber-300"></div>
+            <p class="text-xs text-slate-300 mt-3">Ingat: Kamu bebas berkreasi dengan gaya kartun, warna-warni unik, dan latar tambahan!</p>
+            <button onclick="UI.closeModal('modalReference')" class="btn-3d btn-yellow px-8 py-2.5 rounded-xl font-title text-lg mt-4">LANJUT MENGGAMBAR</button>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM EARLY FINISH -->
+    <div id="modalConfirmFinish" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-4 border-amber-400 rounded-3xl max-w-md w-full p-6 text-center shadow-2xl">
+            <i class="fa-solid fa-flag-checkered text-5xl text-yellow-300 mb-3"></i>
+            <h3 class="font-title text-2xl text-white">Selesaikan Pertandingan Sekarang?</h3>
+            <p class="text-sm text-slate-300 mt-2 mb-6">Pastikan kedua pemain sudah selesai menggambar. Kanvas akan dikunci dan langsung dikirim ke Juri AI.</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="UI.closeModal('modalConfirmFinish'); Game.finishBattle();" class="btn-3d btn-green px-6 py-3 rounded-xl font-title text-lg">YA, NILAI SEKARANG</button>
+                <button onclick="UI.closeModal('modalConfirmFinish')" class="px-6 py-3 rounded-xl bg-slate-700 font-bold text-white">LANJUT MENGGAMBAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: MANUAL TEACHER EVALUATION (Fallback or Teacher Override) -->
+    <div id="modalManualJudge" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-4 border-emerald-400 rounded-3xl max-w-4xl w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-white/15 pb-3 mb-4">
+                <div>
+                    <h3 class="font-title text-2xl sm:text-3xl text-emerald-300"><i class="fa-solid fa-chalkboard-user mr-2"></i> PANEL PENILAIAN MANUAL GURU</h3>
+                    <p class="text-xs text-slate-300">Sesuaikan skor rubrik resmi untuk kedua murid secara langsung di layar PID.</p>
+                </div>
+                <button onclick="UI.closeModal('modalManualJudge')" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-xl">✕</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- P1 Sliders -->
+                <div class="bg-slate-800 p-4 rounded-2xl border border-sky-400/50 space-y-3">
+                    <h4 id="manualP1Title" class="font-title text-xl text-sky-300">Pemain 1</h4>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>1. Kesesuaian Tema (Maks 30)</span><span id="mP1_tema_val">26</span></div>
+                        <input type="range" id="mP1_tema" min="0" max="30" value="26" oninput="document.getElementById('mP1_tema_val').innerText=this.value" class="w-full accent-sky-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>2. Kelengkapan Gambar (Maks 20)</span><span id="mP1_lengkap_val">17</span></div>
+                        <input type="range" id="mP1_lengkap" min="0" max="20" value="17" oninput="document.getElementById('mP1_lengkap_val').innerText=this.value" class="w-full accent-sky-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>3. Kreativitas (Maks 20)</span><span id="mP1_kreatif_val">18</span></div>
+                        <input type="range" id="mP1_kreatif" min="0" max="20" value="18" oninput="document.getElementById('mP1_kreatif_val').innerText=this.value" class="w-full accent-sky-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>4. Pewarnaan (Maks 20)</span><span id="mP1_warna_val">17</span></div>
+                        <input type="range" id="mP1_warna" min="0" max="20" value="17" oninput="document.getElementById('mP1_warna_val').innerText=this.value" class="w-full accent-sky-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>5. Komposisi & Kerapian (Maks 10)</span><span id="mP1_komposisi_val">9</span></div>
+                        <input type="range" id="mP1_komposisi" min="0" max="10" value="9" oninput="document.getElementById('mP1_komposisi_val').innerText=this.value" class="w-full accent-sky-400">
+                    </div>
+                </div>
+
+                <!-- P2 Sliders -->
+                <div class="bg-slate-800 p-4 rounded-2xl border border-rose-400/50 space-y-3">
+                    <h4 id="manualP2Title" class="font-title text-xl text-rose-300">Pemain 2</h4>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>1. Kesesuaian Tema (Maks 30)</span><span id="mP2_tema_val">27</span></div>
+                        <input type="range" id="mP2_tema" min="0" max="30" value="27" oninput="document.getElementById('mP2_tema_val').innerText=this.value" class="w-full accent-rose-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>2. Kelengkapan Gambar (Maks 20)</span><span id="mP2_lengkap_val">18</span></div>
+                        <input type="range" id="mP2_lengkap" min="0" max="20" value="18" oninput="document.getElementById('mP2_lengkap_val').innerText=this.value" class="w-full accent-rose-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>3. Kreativitas (Maks 20)</span><span id="mP2_kreatif_val">18</span></div>
+                        <input type="range" id="mP2_kreatif" min="0" max="20" value="18" oninput="document.getElementById('mP2_kreatif_val').innerText=this.value" class="w-full accent-rose-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>4. Pewarnaan (Maks 20)</span><span id="mP2_warna_val">18</span></div>
+                        <input type="range" id="mP2_warna" min="0" max="20" value="18" oninput="document.getElementById('mP2_warna_val').innerText=this.value" class="w-full accent-rose-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold"><span>5. Komposisi & Kerapian (Maks 10)</span><span id="mP2_komposisi_val">9</span></div>
+                        <input type="range" id="mP2_komposisi" min="0" max="10" value="9" oninput="document.getElementById('mP2_komposisi_val').innerText=this.value" class="w-full accent-rose-400">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="AIJudge.applyManualTeacherScores()" class="btn-3d btn-green px-8 py-3 rounded-2xl font-title text-xl">
+                    TERAPKAN NILAI & UMUMKAN PEMENANG
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         JAVASCRIPT ENGINE (MODULAR & SELF-CONTAINED)
+    =========================================== -->
+    <script>
+        /**
+         * 1. DATABASE TANTANGAN LENGKAP (7 KATEGORI, 51 OBJEK)
+         * Disertai petunjuk visual & generator ikon SVG referensi sederhana.
+         */
+        const CHALLENGE_DB = [
+            // A. HEWAN
+            { id: 'kupu', name: 'Kupu-kupu', category: 'HEWAN', hint: 'Gambarlah badan kupu-kupu, antena, dan sepasang sayap indah penuh corak warna!', icon: '🦋' },
+            { id: 'kucing', name: 'Kucing', category: 'HEWAN', hint: 'Gambarlah kepala kucing dengan telinga segitiga, kumis, tubuh, dan ekornya yang lucu!', icon: '🐱' },
+            { id: 'ikan', name: 'Ikan', category: 'HEWAN', hint: 'Gambarlah tubuh ikan lengkap dengan sirip, ekor, sisik warna-warni, dan gelembung air!', icon: '🐠' },
+            { id: 'burung', name: 'Burung', category: 'HEWAN', hint: 'Gambarlah burung dengan paruh, sayap, ekor, dan bisa ditambah dahan pohon!', icon: '🐦' },
+            { id: 'gajah', name: 'Gajah', category: 'HEWAN', hint: 'Gambarlah gajah bertubuh besar dengan belalai panjang dan telinga lebar!', icon: '🐘' },
+            { id: 'kelinci', name: 'Kelinci', category: 'HEWAN', hint: 'Gambarlah kelinci bertelinga panjang dengan ekor bulat dan wortel kesukaannya!', icon: '🐰' },
+            { id: 'kurakura', name: 'Kura-kura', category: 'HEWAN', hint: 'Gambarlah kura-kura dengan tempurung bermotif unik di punggungnya!', icon: '🐢' },
+            { id: 'singa', name: 'Singa', category: 'HEWAN', hint: 'Gambarlah raja hutan dengan surai lebat mengelilingi kepalanya!', icon: '🦁' },
+
+            // B. TUMBUHAN DAN BUNGA
+            { id: 'mawar', name: 'Bunga Mawar', category: 'TUMBUHAN', hint: 'Gambarlah kelopak bunga mawar berlapis dengan tangkai dan daun hijau!', icon: '🌹' },
+            { id: 'matahari', name: 'Bunga Matahari', category: 'TUMBUHAN', hint: 'Gambarlah bunga matahari dengan bagian tengah bulat dan kelopak kuning cerah!', icon: '🌻' },
+            { id: 'kelapa', name: 'Pohon Kelapa', category: 'TUMBUHAN', hint: 'Gambarlah pohon kelapa menjulang dengan pelepah daun dan buah kelapa!', icon: '🌴' },
+            { id: 'mangga', name: 'Pohon Mangga', category: 'TUMBUHAN', hint: 'Gambarlah pohon rindang berbatang kokoh dengan buah-buah mangga bergelantungan!', icon: '🌳' },
+            { id: 'kaktus', name: 'Kaktus', category: 'TUMBUHAN', hint: 'Gambarlah tanaman kaktus unik di dalam pot atau di padang pasir!', icon: '🌵' },
+            { id: 'anggrek', name: 'Bunga Anggrek', category: 'TUMBUHAN', hint: 'Gambarlah tangkai bunga anggrek yang anggun dengan kelopak warna-warni!', icon: '🌺' },
+            { id: 'tanamanhias', name: 'Tanaman Hias', category: 'TUMBUHAN', hint: 'Gambarlah tanaman hias berdaun cantik di dalam pot dekoratif!', icon: '🪴' },
+
+            // C. KENDARAAN
+            { id: 'mobil', name: 'Mobil', category: 'KENDARAAN', hint: 'Gambarlah bodi mobil, jendela, lampu depan, dan roda-rodanya di jalan raya!', icon: '🚗' },
+            { id: 'sepeda', name: 'Sepeda', category: 'KENDARAAN', hint: 'Gambarlah dua roda sepeda, rangka, setang, sadel, dan pedalnya!', icon: '🚲' },
+            { id: 'motor', name: 'Sepeda Motor', category: 'KENDARAAN', hint: 'Gambarlah sepeda motor keren lengkap dengan dua roda, lampu, dan knalpot!', icon: '🛵' },
+            { id: 'kereta', name: 'Kereta Api', category: 'KENDARAAN', hint: 'Gambarlah lokomotif kereta api yang menarik gerbong di atas rel!', icon: '🚂' },
+            { id: 'pesawat', name: 'Pesawat Terbang', category: 'KENDARAAN', hint: 'Gambarlah badan pesawat, sepasang sayap, jendela penumpang, dan awan di langit!', icon: '✈️' },
+            { id: 'kapal', name: 'Kapal Laut', category: 'KENDARAAN', hint: 'Gambarlah kapal besar yang berlayar di atas ombak lautan biru!', icon: '🚢' },
+            { id: 'bus', name: 'Bus', category: 'KENDARAAN', hint: 'Gambarlah bus panjang dengan deretan jendela penumpang dan roda besar!', icon: '🚌' },
+
+            // D. BANGUNAN
+            { id: 'rumah', name: 'Rumah', category: 'BANGUNAN', hint: 'Gambarlah rumah impian dengan atap, pintu, jendela, dan halaman yang asri!', icon: '🏠' },
+            { id: 'sekolah', name: 'Gedung Sekolah', category: 'BANGUNAN', hint: 'Gambarlah gedung sekolah lengkap dengan tiang bendera Merah Putih di halaman!', icon: '🏫' },
+            { id: 'gedung', name: 'Gedung Bertingkat', category: 'BANGUNAN', hint: 'Gambarlah gedung pencakar langit tinggi dengan banyak jendela kaca!', icon: '🏢' },
+            { id: 'masjid', name: 'Masjid', category: 'BANGUNAN', hint: 'Gambarlah bangunan masjid indah dengan kubah besar dan menara!', icon: '🕌' },
+            { id: 'istana', name: 'Istana', category: 'BANGUNAN', hint: 'Gambarlah istana megah dengan menara-menara lancip, bendera, dan gerbang besar!', icon: '🏰' },
+            { id: 'menara', name: 'Menara', category: 'BANGUNAN', hint: 'Gambarlah menara tinggi yang menjulang ke langit dengan arsitektur unik!', icon: '🗼' },
+            { id: 'jembatan', name: 'Jembatan', category: 'BANGUNAN', hint: 'Gambarlah jembatan kokoh yang membentang di atas sungai atau laut!', icon: '🌉' },
+
+            // E. BENDA SEHARI-HARI
+            { id: 'jam', name: 'Jam Dinding', category: 'BENDA', hint: 'Gambarlah jam dinding dengan angka-angka serta jarum penunjuk waktu!', icon: '⏰' },
+            { id: 'tas', name: 'Tas Sekolah', category: 'BENDA', hint: 'Gambarlah tas ransel sekolah dengan saku, ritsleting, dan corak favoritmu!', icon: '🎒' },
+            { id: 'sepatu', name: 'Sepatu', category: 'BENDA', hint: 'Gambarlah sepatu olahraga atau sepatu sekolah dengan tali dan sol yang keren!', icon: '👟' },
+            { id: 'payung', name: 'Payung', category: 'BENDA', hint: 'Gambarlah payung terbuka yang warna-warni beserta gagang melengkungnya!', icon: '☂️' },
+            { id: 'tv', name: 'Televisi', category: 'BENDA', hint: 'Gambarlah layar televisi yang sedang menampilkan acara atau kartun seru!', icon: '📺' },
+            { id: 'meja', name: 'Meja Belajar', category: 'BENDA', hint: 'Gambarlah meja lengkap dengan empat kaki dan buku atau alat tulis di atasnya!', icon: '🪑' },
+            { id: 'kursi', name: 'Kursi', category: 'BENDA', hint: 'Gambarlah kursi dengan sandaran, dudukan, dan kaki-kaki yang proporsional!', icon: '🪑' },
+            { id: 'lampu', name: 'Lampu Hias', category: 'BENDA', hint: 'Gambarlah lampu meja atau lampu gantung yang memancarkan cahaya terang!', icon: '💡' },
+
+            // F. MAKANAN DAN BUAH
+            { id: 'eskrim', name: 'Es Krim', category: 'MAKANAN', hint: 'Gambarlah cone renyah dengan tumpukan es krim warna-warni dan taburan meses!', icon: '🍦' },
+            { id: 'burger', name: 'Hamburger', category: 'MAKANAN', hint: 'Gambarlah roti burger berlapis daging, keju leleh, selada hijau, dan tomat!', icon: '🍔' },
+            { id: 'pizza', name: 'Pizza', category: 'MAKANAN', hint: 'Gambarlah pizza lezat dengan potongan sosis, keju, dan saus tomat!', icon: '🍕' },
+            { id: 'kue', name: 'Kue Ulang Tahun', category: 'MAKANAN', hint: 'Gambarlah kue tart bertingkat dengan krim warna-warni dan lilin menyala!', icon: '🎂' },
+            { id: 'apel', name: 'Buah Apel', category: 'MAKANAN', hint: 'Gambarlah buah apel segar lengkap dengan tangkai dan sehelai daun hijau!', icon: '🍎' },
+            { id: 'pisang', name: 'Buah Pisang', category: 'MAKANAN', hint: 'Gambarlah sisir atau buah pisang melengkung berwarna kuning cerah!', icon: '🍌' },
+            { id: 'semangka', name: 'Buah Semangka', category: 'MAKANAN', hint: 'Gambarlah semangka utuh bergaris hijau atau irisan merah berbiji hitam!', icon: '🍉' },
+            { id: 'stroberi', name: 'Buah Stroberi', category: 'MAKANAN', hint: 'Gambarlah buah stroberi merah berbintik dengan mahkota daun hijau di atasnya!', icon: '🍓' },
+
+            // G. PEMANDANGAN
+            { id: 'pantai', name: 'Pemandangan Pantai', category: 'PEMANDANGAN', hint: 'Gambarlah hamparan pasir pantai, ombak laut, pohon kelapa, dan matahari cerah!', icon: '🏖️' },
+            { id: 'gunung', name: 'Pemandangan Gunung', category: 'PEMANDANGAN', hint: 'Gambarlah gunung menjulang, matahari terbit, awan, dan pepohonan hijau!', icon: '⛰️' },
+            { id: 'sawah', name: 'Pemandangan Sawah', category: 'PEMANDANGAN', hint: 'Gambarlah petak-petak sawah hijau berundak dengan aliran air dan gubuk kecil!', icon: '🌾' },
+            { id: 'taman', name: 'Taman Bermain / Bunga', category: 'PEMANDANGAN', hint: 'Gambarlah taman indah penuh bunga warna-warni, jalan setapak, dan bangku taman!', icon: '🏞️' },
+            { id: 'hutan', name: 'Pemandangan Hutan', category: 'PEMANDANGAN', hint: 'Gambarlah pepohonan rimbun, semak-semak, dan suasana alam hutan yang asri!', icon: '🌲' },
+            { id: 'desa', name: 'Rumah di Pedesaan', category: 'PEMANDANGAN', hint: 'Gambarlah suasana desa yang damai dengan rumah, pepohonan, dan jalan desa!', icon: '🏡' }
+        ];
+
+        const AVATAR_LIST = ['🎨', '🚀', '🦄', '🦁', '🐼', '🦊', '🐯', '🐸', '👑', '⚡', '🌟', '🦖'];
+        const IDENTITY_COLORS = [
+            { name: 'Biru Langit', hex: '#0ea5e9' },
+            { name: 'Merah Muda', hex: '#f43f5e' },
+            { name: 'Hijau Zamrud', hex: '#10b981' },
+            { name: 'Ungu Royal', hex: '#a855f7' },
+            { name: 'Oranye Api', hex: '#f97316' },
+            { name: 'Kuning Emas', hex: '#eab308' }
+        ];
+        const PALETTE_COLORS = [
+            { name: 'Merah', hex: '#ef4444' },
+            { name: 'Kuning', hex: '#facc15' },
+            { name: 'Biru', hex: '#3b82f6' },
+            { name: 'Hijau', hex: '#22c55e' },
+            { name: 'Jingga', hex: '#f97316' },
+            { name: 'Ungu', hex: '#a855f7' },
+            { name: 'Pink', hex: '#ec4899' },
+            { name: 'Cokelat', hex: '#854d0e' },
+            { name: 'Hitam', hex: '#0f172a' },
+            { name: 'Abu-abu', hex: '#64748b' },
+            { name: 'Putih', hex: '#ffffff' }
+        ];
+
+        /**
+         * 2. PROCEDURAL SOUND EFFECTS & MUSIC (Tone.js)
+         */
+        const SoundFX = {
+            muted: false,
+            sfxVol: 0.85,
+            musicVol: 0.6,
+            synth: null,
+            initialized: false,
+
+            async init() {
+                if (this.initialized) return;
+                try {
+                    await Tone.start();
+                    this.synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                    this.initialized = true;
+                } catch (e) {
+                    // Audio context awaits user gesture
+                }
+            },
+
+            playTone(notes, duration = '16n') {
+                if (this.muted) return;
+                this.init().then(() => {
+                    if (!this.synth) return;
+                    this.synth.volume.value = Tone.gainToDb(Math.max(0.01, this.sfxVol * 0.5));
+                    this.synth.triggerAttackRelease(notes, duration);
+                });
+            },
+
+            click() { this.playTone(['C5'], '32n'); },
+            wheelTick() { this.playTone(['G5'], '64n'); },
+            challengeSelected() {
+                if (this.muted) return;
+                this.init().then(() => {
+                    const now = Tone.now();
+                    this.synth.triggerAttackRelease('C5', '16n', now);
+                    this.synth.triggerAttackRelease('E5', '16n', now + 0.1);
+                    this.synth.triggerAttackRelease('G5', '16n', now + 0.2);
+                    this.synth.triggerAttackRelease('C6', '8n', now + 0.3);
+                });
+            },
+            beepCountdown(urgent = false) {
+                this.playTone([urgent ? 'A5' : 'E5'], '16n');
+            },
+            timesUp() {
+                if (this.muted) return;
+                this.init().then(() => {
+                    const now = Tone.now();
+                    this.synth.triggerAttackRelease(['C4', 'G4', 'C5'], '4n', now);
+                    this.synth.triggerAttackRelease(['B3', 'F4', 'B4'], '4n', now + 0.25);
+                    this.synth.triggerAttackRelease(['C4', 'E4', 'G4', 'C5'], '2n', now + 0.5);
+                });
+            },
+            victoryFanfare() {
+                if (this.muted) return;
+                this.init().then(() => {
+                    const now = Tone.now();
+                    const notes = ['C5', 'E5', 'G5', 'C6', 'G5', 'C6'];
+                    const times = [0, 0.14, 0.28, 0.42, 0.6, 0.78];
+                    notes.forEach((n, idx) => {
+                        this.synth.triggerAttackRelease(n, idx === notes.length - 1 ? '2n' : '8n', now + times[idx]);
+                    });
+                });
+            },
+            toggleMute() {
+                this.muted = !this.muted;
+                const icon = document.getElementById('iconVolume');
+                icon.className = this.muted ? 'fa-solid fa-volume-xmark text-rose-400' : 'fa-solid fa-volume-high';
+            },
+            setMusicVolume(v) { this.musicVol = Number(v) / 100; },
+            setSfxVolume(v) { this.sfxVol = Number(v) / 100; }
+        };
+
+        /**
+         * 3. UI & NAVIGATION CONTROLLER
+         */
+        const UI = {
+            screens: [
+                'screenOpening',
+                'screenRegistration',
+                'screenWheel',
+                'screenArena',
+                'screenJudging',
+                'screenWinner',
+                'screenResultDetail'
+            ],
+            showScreen(screenId) {
+                SoundFX.click();
+                this.screens.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.toggle('hidden', id !== screenId);
+                });
+                // Toggle quick reference button only inside Arena
+                const btnRef = document.getElementById('btnQuickRef');
+                if (btnRef) btnRef.classList.toggle('hidden', screenId !== 'screenArena');
+
+                if (screenId === 'screenArena') {
+                    setTimeout(() => CanvasEngine.resizeBothCanvases(), 60);
+                }
+                if (screenId === 'screenWheel') {
+                    Wheel.drawWheel();
+                }
+            },
+            openModal(id) {
+                SoundFX.click();
+                document.getElementById(id)?.classList.remove('hidden');
+            },
+            closeModal(id) {
+                SoundFX.click();
+                document.getElementById(id)?.classList.add('hidden');
+            },
+            toggleFullscreen() {
+                SoundFX.click();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                } else {
+                    document.exitFullscreen().catch(() => {});
+                }
+            },
+            getReferenceSVG(challenge) {
+                // Generates a clean, friendly educational vector reference based on challenge ID/category
+                return `
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="text-6xl sm:text-7xl select-none">${challenge.icon}</div>
+                        <div class="mt-2 px-3 py-0.5 rounded-full bg-indigo-100 text-indigo-900 font-extrabold text-xs uppercase">${challenge.name}</div>
+                    </div>
+                `;
+            }
+        };
+
+        /**
+         * 4. SPINNING WHEEL & RANDOM CHALLENGE ENGINE
+         */
+        const Wheel = {
+            currentCategory: 'ALL',
+            filteredList: [...CHALLENGE_DB],
+            rotation: 0,
+            isSpinning: false,
+            lastPickedId: null,
+            selectedChallenge: null,
+
+            init() {
+                this.renderCategoryPills();
+                this.setCategory('ALL');
+            },
+
+            renderCategoryPills() {
+                const cats = [
+                    { key: 'ALL', label: 'Semua Kategori' },
+                    { key: 'HEWAN', label: '🐾 Hewan' },
+                    { key: 'TUMBUHAN', label: '🌻 Tumbuhan & Bunga' },
+                    { key: 'KENDARAAN', label: '🚗 Kendaraan' },
+                    { key: 'BANGUNAN', label: '🏰 Bangunan' },
+                    { key: 'BENDA', label: '🎒 Benda Sehari-hari' },
+                    { key: 'MAKANAN', label: '🍕 Makanan & Buah' },
+                    { key: 'PEMANDANGAN', label: '⛰️ Pemandangan' }
+                ];
+                const bar = document.getElementById('categoryFilterBar');
+                bar.innerHTML = cats.map(c => `
+                    <button onclick="Wheel.setCategory('${c.key}')" data-cat="${c.key}"
+                        class="cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition border ${c.key === this.currentCategory ? 'bg-yellow-400 text-slate-950 border-white shadow' : 'bg-slate-800/90 text-indigo-200 border-white/15 hover:bg-slate-700'}">
+                        ${c.label}
+                    </button>
+                `).join('');
+            },
+
+            setCategory(catKey) {
+                SoundFX.click();
+                this.currentCategory = catKey;
+                this.filteredList = catKey === 'ALL'
+                    ? [...CHALLENGE_DB]
+                    : CHALLENGE_DB.filter(item => item.category === catKey);
+
+                document.querySelectorAll('.cat-pill').forEach(btn => {
+                    const active = btn.dataset.cat === catKey;
+                    btn.className = `cat-pill px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition border ${active ? 'bg-yellow-400 text-slate-950 border-white shadow' : 'bg-slate-800/90 text-indigo-200 border-white/15 hover:bg-slate-700'}`;
+                });
+
+                const selectEl = document.getElementById('settingsCategorySelect');
+                if (selectEl) selectEl.value = catKey;
+
+                this.drawWheel();
+            },
+
+            drawWheel() {
+                const canvas = document.getElementById('wheelCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const items = this.filteredList.slice(0, 12); // Display up to 12 slices visually on wheel
+                const numSlices = items.length;
+                const arc = (2 * Math.PI) / numSlices;
+                const radius = canvas.width / 2;
+                const sliceColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(radius, radius);
+                ctx.rotate(this.rotation);
+
+                for (let i = 0; i < numSlices; i++) {
+                    const angle = i * arc;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, radius - 6, angle, angle + arc);
+                    ctx.fillStyle = sliceColors[i % sliceColors.length];
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.stroke();
+
+                    // Draw Slice Label & Emoji
+                    ctx.save();
+                    ctx.rotate(angle + arc / 2);
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 13px Nunito, sans-serif';
+                    const text = items[i].name.length > 13 ? items[i].name.slice(0, 12) + '…' : items[i].name;
+                    ctx.fillText(`${items[i].icon} ${text}`, radius - 18, 5);
+                    ctx.restore();
+                }
+                ctx.restore();
+            },
+
+            spin() {
+                if (this.isSpinning) return;
+                this.isSpinning = true;
+
+                const btnReady = document.getElementById('btnReadyBattle');
+                btnReady.disabled = true;
+                btnReady.classList.add('opacity-40', 'pointer-events-none');
+
+                // Pick truly random item from full filteredList, avoiding immediate repeat
+                let pool = this.filteredList.filter(c => c.id !== this.lastPickedId);
+                if (pool.length === 0) pool = [...this.filteredList];
+                const chosen = pool[Math.floor(Math.random() * pool.length)];
+                this.lastPickedId = chosen.id;
+
+                const spinDuration = 2600;
+                const startRotation = this.rotation;
+                const extraSpins = (Math.PI * 2) * (5 + Math.random() * 3);
+                const startTime = performance.now();
+                let lastTickAngle = startRotation;
+
+                const animateSpin = (now) => {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / spinDuration, 1);
+                    // Cubic ease-out
+                    const easeOut = 1 - Math.pow(1 - progress, 3);
+                    this.rotation = startRotation + extraSpins * easeOut;
+                    this.drawWheel();
+
+                    if (this.rotation - lastTickAngle > 0.45) {
+                        SoundFX.wheelTick();
+                        lastTickAngle = this.rotation;
+                    }
+
+                    // Show shuffling text during spin
+                    if (progress < 0.95) {
+                        const previewItem = this.filteredList[Math.floor(Math.random() * this.filteredList.length)];
+                        document.getElementById('challengeTitleDisplay').innerText = previewItem.name.toUpperCase();
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateSpin);
+                    } else {
+                        this.isSpinning = false;
+                        this.setChallenge(chosen);
+                        SoundFX.challengeSelected();
+                    }
+                };
+
+                requestAnimationFrame(animateSpin);
+            },
+
+            setChallenge(challenge) {
+                this.selectedChallenge = challenge;
+                document.getElementById('challengeCategoryBadge').innerText = `KATEGORI: ${challenge.category}`;
+                document.getElementById('challengeTitleDisplay').innerText = `GAMBAR ${challenge.name.toUpperCase()}`;
+                document.getElementById('challengeHintDisplay').innerText = challenge.hint;
+                document.getElementById('challengeReferenceSvg').innerHTML = UI.getReferenceSVG(challenge);
+
+                // Populate quick reference modal
+                document.getElementById('modalRefTitle').innerText = challenge.name.toUpperCase();
+                document.getElementById('modalRefSvg').innerHTML = UI.getReferenceSVG(challenge);
+
+                const btnReady = document.getElementById('btnReadyBattle');
+                btnReady.disabled = false;
+                btnReady.classList.remove('opacity-40', 'pointer-events-none');
+            }
+        };
+
+        /**
+         * 5. DUAL INDEPENDENT MULTI-TOUCH CANVAS ENGINE
+         * Supports simultaneous drawing on Left (P1) and Right (P2) canvases via PointerEvents.
+         */
+        const CanvasEngine = {
+            locked: true,
+            players: {
+                1: {
+                    canvas: null,
+                    ctx: null,
+                    tool: 'pencil',
+                    color: '#ef4444',
+                    size: 8,
+                    alpha: 1.0,
+                    activePointers: new Map(), // Supports multi-touch per player canvas
+                    shapeSnapshot: null,
+                    shapeStart: null,
+                    undoStack: [],
+                    redoStack: [],
+                    strokeCount: 0
+                },
+                2: {
+                    canvas: null,
+                    ctx: null,
+                    tool: 'pencil',
+                    color: '#3b82f6',
+                    size: 8,
+                    alpha: 1.0,
+                    activePointers: new Map(),
+                    shapeSnapshot: null,
+                    shapeStart: null,
+                    undoStack: [],
+                    redoStack: [],
+                    strokeCount: 0
+                }
+            },
+
+            init() {
+                [1, 2].forEach(pNum => {
+                    const p = this.players[pNum];
+                    p.canvas = document.getElementById(`canvasP${pNum}`);
+                    p.ctx = p.canvas.getContext('2d', { willReadFrequently: true });
+                    this.renderPalette(pNum);
+                    this.bindPointerEvents(pNum);
+                });
+
+                window.addEventListener('resize', () => {
+                    if (!document.getElementById('screenArena').classList.contains('hidden')) {
+                        this.resizeBothCanvases(true);
+                    }
+                });
+            },
+
+            renderPalette(pNum) {
+                const container = document.getElementById(`p${pNum}PaletteContainer`);
+                const defaultColor = this.players[pNum].color;
+                container.innerHTML = PALETTE_COLORS.map(c => `
+                    <button onclick="CanvasEngine.setColor(${pNum}, '${c.hex}')"
+                        data-color="${c.hex}"
+                        style="background-color: ${c.hex};"
+                        class="color-swatch w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-slate-300 shadow ${c.hex === defaultColor ? 'active' : ''}"
+                        title="${c.name}">
+                    </button>
+                `).join('');
+            },
+
+            resizeBothCanvases(preserveContent = false) {
+                [1, 2].forEach(pNum => {
+                    const p = this.players[pNum];
+                    const wrapper = document.getElementById(`p${pNum}CanvasWrapper`);
+                    if (!wrapper || !p.canvas) return;
+                    const rect = wrapper.getBoundingClientRect();
+                    if (rect.width === 0 || rect.height === 0) return;
+
+                    let tempCanvas = null;
+                    if (preserveContent && p.canvas.width > 0 && p.canvas.height > 0) {
+                        tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = p.canvas.width;
+                        tempCanvas.height = p.canvas.height;
+                        tempCanvas.getContext('2d').drawImage(p.canvas, 0, 0);
+                    }
+
+                    p.canvas.width = Math.floor(rect.width);
+                    p.canvas.height = Math.floor(rect.height);
+
+                    // Fill crisp white background
+                    p.ctx.fillStyle = '#ffffff';
+                    p.ctx.fillRect(0, 0, p.canvas.width, p.canvas.height);
+
+                    if (tempCanvas) {
+                        p.ctx.drawImage(tempCanvas, 0, 0, p.canvas.width, p.canvas.height);
+                    } else {
+                        p.undoStack = [];
+                        p.redoStack = [];
+                        this.saveSnapshot(pNum);
+                    }
+                });
+            },
+
+            resetCanvasesForNewBattle() {
+                [1, 2].forEach(pNum => {
+                    const p = this.players[pNum];
+                    p.strokeCount = 0;
+                    p.undoStack = [];
+                    p.redoStack = [];
+                    if (p.canvas && p.ctx) {
+                        p.ctx.fillStyle = '#ffffff';
+                        p.ctx.fillRect(0, 0, p.canvas.width, p.canvas.height);
+                        this.saveSnapshot(pNum);
+                    }
+                });
+            },
+
+            saveSnapshot(pNum) {
+                const p = this.players[pNum];
+                if (!p.canvas || p.canvas.width === 0) return;
+                if (p.undoStack.length >= 20) p.undoStack.shift();
+                p.undoStack.push(p.ctx.getImageData(0, 0, p.canvas.width, p.canvas.height));
+            },
+
+            undo(pNum) {
+                if (this.locked) return;
+                SoundFX.click();
+                const p = this.players[pNum];
+                if (p.undoStack.length > 1) {
+                    const current = p.undoStack.pop();
+                    p.redoStack.push(current);
+                    const prev = p.undoStack[p.undoStack.length - 1];
+                    p.ctx.putImageData(prev, 0, 0);
+                }
+            },
+
+            redo(pNum) {
+                if (this.locked) return;
+                SoundFX.click();
+                const p = this.players[pNum];
+                if (p.redoStack.length > 0) {
+                    const next = p.redoStack.pop();
+                    p.undoStack.push(next);
+                    p.ctx.putImageData(next, 0, 0);
+                }
+            },
+
+            requestClear(pNum) {
+                if (this.locked) return;
+                SoundFX.click();
+                document.getElementById(`p${pNum}ClearConfirm`).classList.remove('hidden');
+            },
+
+            confirmClear(pNum, confirmed) {
+                SoundFX.click();
+                document.getElementById(`p${pNum}ClearConfirm`).classList.add('hidden');
+                if (confirmed && !this.locked) {
+                    const p = this.players[pNum];
+                    p.ctx.fillStyle = '#ffffff';
+                    p.ctx.fillRect(0, 0, p.canvas.width, p.canvas.height);
+                    p.redoStack = [];
+                    this.saveSnapshot(pNum);
+                }
+            },
+
+            setTool(pNum, toolName) {
+                SoundFX.click();
+                this.players[pNum].tool = toolName;
+                const group = document.getElementById(`p${pNum}ToolsGroup`);
+                group.querySelectorAll('.tool-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tool === toolName);
+                });
+            },
+
+            setColor(pNum, hex) {
+                SoundFX.click();
+                const p = this.players[pNum];
+                p.color = hex;
+                // If currently on eraser, switch back to pencil automatically
+                if (p.tool === 'eraser') this.setTool(pNum, 'pencil');
+
+                const container = document.getElementById(`p${pNum}PaletteContainer`);
+                container.querySelectorAll('.color-swatch').forEach(sw => {
+                    sw.classList.toggle('active', sw.dataset.color.toLowerCase() === hex.toLowerCase());
+                });
+            },
+
+            setSize(pNum, val) {
+                this.players[pNum].size = Number(val);
+                document.getElementById(`p${pNum}SizeLabel`).innerText = `${val}px`;
+            },
+
+            setAlpha(pNum, val) {
+                this.players[pNum].alpha = Number(val) / 100;
+                document.getElementById(`p${pNum}AlphaLabel`).innerText = `${val}%`;
+            },
+
+            getLocalCoords(canvas, e) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                    y: (e.clientY - rect.top) * (canvas.height / rect.height)
+                };
+            },
+
+            bindPointerEvents(pNum) {
+                const p = this.players[pNum];
+                const canvas = p.canvas;
+
+                canvas.addEventListener('pointerdown', (e) => {
+                    if (this.locked) return;
+                    e.preventDefault();
+                    canvas.setPointerCapture(e.pointerId);
+                    const pt = this.getLocalCoords(canvas, e);
+
+                    // Fill Bucket Tool
+                    if (p.tool === 'bucket') {
+                        this.floodFill(pNum, Math.floor(pt.x), Math.floor(pt.y), p.color);
+                        p.strokeCount++;
+                        p.redoStack = [];
+                        this.saveSnapshot(pNum);
+                        return;
+                    }
+
+                    // Geometric Shape Tools (Line, Rect, Circle, Triangle)
+                    if (['line', 'rect', 'circle', 'triangle'].includes(p.tool)) {
+                        p.shapeStart = pt;
+                        p.shapeSnapshot = p.ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        p.activePointers.set(e.pointerId, pt);
+                        return;
+                    }
+
+                    // Freehand Brush / Pencil / Marker / Crayon / Eraser
+                    p.activePointers.set(e.pointerId, pt);
+                    this.drawSegment(pNum, pt, pt);
+                });
+
+                canvas.addEventListener('pointermove', (e) => {
+                    if (this.locked || !p.activePointers.has(e.pointerId)) return;
+                    e.preventDefault();
+                    const prevPt = p.activePointers.get(e.pointerId);
+                    const currPt = this.getLocalCoords(canvas, e);
+
+                    if (['line', 'rect', 'circle', 'triangle'].includes(p.tool)) {
+                        if (p.shapeSnapshot && p.shapeStart) {
+                            p.ctx.putImageData(p.shapeSnapshot, 0, 0);
+                            this.drawShapePreview(pNum, p.shapeStart, currPt);
+                        }
+                        return;
+                    }
+
+                    this.drawSegment(pNum, prevPt, currPt);
+                    p.activePointers.set(e.pointerId, currPt);
+                });
+
+                const endPointer = (e) => {
+                    if (!p.activePointers.has(e.pointerId)) return;
+                    p.activePointers.delete(e.pointerId);
+                    p.shapeSnapshot = null;
+                    p.shapeStart = null;
+                    p.strokeCount++;
+                    p.redoStack = [];
+                    this.saveSnapshot(pNum);
+                };
+
+                canvas.addEventListener('pointerup', endPointer);
+                canvas.addEventListener('pointercancel', endPointer);
+            },
+
+            drawSegment(pNum, from, to) {
+                const p = this.players[pNum];
+                const ctx = p.ctx;
+                ctx.save();
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                if (p.tool === 'eraser') {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = p.size * 1.8;
+                    ctx.globalAlpha = 1.0;
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                } else if (p.tool === 'pencil') {
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = Math.max(2, p.size * 0.75);
+                    ctx.globalAlpha = p.alpha;
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                } else if (p.tool === 'brush') {
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = p.size * 1.3;
+                    ctx.globalAlpha = p.alpha;
+                    ctx.shadowColor = p.color;
+                    ctx.shadowBlur = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                } else if (p.tool === 'marker') {
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = p.size * 1.8;
+                    ctx.globalAlpha = Math.min(0.45, p.alpha * 0.5);
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                } else if (p.tool === 'crayon') {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.alpha * 0.75;
+                    const dist = Math.hypot(to.x - from.x, to.y - from.y);
+                    const steps = Math.max(1, Math.ceil(dist / 3));
+                    for (let s = 0; s <= steps; s++) {
+                        const x = from.x + (to.x - from.x) * (s / steps);
+                        const y = from.y + (to.y - from.y) * (s / steps);
+                        for (let g = 0; g < 6; g++) {
+                            const ox = (Math.random() - 0.5) * p.size * 1.2;
+                            const oy = (Math.random() - 0.5) * p.size * 1.2;
+                            ctx.fillRect(x + ox, y + oy, 2.2, 2.2);
+                        }
+                    }
+                }
+                ctx.restore();
+            },
+
+            drawShapePreview(pNum, start, end) {
+                const p = this.players[pNum];
+                const ctx = p.ctx;
+                ctx.save();
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = p.size;
+                ctx.globalAlpha = p.alpha;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+
+                if (p.tool === 'line') {
+                    ctx.moveTo(start.x, start.y);
+                    ctx.lineTo(end.x, end.y);
+                } else if (p.tool === 'rect') {
+                    ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
+                } else if (p.tool === 'circle') {
+                    const rx = Math.abs(end.x - start.x) / 2;
+                    const ry = Math.abs(end.y - start.y) / 2;
+                    const cx = (start.x + end.x) / 2;
+                    const cy = (start.y + end.y) / 2;
+                    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+                } else if (p.tool === 'triangle') {
+                    ctx.moveTo((start.x + end.x) / 2, start.y);
+                    ctx.lineTo(end.x, end.y);
+                    ctx.lineTo(start.x, end.y);
+                    ctx.closePath();
+                }
+                ctx.stroke();
+                ctx.restore();
+            },
+
+            floodFill(pNum, startX, startY, fillHex) {
+                const p = this.players[pNum];
+                const canvas = p.canvas;
+                const ctx = p.ctx;
+                const w = canvas.width;
+                const h = canvas.height;
+                if (startX < 0 || startX >= w || startY < 0 || startY >= h) return;
+
+                const imgData = ctx.getImageData(0, 0, w, h);
+                const data = imgData.data;
+
+                // Parse hex to RGB
+                const rFill = parseInt(fillHex.slice(1, 3), 16);
+                const gFill = parseInt(fillHex.slice(3, 5), 16);
+                const bFill = parseInt(fillHex.slice(5, 7), 16);
+
+                const startPos = (startY * w + startX) * 4;
+                const rTarget = data[startPos];
+                const gTarget = data[startPos + 1];
+                const bTarget = data[startPos + 2];
+
+                if (Math.abs(rTarget - rFill) < 10 && Math.abs(gTarget - gFill) < 10 && Math.abs(bTarget - bFill) < 10) {
+                    return;
+                }
+
+                const tolerance = 38;
+                const matchTarget = (idx) => {
+                    return (
+                        Math.abs(data[idx] - rTarget) <= tolerance &&
+                        Math.abs(data[idx + 1] - gTarget) <= tolerance &&
+                        Math.abs(data[idx + 2] - bTarget) <= tolerance
+                    );
+                };
+
+                const visited = new Uint8Array(w * h);
+                const stack = [startX, startY];
+
+                while (stack.length > 0) {
+                    const y = stack.pop();
+                    const x = stack.pop();
+                    const pixelIndex = y * w + x;
+                    if (visited[pixelIndex]) continue;
+
+                    const idx = pixelIndex * 4;
+                    if (!matchTarget(idx)) continue;
+
+                    visited[pixelIndex] = 1;
+                    data[idx] = rFill;
+                    data[idx + 1] = gFill;
+                    data[idx + 2] = bFill;
+                    data[idx + 3] = 255;
+
+                    if (x > 0) stack.push(x - 1, y);
+                    if (x < w - 1) stack.push(x + 1, y);
+                    if (y > 0) stack.push(x, y - 1);
+                    if (y < h - 1) stack.push(x, y + 1);
+                }
+
+                ctx.putImageData(imgData, 0, 0);
+            }
+        };
+
+        /**
+         * 6. GAME STATE, REGISTRATION & COUNTDOWN TIMER CONTROLLER
+         */
+        const Game = {
+            durationSeconds: 300, // Default 5 minutes
+            remainingSeconds: 300,
+            timerInterval: null,
+            player1: { name: 'Seniman Biru', avatar: '🎨', color: '#0ea5e9', imageBase64: '' },
+            player2: { name: 'Seniman Merah', avatar: '🚀', color: '#f43f5e', imageBase64: '' },
+
+            init() {
+                this.renderRegistrationControls();
+                Wheel.init();
+                CanvasEngine.init();
+            },
+
+            renderRegistrationControls() {
+                [1, 2].forEach(pNum => {
+                    const pObj = pNum === 1 ? this.player1 : this.player2;
+                    const avatarGrid = document.getElementById(`p${pNum}AvatarGrid`);
+                    avatarGrid.innerHTML = AVATAR_LIST.map(av => `
+                        <button onclick="Game.selectAvatar(${pNum}, '${av}')"
+                            data-avatar="${av}"
+                            class="av-btn-${pNum} h-12 rounded-xl text-2xl flex items-center justify-center border-2 transition ${av === pObj.avatar ? 'bg-indigo-600 border-yellow-300 scale-105' : 'bg-slate-800 border-slate-700 hover:bg-slate-700'}">
+                            ${av}
+                        </button>
+                    `).join('');
+
+                    const colorGrid = document.getElementById(`p${pNum}ColorGrid`);
+                    colorGrid.innerHTML = IDENTITY_COLORS.map(c => `
+                        <button onclick="Game.selectIdentityColor(${pNum}, '${c.hex}')"
+                            data-hex="${c.hex}"
+                            style="background-color: ${c.hex};"
+                            class="id-col-${pNum} w-10 h-10 rounded-xl border-2 transition ${c.hex === pObj.color ? 'border-white scale-110 ring-2 ring-yellow-300' : 'border-transparent opacity-80'}">
+                        </button>
+                    `).join('');
+                });
+            },
+
+            updatePlayerPreview(pNum) {
+                const input = document.getElementById(`p${pNum}NameInput`);
+                const pObj = pNum === 1 ? this.player1 : this.player2;
+                pObj.name = input.value.trim() || `Pemain ${pNum}`;
+                document.getElementById(`p${pNum}PreviewName`).innerText = pObj.name;
+            },
+
+            randomPlayerName(pNum) {
+                SoundFX.click();
+                const presets = ['Bintang Seni', 'Pelukis Hebat', 'Juara Warna', 'Kapten Kuas', 'Maestro Cilik', 'Kreator Muda', 'Putri Pelangi', 'Ksatria Sketsa'];
+                const pick = presets[Math.floor(Math.random() * presets.length)];
+                document.getElementById(`p${pNum}NameInput`).value = pick;
+                this.updatePlayerPreview(pNum);
+            },
+
+            selectAvatar(pNum, av) {
+                SoundFX.click();
+                const pObj = pNum === 1 ? this.player1 : this.player2;
+                pObj.avatar = av;
+                document.getElementById(`p${pNum}PreviewBadge`).innerText = av;
+                document.querySelectorAll(`.av-btn-${pNum}`).forEach(btn => {
+                    const active = btn.dataset.avatar === av;
+                    btn.className = `av-btn-${pNum} h-12 rounded-xl text-2xl flex items-center justify-center border-2 transition ${active ? 'bg-indigo-600 border-yellow-300 scale-105' : 'bg-slate-800 border-slate-700 hover:bg-slate-700'}`;
+                });
+            },
+
+            selectIdentityColor(pNum, hex) {
+                SoundFX.click();
+                const pObj = pNum === 1 ? this.player1 : this.player2;
+                pObj.color = hex;
+                document.getElementById(`p${pNum}PreviewBadge`).style.backgroundColor = hex;
+                document.getElementById(`p${pNum}RegCard`).style.borderColor = hex;
+                document.querySelectorAll(`.id-col-${pNum}`).forEach(btn => {
+                    const active = btn.dataset.hex === hex;
+                    btn.className = `id-col-${pNum} w-10 h-10 rounded-xl border-2 transition ${active ? 'border-white scale-110 ring-2 ring-yellow-300' : 'border-transparent opacity-80'}`;
+                });
+            },
+
+            setDuration(seconds) {
+                SoundFX.click();
+                this.durationSeconds = seconds;
+                document.querySelectorAll('#settingsDurationGroup button').forEach(btn => {
+                    const active = Number(btn.dataset.sec) === seconds;
+                    btn.className = `py-3 rounded-xl font-title text-lg border-2 ${active ? 'bg-indigo-600 border-yellow-400' : 'bg-slate-800 border-slate-600'}`;
+                });
+                const mins = Math.floor(seconds / 60);
+                document.getElementById('wheelDurationLabel').innerText = `${mins} Menit`;
+            },
+
+            goToRegistration() {
+                UI.showScreen('screenRegistration');
+            },
+
+            goToWheelScreen() {
+                this.updatePlayerPreview(1);
+                this.updatePlayerPreview(2);
+                UI.showScreen('screenWheel');
+            },
+
+            enterBattleArena() {
+                if (!Wheel.selectedChallenge) {
+                    Wheel.spin();
+                    return;
+                }
+                this.prepareArenaUI();
+                UI.showScreen('screenArena');
+                setTimeout(() => {
+                    CanvasEngine.resizeBothCanvases(false);
+                    CanvasEngine.resetCanvasesForNewBattle();
+                }, 80);
+            },
+
+            replaySameChallenge() {
+                this.prepareArenaUI();
+                UI.showScreen('screenArena');
+                setTimeout(() => {
+                    CanvasEngine.resizeBothCanvases(false);
+                    CanvasEngine.resetCanvasesForNewBattle();
+                }, 80);
+            },
+
+            prepareArenaUI() {
+                clearInterval(this.timerInterval);
+                CanvasEngine.locked = true;
+                this.remainingSeconds = this.durationSeconds;
+                this.updateTimerDisplay();
+
+                const ch = Wheel.selectedChallenge;
+                document.getElementById('arenaChallengeName').innerText = `${ch.icon} ${ch.name.toUpperCase()}`;
+                document.getElementById('overlayChallengeTitle').innerText = `${ch.icon} GAMBAR ${ch.name.toUpperCase()}`;
+
+                // Apply Player 1 & Player 2 identities
+                document.getElementById('arenaP1Avatar').innerText = this.player1.avatar;
+                document.getElementById('arenaP1Name').innerText = this.player1.name;
+                document.getElementById('arenaP1Header').style.borderColor = this.player1.color;
+                document.getElementById('p1Workspace').style.borderColor = this.player1.color;
+
+                document.getElementById('arenaP2Avatar').innerText = this.player2.avatar;
+                document.getElementById('arenaP2Name').innerText = this.player2.name;
+                document.getElementById('arenaP2Header').style.borderColor = this.player2.color;
+                document.getElementById('p2Workspace').style.borderColor = this.player2.color;
+
+                document.getElementById('arenaLockOverlay').classList.remove('hidden');
+                document.getElementById('btnStartCountdown').classList.remove('hidden');
+                document.getElementById('btnFinishEarly').classList.add('hidden');
+            },
+
+            startBattleTimer() {
+                SoundFX.challengeSelected();
+                CanvasEngine.locked = false;
+                document.getElementById('arenaLockOverlay').classList.add('hidden');
+                document.getElementById('btnStartCountdown').classList.add('hidden');
+                document.getElementById('btnFinishEarly').classList.remove('hidden');
+
+                clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => {
+                    this.remainingSeconds--;
+                    this.updateTimerDisplay();
+
+                    // Warnings at 60s and last 10s
+                    if (this.remainingSeconds === 60) {
+                        SoundFX.beepCountdown(false);
+                    } else if (this.remainingSeconds <= 10 && this.remainingSeconds > 0) {
+                        SoundFX.beepCountdown(true);
+                    }
+
+                    if (this.remainingSeconds <= 0) {
+                        clearInterval(this.timerInterval);
+                        SoundFX.timesUp();
+                        this.finishBattle();
+                    }
+                }, 1000);
+            },
+
+            updateTimerDisplay() {
+                const mins = String(Math.floor(this.remainingSeconds / 60)).padStart(2, '0');
+                const secs = String(this.remainingSeconds % 60).padStart(2, '0');
+                const timerText = document.getElementById('timerText');
+                const timerBox = document.getElementById('timerContainer');
+                timerText.innerText = `${mins}:${secs}`;
+
+                const pct = Math.max(0, (this.remainingSeconds / this.durationSeconds) * 100);
+                document.getElementById('timerProgressBar').style.width = `${pct}%`;
+
+                if (this.remainingSeconds <= 10) {
+                    timerBox.className = 'flex items-center gap-2.5 bg-rose-700 border-2 border-white px-4 py-1 rounded-2xl shadow-lg animate-bounce';
+                } else if (this.remainingSeconds <= 60) {
+                    timerBox.className = 'flex items-center gap-2.5 bg-amber-600 border-2 border-yellow-300 px-4 py-1 rounded-2xl shadow-lg';
+                } else {
+                    timerBox.className = 'flex items-center gap-2.5 bg-slate-800 border-2 border-yellow-400 px-4 py-1 rounded-2xl shadow-lg';
+                }
+            },
+
+            finishBattle() {
+                clearInterval(this.timerInterval);
+                CanvasEngine.locked = true;
+
+                // Export both canvases to DataURL
+                this.player1.imageBase64 = CanvasEngine.players[1].canvas.toDataURL('image/png');
+                this.player2.imageBase64 = CanvasEngine.players[2].canvas.toDataURL('image/png');
+
+                // Populate Judging Screen Previews
+                document.getElementById('judgeP1Name').innerText = `${this.player1.avatar} ${this.player1.name}`;
+                document.getElementById('judgeP2Name').innerText = `${this.player2.avatar} ${this.player2.name}`;
+                document.getElementById('judgeImgP1').src = this.player1.imageBase64;
+                document.getElementById('judgeImgP2').src = this.player2.imageBase64;
+
+                // Also populate Teacher Manual Override labels
+                document.getElementById('manualP1Title').innerText = `${this.player1.avatar} ${this.player1.name}`;
+                document.getElementById('manualP2Title').innerText = `${this.player2.avatar} ${this.player2.name}`;
+
+                UI.showScreen('screenJudging');
+                AIJudge.evaluateArtworks();
+            },
+
+            downloadArtwork(pNum) {
+                SoundFX.click();
+                const pObj = pNum === 1 ? this.player1 : this.player2;
+                const ch = Wheel.selectedChallenge ? Wheel.selectedChallenge.name : 'Karya';
+                const link = document.createElement('a');
+                link.download = `ArtBattle_${pObj.name}_${ch}.png`;
+                link.href = pObj.imageBase64;
+                link.click();
+            }
+        };
+
+        /**
+         * 7. AI VISION JUDGE EVALUATION SYSTEM (Gemini 3 Flash Preview Multimodal + Rubric Schema)
+         * Also includes transparent Teacher Manual Scoring & Labeled Canvas Pixel Analysis Demo Mode.
+         */
+        const AIJudge = {
+            lastEvaluationResult: null,
+            evaluationSource: 'HASIL RESMI AI VISION JUDGE',
+
+            async evaluateArtworks() {
+                const progressBar = document.getElementById('judgingProgressBar');
+                const statusText = document.getElementById('judgingStatusText');
+                const fallbackBox = document.getElementById('judgingFallbackBox');
+                const progressSection = document.getElementById('judgingProgressSection');
+                const scannerVisual = document.getElementById('judgeScannerVisual');
+
+                fallbackBox.classList.add('hidden');
+                progressSection.classList.remove('hidden');
+                scannerVisual.classList.remove('hidden');
+                progressBar.style.width = '25%';
+                statusText.innerText = `Mengirim kedua gambar tantangan "${Wheel.selectedChallenge.name}" ke sistem Juri AI Vision...`;
+
+                const b64P1 = Game.player1.imageBase64.split(',')[1];
+                const b64P2 = Game.player2.imageBase64.split(',')[1];
+                const challengeName = Wheel.selectedChallenge.name;
+                const challengeCat = Wheel.selectedChallenge.category;
+
+                const systemInstruction = `Anda adalah Juri Lomba Menggambar dan Mewarnai Digital (ART BATTLE) untuk murid Kelas 6 SD.
+Tugas yang diundi untuk kedua pemain adalah menggambar: "${challengeName}" (Kategori: ${challengeCat}).
+
+ATURAN PENILAIAN WAJIB:
+1. Jangan mengutamakan gambar yang paling realistis atau sempurna seperti orang dewasa.
+2. Gambar sederhana, kartun, abstrak yang masih relevan, dan gaya ekspresi anak-anak SD harus dihargai secara adil dan positif.
+3. Jangan memberikan nilai tinggi hanya karena banyak warna acak; perhatikan kesesuaian bentuk objek "${challengeName}".
+4. Jika kanvas kosong atau hanya berupa satu coretan tanpa bentuk, berikan nilai Kesesuaian Tema dan Kelengkapan yang rendah secara jujur.
+5. Gunakan Bahasa Indonesia yang ramah, memotivasi, dan edukatif untuk murid kelas 6 SD.
+
+RUBRIK PENILAIAN (TOTAL MAKSIMAL 100 POIN):
+- kesesuaianTema (0 - 30 poin): Apakah objek sesuai tugas "${challengeName}" & karakteristik utamanya dikenali?
+- kelengkapan (0 - 20 poin): Apakah bagian penting objek digambar cukup lengkap & memiliki struktur jelas?
+- kreativitas (0 - 20 poin): Keunikan ide, pengembangan detail, imajinasi, dan elemen tambahan yang relevan.
+- pewarnaan (0 - 20 poin): Pemilihan warna, kesesuaian kombinasi warna, kerapian, dan variasi warna.
+- komposisi (0 - 10 poin): Penempatan objek pada kanvas, keseimbangan komposisi, dan kerapian visual.`;
+
+                const userPrompt = `Analisis Gambar 1 (karya ${Game.player1.name}) dan Gambar 2 (karya ${Game.player2.name}) untuk tantangan menggambar "${challengeName}". Berikan skor rubrik yang objektif dan komentar membangun dalam format JSON.`;
+
+                const payload = {
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                { text: userPrompt },
+                                { text: `Gambar 1 (${Game.player1.name}):` },
+                                { inlineData: { mimeType: "image/png", data: b64P1 } },
+                                { text: `Gambar 2 (${Game.player2.name}):` },
+                                { inlineData: { mimeType: "image/png", data: b64P2 } }
+                            ]
+                        }
+                    ],
+                    systemInstruction: {
+                        parts: [{ text: systemInstruction }]
+                    },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                player1: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        kesesuaianTema: { type: "INTEGER" },
+                                        kelengkapan: { type: "INTEGER" },
+                                        kreativitas: { type: "INTEGER" },
+                                        pewarnaan: { type: "INTEGER" },
+                                        komposisi: { type: "INTEGER" },
+                                        kelebihan: { type: "STRING" },
+                                        saranPerbaikan: { type: "STRING" },
+                                        alasanPenilaian: { type: "STRING" }
+                                    },
+                                    required: ["kesesuaianTema", "kelengkapan", "kreativitas", "pewarnaan", "komposisi", "kelebihan", "saranPerbaikan", "alasanPenilaian"]
+                                },
+                                player2: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        kesesuaianTema: { type: "INTEGER" },
+                                        kelengkapan: { type: "INTEGER" },
+                                        kreativitas: { type: "INTEGER" },
+                                        pewarnaan: { type: "INTEGER" },
+                                        komposisi: { type: "INTEGER" },
+                                        kelebihan: { type: "STRING" },
+                                        saranPerbaikan: { type: "STRING" },
+                                        alasanPenilaian: { type: "STRING" }
+                                    },
+                                    required: ["kesesuaianTema", "kelengkapan", "kreativitas", "pewarnaan", "komposisi", "kelebihan", "saranPerbaikan", "alasanPenilaian"]
+                                },
+                                komentarUmumJuri: { type: "STRING" }
+                            },
+                            required: ["player1", "player2", "komentarUmumJuri"]
+                        }
+                    }
+                };
+
+                try {
+                    progressBar.style.width = '65%';
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                    const result = await this.fetchWithBackoff(apiUrl, payload);
+                    const rawJsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (!rawJsonText) throw new Error("Respons AI Vision kosong.");
+
+                    const parsed = JSON.parse(rawJsonText);
+                    progressBar.style.width = '100%';
+                    this.evaluationSource = 'HASIL RESMI AI VISION JUDGE';
+
+                    setTimeout(() => {
+                        this.presentResults(parsed);
+                    }, 500);
+
+                } catch (err) {
+                    // Do NOT invent silent fake AI scores; offer retry, teacher manual rubric, or clearly labeled Demo pixel analyzer
+                    progressSection.classList.add('hidden');
+                    scannerVisual.classList.add('hidden');
+                    fallbackBox.classList.remove('hidden');
+                }
+            },
+
+            async fetchWithBackoff(url, payload) {
+                const delays = [1000, 2000];
+                for (let attempt = 0; attempt <= delays.length; attempt++) {
+                    try {
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return await res.json();
+                    } catch (e) {
+                        if (attempt === delays.length) throw e;
+                        await new Promise(r => setTimeout(r, delays[attempt]));
+                    }
+                }
+            },
+
+            /**
+             * Mode Penilaian Manual Guru (Menggunakan slider rubrik resmi)
+             */
+            applyManualTeacherScores() {
+                UI.closeModal('modalManualJudge');
+                const p1 = {
+                    kesesuaianTema: Number(document.getElementById('mP1_tema').value),
+                    kelengkapan: Number(document.getElementById('mP1_lengkap').value),
+                    kreativitas: Number(document.getElementById('mP1_kreatif').value),
+                    pewarnaan: Number(document.getElementById('mP1_warna').value),
+                    komposisi: Number(document.getElementById('mP1_komposisi').value),
+                    kelebihan: `Karya ${Game.player1.name} menunjukkan semangat berkreasi dan keberanian mengekspresikan bentuk ${Wheel.selectedChallenge.name}.`,
+                    saranPerbaikan: `Dapat menambahkan detail latar belakang dan variasi gradasi warna agar makin hidup.`,
+                    alasanPenilaian: `Dinilai secara langsung oleh Guru berdasarkan rubrik 5 kriteria Art Battle.`
+                };
+                const p2 = {
+                    kesesuaianTema: Number(document.getElementById('mP2_tema').value),
+                    kelengkapan: Number(document.getElementById('mP2_lengkap').value),
+                    kreativitas: Number(document.getElementById('mP2_kreatif').value),
+                    pewarnaan: Number(document.getElementById('mP2_warna').value),
+                    komposisi: Number(document.getElementById('mP2_komposisi').value),
+                    kelebihan: `Karya ${Game.player2.name} memiliki komposisi objek ${Wheel.selectedChallenge.name} yang jelas dan pemilihan warna menarik.`,
+                    saranPerbaikan: `Perkuat garis tepi objek utama dan eksplorasi tekstur krayon atau kuas.`,
+                    alasanPenilaian: `Dinilai secara langsung oleh Guru berdasarkan rubrik 5 kriteria Art Battle.`
+                };
+                this.evaluationSource = 'PENILAIAN MANUAL GURU (RUBRIK RESMI)';
+                this.presentResults({
+                    player1: p1,
+                    player2: p2,
+                    komentarUmumJuri: "Selamat! Kedua pemain telah menunjukkan kreativitas yang luar biasa. Teruslah berkarya dan jangan takut bereksperimen dengan warna!"
+                });
+            },
+
+            /**
+             * Mode DEMO (Clearly labeled as DEMO): Analyzes real canvas pixel coverage, color diversity, and spatial balance
+             * so that offline testing still inspects actual canvas data rather than random numbers.
+             */
+            runHeuristicDemoAnalysis() {
+                this.evaluationSource = 'MODE DEMO — ANALISIS VISUAL KANVAS';
+                const analyzeCanvas = (pNum, pName) => {
+                    const canvas = CanvasEngine.players[pNum].canvas;
+                    const ctx = CanvasEngine.players[pNum].ctx;
+                    const { width, height } = canvas;
+                    const data = ctx.getImageData(0, 0, width, height).data;
+
+                    let nonWhitePixels = 0;
+                    const colorBuckets = new Set();
+                    let minX = width, maxX = 0, minY = height, maxY = 0;
+
+                    for (let y = 0; y < height; y += 3) {
+                        for (let x = 0; x < width; x += 3) {
+                            const idx = (y * width + x) * 4;
+                            const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+                            if (r < 245 || g < 245 || b < 245) {
+                                nonWhitePixels++;
+                                const qColor = `${Math.floor(r / 32)}-${Math.floor(g / 32)}-${Math.floor(b / 32)}`;
+                                colorBuckets.add(qColor);
+                                if (x < minX) minX = x;
+                                if (x > maxX) maxX = x;
+                                if (y < minY) minY = y;
+                                if (y > maxY) maxY = y;
+                            }
+                        }
+                    }
+
+                    const totalSampled = (width / 3) * (height / 3);
+                    const coverageRatio = nonWhitePixels / Math.max(1, totalSampled);
+                    const strokes = CanvasEngine.players[pNum].strokeCount;
+
+                    if (nonWhitePixels < 15) {
+                        return {
+                            kesesuaianTema: 5,
+                            kelengkapan: 4,
+                            kreativitas: 5,
+                            pewarnaan: 4,
+                            komposisi: 3,
+                            kelebihan: `${pName} sudah siap di depan kanvas.`,
+                            saranPerbaikan: `Kanvas masih hampir kosong. Yuk gambar objek ${Wheel.selectedChallenge.name} lebih lengkap!`,
+                            alasanPenilaian: `[MODE DEMO] Kanvas terdeteksi memiliki sangat sedikit goresan (${strokes} langkah).`
+                        };
+                    }
+
+                    const spanW = Math.max(0, maxX - minX) / width;
+                    const spanH = Math.max(0, maxY - minY) / height;
+                    const numColors = colorBuckets.size;
+
+                    const tema = Math.min(30, Math.max(16, Math.round(18 + Math.min(1, coverageRatio * 6) * 10)));
+                    const lengkap = Math.min(20, Math.max(10, Math.round(10 + ((spanW + spanH) / 2) * 10)));
+                    const kreatif = Math.min(20, Math.max(11, Math.round(11 + Math.min(1, strokes / 25) * 9)));
+                    const warna = Math.min(20, Math.max(10, Math.round(9 + Math.min(1, numColors / 8) * 11)));
+                    const komposisi = Math.min(10, Math.max(6, Math.round(6 + ((spanW + spanH) / 2) * 4)));
+
+                    return {
+                        kesesuaianTema: tema,
+                        kelengkapan: lengkap,
+                        kreativitas: kreatif,
+                        pewarnaan: warna,
+                        komposisi: komposisi,
+                        kelebihan: `Karya ${pName} menggunakan sekitar ${numColors} variasi nuansa warna dengan proporsi bidang gambar yang aktif.`,
+                        saranPerbaikan: `Tambahkan lebih banyak detail spesifik pada ${Wheel.selectedChallenge.name} dan perhalus perpaduan warnanya.`,
+                        alasanPenilaian: `[MODE DEMO] Dianalisis dari kepadatan goresan (${strokes} aksi), variasi warna, dan keseimbangan komposisi kanvas.`
+                    };
+                };
+
+                const p1Res = analyzeCanvas(1, Game.player1.name);
+                const p2Res = analyzeCanvas(2, Game.player2.name);
+
+                this.presentResults({
+                    player1: p1Res,
+                    player2: p2Res,
+                    komentarUmumJuri: "[MODE DEMO] Selamat! Kedua pemain telah menunjukkan kreativitas yang luar biasa. Teruslah berkarya dan jangan takut bereksperimen dengan warna!"
+                });
+            },
+
+            clampRubric(p) {
+                const kesesuaianTema = Math.min(30, Math.max(0, Math.round(Number(p.kesesuaianTema) || 0)));
+                const kelengkapan = Math.min(20, Math.max(0, Math.round(Number(p.kelengkapan) || 0)));
+                const kreativitas = Math.min(20, Math.max(0, Math.round(Number(p.kreativitas) || 0)));
+                const pewarnaan = Math.min(20, Math.max(0, Math.round(Number(p.pewarnaan) || 0)));
+                const komposisi = Math.min(10, Math.max(0, Math.round(Number(p.komposisi) || 0)));
+                const total = kesesuaianTema + kelengkapan + kreativitas + pewarnaan + komposisi;
+                return {
+                    ...p,
+                    kesesuaianTema,
+                    kelengkapan,
+                    kreativitas,
+                    pewarnaan,
+                    komposisi,
+                    total
+                };
+            },
+
+            presentResults(data) {
+                const p1 = this.clampRubric(data.player1);
+                const p2 = this.clampRubric(data.player2);
+                this.lastEvaluationResult = { p1, p2, quote: data.komentarUmumJuri };
+
+                // 1. Populate Winner Announcement Screen
+                document.getElementById('winnerEvaluationBadge').innerText = this.evaluationSource;
+                document.querySelectorAll('.winnerTaskLabel').forEach(el => {
+                    el.innerText = Wheel.selectedChallenge.name;
+                });
+
+                document.getElementById('winnerAvatarP1').innerText = Game.player1.avatar;
+                document.getElementById('winnerNameP1').innerText = Game.player1.name;
+                document.getElementById('winnerScoreP1').innerText = p1.total;
+                document.getElementById('winnerImgP1').src = Game.player1.imageBase64;
+
+                document.getElementById('winnerAvatarP2').innerText = Game.player2.avatar;
+                document.getElementById('winnerNameP2').innerText = Game.player2.name;
+                document.getElementById('winnerScoreP2').innerText = p2.total;
+                document.getElementById('winnerImgP2').src = Game.player2.imageBase64;
+
+                const diff = Math.abs(p1.total - p2.total);
+                document.getElementById('winnerScoreDiff').innerText = diff === 0 ? 'Skor Sama Persis!' : `Selisih: ${diff} Poin`;
+
+                const badgeP1 = document.getElementById('winnerRankBadgeP1');
+                const badgeP2 = document.getElementById('winnerRankBadgeP2');
+                const champName = document.getElementById('winnerChampionName');
+                const heading = document.getElementById('winnerMainHeading');
+
+                if (p1.total > p2.total) {
+                    heading.innerText = '🏆 ART BATTLE CHAMPION';
+                    champName.innerText = `${Game.player1.avatar} ${Game.player1.name}`;
+                    badgeP1.innerText = '🏆 JUARA 1';
+                    badgeP1.className = 'absolute -top-4 left-6 px-4 py-1 rounded-full bg-yellow-400 text-slate-950 font-title text-sm shadow';
+                    badgeP2.innerText = 'JUARA 2';
+                    badgeP2.className = 'absolute -top-4 right-6 px-4 py-1 rounded-full bg-slate-700 text-slate-200 font-title text-sm shadow';
+                } else if (p2.total > p1.total) {
+                    heading.innerText = '🏆 ART BATTLE CHAMPION';
+                    champName.innerText = `${Game.player2.avatar} ${Game.player2.name}`;
+                    badgeP2.innerText = '🏆 JUARA 1';
+                    badgeP2.className = 'absolute -top-4 right-6 px-4 py-1 rounded-full bg-yellow-400 text-slate-950 font-title text-sm shadow';
+                    badgeP1.innerText = 'JUARA 2';
+                    badgeP1.className = 'absolute -top-4 left-6 px-4 py-1 rounded-full bg-slate-700 text-slate-200 font-title text-sm shadow';
+                } else {
+                    heading.innerText = '🤝 JUARA BERSAMA (SERI!)';
+                    champName.innerText = `${Game.player1.name} & ${Game.player2.name}`;
+                    badgeP1.innerText = '🏆 JUARA BERSAMA';
+                    badgeP1.className = 'absolute -top-4 left-6 px-4 py-1 rounded-full bg-yellow-400 text-slate-950 font-title text-sm shadow';
+                    badgeP2.innerText = '🏆 JUARA BERSAMA';
+                    badgeP2.className = 'absolute -top-4 right-6 px-4 py-1 rounded-full bg-yellow-400 text-slate-950 font-title text-sm shadow';
+                }
+
+                document.getElementById('winnerJudgeQuote').innerText = `"${data.komentarUmumJuri || 'Selamat! Kedua pemain telah menunjukkan kreativitas yang luar biasa. Teruslah berkarya dan jangan takut bereksperimen dengan warna!'}"`;
+
+                // 2. Populate Result Detail Screen
+                this.renderDetailColumn(1, Game.player1, p1);
+                this.renderDetailColumn(2, Game.player2, p2);
+
+                UI.showScreen('screenWinner');
+                SoundFX.victoryFanfare();
+
+                // Launch celebratory confetti
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+                }
+            },
+
+            renderDetailColumn(pNum, playerInfo, scoreObj) {
+                document.getElementById(`detailAvatarP${pNum}`).innerText = playerInfo.avatar;
+                document.getElementById(`detailNameP${pNum}`).innerText = playerInfo.name;
+                document.getElementById(`detailTotalP${pNum}`).innerText = `${scoreObj.total}/100`;
+                document.getElementById(`detailImgP${pNum}`).src = playerInfo.imageBase64;
+
+                const criteria = [
+                    { label: 'Kesesuaian Tema', val: scoreObj.kesesuaianTema, max: 30, color: 'bg-sky-400' },
+                    { label: 'Kelengkapan Gambar', val: scoreObj.kelengkapan, max: 20, color: 'bg-emerald-400' },
+                    { label: 'Kreativitas', val: scoreObj.kreativitas, max: 20, color: 'bg-purple-400' },
+                    { label: 'Pewarnaan', val: scoreObj.pewarnaan, max: 20, color: 'bg-pink-400' },
+                    { label: 'Komposisi & Kerapian', val: scoreObj.komposisi, max: 10, color: 'bg-amber-400' }
+                ];
+
+                const barsContainer = document.getElementById(`detailRubricBarsP${pNum}`);
+                barsContainer.innerHTML = criteria.map(c => {
+                    const pct = Math.round((c.val / c.max) * 100);
+                    return `
+                        <div>
+                            <div class="flex justify-between text-xs font-bold mb-1">
+                                <span class="text-slate-200">${c.label}</span>
+                                <span class="text-yellow-300">${c.val}/${c.max}</span>
+                            </div>
+                            <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div class="${c.color} h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById(`detailStrengthP${pNum}`).innerText = scoreObj.kelebihan;
+                document.getElementById(`detailImproveP${pNum}`).innerText = scoreObj.saranPerbaikan;
+                document.getElementById(`detailReasonP${pNum}`).innerText = scoreObj.alasanPenilaian;
+            }
+        };
+
+        // Initialize the entire game on window load
+        window.onload = function () {
+            Game.init();
+        };
+    </script>
+</body>
+</html>
