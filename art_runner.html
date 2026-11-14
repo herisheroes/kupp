@@ -125,6 +125,17 @@
         .text-stroke-sm {
             text-shadow: 0 2px 0 rgba(0,0,0,0.5);
         }
+        /* Solid High-Contrast HUD & Quiz Card Backgrounds for PID Readability */
+        .hud-card-solid {
+            background-color: rgba(15, 23, 42, 0.96) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+        .question-box-contrast {
+            background-color: #020617;
+            border: 2px solid #334155;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+        }
     </style>
 </head>
 <body>
@@ -566,7 +577,7 @@
         <!-- 7. SCREEN: RESULT & 3D PODIUM                         -->
         <!-- ===================================================== -->
         <section id="screen-result" class="hidden w-full h-full flex flex-col items-center justify-end p-3 sm:p-6 interactive-panel overflow-y-auto">
-            <div class="w-full max-w-5xl bg-slate-900/92 backdrop-blur-md border-4 border-amber-400 rounded-3xl p-4 sm:p-6 shadow-2xl mt-auto">
+            <div class="w-full max-w-5xl hud-card-solid backdrop-blur-md border-4 border-amber-400 rounded-3xl p-4 sm:p-6 shadow-2xl mt-auto">
                 <!-- Top Winner Announcement -->
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-slate-700 pb-3 mb-3">
                     <div class="flex items-center gap-3">
@@ -2553,7 +2564,7 @@
 
                     hud.innerHTML = `
                         <!-- Top Telemetry Bar -->
-                        <div class="bg-slate-900/88 backdrop-blur-md border-2 border-slate-600 rounded-2xl ${isCompact4P ? 'p-1.5 sm:p-2' : 'p-2.5 sm:p-3'} shadow-xl pointer-events-auto">
+                        <div class="hud-card-solid backdrop-blur-md border-2 border-slate-500 rounded-2xl ${isCompact4P ? 'p-1.5 sm:p-2' : 'p-2.5 sm:p-3'} shadow-xl pointer-events-auto">
                             <div class="flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="${isCompact4P ? 'w-7 h-7 text-base' : 'w-9 h-9 text-xl'} rounded-xl flex items-center justify-center shrink-0 border border-white/40" style="background-color: ${r.costume.hex}">
@@ -2561,7 +2572,7 @@
                                     </span>
                                     <div class="min-w-0">
                                         <div class="font-display font-bold text-white ${isCompact4P ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} truncate">${r.name}</div>
-                                        <div class="flex items-center gap-1.5 text-[11px] font-bold">
+                                        <div class="flex items-center gap-2 text-xs font-extrabold">
                                             <span class="text-emerald-400">✓ <span id="p-${i}-correct">0</span></span>
                                             <span class="text-rose-400">✗ <span id="p-${i}-wrong">0</span></span>
                                         </div>
@@ -2569,14 +2580,14 @@
                                 </div>
 
                                 <!-- Status Effect Pill -->
-                                <div id="p-${i}-effect-badge" class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black bg-slate-700 text-slate-200 uppercase tracking-wider shrink-0">
+                                <div id="p-${i}-effect-badge" class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black bg-slate-700 text-white uppercase tracking-wider shrink-0 border border-slate-500">
                                     NORMAL
                                 </div>
 
                                 <!-- Speed & Lap Counter -->
                                 <div class="flex items-center gap-2 sm:gap-3 shrink-0 text-right">
                                     <div>
-                                        <div class="text-[10px] text-slate-400 uppercase font-bold">Kecepatan</div>
+                                        <div class="text-[10px] text-slate-300 uppercase font-extrabold">Kecepatan</div>
                                         <div id="p-${i}-speed" class="font-display ${isCompact4P ? 'text-xs sm:text-sm' : 'text-sm sm:text-lg'} font-bold text-sky-300">5.0 u/d</div>
                                     </div>
                                     <div class="bg-amber-400 text-slate-950 px-2.5 py-1 rounded-xl font-display font-black ${isCompact4P ? 'text-xs' : 'text-sm sm:text-base'}">
@@ -2587,41 +2598,41 @@
 
                             <!-- Track Progress Bar toward FINISH -->
                             <div class="mt-1.5 flex items-center gap-2">
-                                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                                <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-600">
                                     <div id="p-${i}-prog-bar" class="h-full bg-gradient-to-r from-sky-400 via-emerald-400 to-amber-400 transition-all duration-150" style="width: 0%"></div>
                                 </div>
-                                <span id="p-${i}-prog-text" class="text-[10px] font-extrabold text-amber-300 w-9 text-right">0%</span>
+                                <span id="p-${i}-prog-text" class="text-xs font-black text-amber-300 w-10 text-right">0%</span>
                             </div>
                         </div>
 
                         <!-- Bottom Interactive Question & Answer Touch Panel -->
-                        <div id="p-${i}-quiz-card" class="bg-slate-900/92 backdrop-blur-md border-2 border-sky-400/80 rounded-2xl ${isCompact4P ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'} shadow-2xl pointer-events-auto max-w-2xl w-full mx-auto transition-all">
+                        <div id="p-${i}-quiz-card" class="hud-card-solid backdrop-blur-md border-4 border-sky-400 rounded-2xl ${isCompact4P ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'} shadow-2xl pointer-events-auto max-w-2xl w-full mx-auto transition-all">
                             <!-- Question Timer Header -->
-                            <div class="flex items-center justify-between gap-2 mb-1">
-                                <span id="p-${i}-q-cat" class="text-[10px] sm:text-xs font-extrabold uppercase px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/40">
+                            <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <span id="p-${i}-q-cat" class="text-[11px] sm:text-xs font-black uppercase px-2.5 py-1 rounded-lg bg-sky-400 text-slate-950 shadow">
                                     SOAL SENI RUPA
                                 </span>
-                                <div class="flex items-center gap-1.5 text-amber-300 font-display font-bold ${isCompact4P ? 'text-xs' : 'text-sm'}">
+                                <div class="flex items-center gap-1.5 bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-lg font-display font-black ${isCompact4P ? 'text-xs' : 'text-sm'} shadow">
                                     <i class="fas fa-stopwatch"></i>
                                     <span id="p-${i}-timer-num">${this.gameConfig.timer}s</span>
                                 </div>
                             </div>
-                            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mb-1.5">
+                            <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden mb-2 border border-slate-700">
                                 <div id="p-${i}-timer-bar" class="h-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 transition-all duration-100" style="width: 100%"></div>
                             </div>
 
-                            <!-- Question Text -->
-                            <div id="p-${i}-q-text" class="font-bold text-white ${isCompact4P ? 'text-xs sm:text-sm leading-snug mb-1.5' : 'text-sm sm:text-base leading-snug mb-2.5'}">
+                            <!-- High-Contrast Question Text Box -->
+                            <div id="p-${i}-q-text" class="question-box-contrast rounded-xl ${isCompact4P ? 'p-2 text-xs sm:text-sm mb-1.5' : 'p-2.5 sm:p-3.5 text-sm sm:text-lg mb-2.5'} font-extrabold text-white leading-snug tracking-wide">
                                 Bersiap menerima soal pertama...
                             </div>
 
                             <!-- 4 Touch Answer Buttons (A, B, C, D) -->
-                            <div id="p-${i}-options-grid" class="grid grid-cols-2 ${isCompact4P ? 'gap-1.5' : 'gap-2'}">
+                            <div id="p-${i}-options-grid" class="grid grid-cols-2 ${isCompact4P ? 'gap-1.5' : 'gap-2.5'}">
                                 <!-- Populated when question activates -->
                             </div>
 
                             <!-- Educational Feedback Banner -->
-                            <div id="p-${i}-feedback" class="hidden mt-1.5 p-2 rounded-xl text-xs font-bold text-center"></div>
+                            <div id="p-${i}-feedback" class="hidden mt-2 p-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-center shadow-lg"></div>
                         </div>
                     `;
 
@@ -2701,12 +2712,12 @@
 
                     qObj.options.forEach((optText, optIdx) => {
                         const btn = document.createElement('button');
-                        btn.className = `quiz-option-btn bg-slate-800 hover:bg-slate-700 text-white border-2 border-slate-600 rounded-xl ${
-                            isCompact4P ? 'py-1.5 px-2 text-xs' : 'py-2.5 px-3 text-xs sm:text-sm'
-                        } font-bold text-left flex items-center gap-2 w-full`;
+                        btn.className = `quiz-option-btn bg-slate-950 hover:bg-slate-800 text-white border-2 border-sky-400/75 rounded-xl ${
+                            isCompact4P ? 'py-1.5 px-2 text-xs' : 'py-2.5 px-3 text-xs sm:text-base'
+                        } font-extrabold text-left flex items-center gap-2.5 w-full`;
                         btn.innerHTML = `
-                            <span class="bg-sky-400 text-slate-950 font-display font-black w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center shrink-0 text-xs">${letters[optIdx]}</span>
-                            <span class="leading-tight">${optText}</span>
+                            <span class="bg-amber-400 text-slate-950 font-display font-black w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 text-xs sm:text-sm shadow">${letters[optIdx]}</span>
+                            <span class="leading-tight text-white drop-shadow">${optText}</span>
                         `;
 
                         // Support simultaneous multi-touch on PID via pointerdown
@@ -2762,7 +2773,7 @@
                 if (chosenIdx === -1) {
                     // Timeout: No speed bonus
                     if (fbEl) {
-                        fbEl.className = 'mt-1.5 p-2 rounded-xl text-xs font-bold text-center bg-amber-500/20 border border-amber-400 text-amber-200';
+                        fbEl.className = 'mt-2 p-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-center bg-amber-950 border-2 border-amber-400 text-amber-200 shadow-lg';
                         fbEl.innerHTML = `⏰ <b>WAKTU HABIS!</b> Tanpa bonus kecepatan. Jawaban: <b>${qObj.options[qObj.correctIndex]}</b>`;
                         fbEl.classList.remove('hidden');
                     }
@@ -2775,7 +2786,7 @@
                         cardEl.classList.add('boost-glow');
                     }
                     if (fbEl) {
-                        fbEl.className = 'mt-1.5 p-2 rounded-xl text-xs font-bold text-center bg-emerald-500/25 border border-emerald-400 text-emerald-200';
+                        fbEl.className = 'mt-2 p-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-center bg-emerald-950 border-2 border-emerald-400 text-emerald-200 shadow-lg';
                         fbEl.innerHTML = `🌟 <b>BENAR! BOOST +2 u/d (5 dtk)!</b> ${qObj.explanation}`;
                         fbEl.classList.remove('hidden');
                     }
@@ -2788,7 +2799,7 @@
                         cardEl.classList.add('slow-glow');
                     }
                     if (fbEl) {
-                        fbEl.className = 'mt-1.5 p-2 rounded-xl text-xs font-bold text-center bg-rose-500/25 border border-rose-400 text-rose-200';
+                        fbEl.className = 'mt-2 p-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-center bg-rose-950 border-2 border-rose-400 text-rose-200 shadow-lg';
                         fbEl.innerHTML = `⚠️ <b>KURANG TEPAT! SLOW -2 u/d (3 dtk).</b> Jawaban: <b>${qObj.options[qObj.correctIndex]}</b>`;
                         fbEl.classList.remove('hidden');
                     }
