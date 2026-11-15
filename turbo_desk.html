@@ -1,0 +1,2824 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Turbo Desk Racer 3D: Balap Hitung Meja Kerja</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+        }
+        .font-racing {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .font-kids {
+            font-family: 'Fredoka', sans-serif;
+        }
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .interactive-panel {
+            pointer-events: auto;
+        }
+        /* Glassmorphism */
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .glass-hud {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.18);
+        }
+        /* Answer button arcade style */
+        .btn-answer {
+            transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 6px 0 #1e293b, 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .btn-answer:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #1e293b, 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn-arcade {
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 0 #991b1b, 0 12px 24px rgba(220, 38, 38, 0.4);
+        }
+        .btn-arcade:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #991b1b;
+        }
+        /* Animations */
+        @keyframes pulse-fast {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 0.6s infinite;
+        }
+        @keyframes shake-screen {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-10px, 6px); }
+            40% { transform: translate(10px, -6px); }
+            60% { transform: translate(-8px, -4px); }
+            80% { transform: translate(8px, 4px); }
+        }
+        .shake-effect {
+            animation: shake-screen 0.35s ease-in-out;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="text-white antialiased">
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Speed Lines Overlay when high speed -->
+    <div id="speed-lines-overlay" class="fixed inset-0 pointer-events-none z-[5] opacity-0 transition-opacity duration-300"
+         style="background: radial-gradient(circle, transparent 50%, rgba(56, 189, 248, 0.25) 95%);">
+    </div>
+
+    <!-- Flash Feedback Overlay (Green/Red Flash) -->
+    <div id="feedback-flash" class="fixed inset-0 pointer-events-none z-[6] opacity-0 transition-opacity duration-200"></div>
+
+    <!-- ==========================================
+         LAYAR 1: GARASI & PENGATURAN BALAPAN (LOBBY)
+         ========================================== -->
+    <div id="screen-lobby" class="ui-layer flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="interactive-panel glass-dark w-full max-w-4xl rounded-3xl p-5 sm:p-8 shadow-2xl border-t-4 border-amber-400 my-auto">
+            
+            <!-- Header Title -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-700/80">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-400 flex items-center justify-center shadow-lg shadow-orange-500/30 border-2 border-white/30 shrink-0">
+                        <i data-lucide="Flame" class="w-9 h-9 text-white"></i>
+                    </div>
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 mb-1">
+                            <span>EDISI MEJA KERJA 3D • 5 LAP SIRKUIT • MULTIPLAYER IFP</span>
+                        </div>
+                        <h1 class="text-2xl sm:text-4xl font-black tracking-tight font-kids bg-gradient-to-r from-white via-amber-200 to-orange-400 bg-clip-text text-transparent">
+                            TURBO DESK RACER 3D
+                        </h1>
+                        <p class="text-xs sm:text-sm text-slate-300">Balap Mobil Mini 1–4 Pemain Sekaligus (Split-Screen Vertikal)! Hitung Cepat untuk Memacu 300 KM/Jam!</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 self-end md:self-center">
+                    <button id="btn-toggle-sound" onclick="toggleAudioMute()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 flex items-center gap-2 text-sm font-bold transition">
+                        <i data-lucide="volume-2" id="icon-sound" class="w-5 h-5 text-emerald-400"></i>
+                        <span id="text-sound">Suara: ON</span>
+                    </button>
+                    <button onclick="openLeaderboardModal()" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold flex items-center gap-2 text-sm shadow-lg shadow-amber-500/25 transition">
+                        <i data-lucide="trophy" class="w-5 h-5"></i>
+                        <span>Leaderboard</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form Configuration Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+                
+                <!-- Left Column: Player Count, Identity & Operation -->
+                <div class="lg:col-span-7 space-y-4">
+                    <!-- Pilih Mode Jumlah Pemain (VS Split-Screen Vertikal) -->
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wider text-emerald-300 mb-2 flex items-center gap-1.5">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            1. Mode Pemain (Layar Terbagi Vertikal untuk IFP / PID / Laptop)
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="playercount-buttons">
+                            <button type="button" onclick="selectPlayerCount(1)" data-pcount="1" class="pcount-btn flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 border-emerald-400 bg-emerald-500/25 text-white transition">
+                                <span class="text-lg font-black font-kids text-emerald-300">1 PEMAIN</span>
+                                <span class="text-[11px] font-bold text-slate-200">Solo vs 3 AI</span>
+                            </button>
+                            <button type="button" onclick="selectPlayerCount(2)" data-pcount="2" class="pcount-btn flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800">
+                                <span class="text-lg font-black font-kids text-sky-300">2 PEMAIN VS</span>
+                                <span class="text-[11px] font-bold text-slate-300">2 Layar + 2 AI</span>
+                            </button>
+                            <button type="button" onclick="selectPlayerCount(3)" data-pcount="3" class="pcount-btn flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800">
+                                <span class="text-lg font-black font-kids text-amber-300">3 PEMAIN VS</span>
+                                <span class="text-[11px] font-bold text-slate-300">3 Layar + 1 AI</span>
+                            </button>
+                            <button type="button" onclick="selectPlayerCount(4)" data-pcount="4" class="pcount-btn flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800">
+                                <span class="text-lg font-black font-kids text-rose-300">4 PEMAIN VS</span>
+                                <span class="text-[11px] font-bold text-slate-300">4 Layar Penuh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input Nama Pembalap (Dinamis 1 - 4 Pemain) -->
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wider text-amber-300 mb-2 flex items-center gap-1.5">
+                            <i data-lucide="user-check" class="w-4 h-4"></i>
+                            2. Nama Pembalap
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="player-names-grid">
+                            <div class="relative" id="p-input-wrap-0">
+                                <input type="text" id="input-player-name-0" maxlength="15" value="Pembalap 1" placeholder="Nama Pemain 1..."
+                                    class="w-full pl-3 pr-20 py-2.5 rounded-xl bg-slate-900/90 border-2 border-red-500/60 focus:border-red-400 focus:outline-none text-sm font-bold text-white">
+                                <span class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-red-500/25 text-red-300 text-[10px] font-extrabold">P1 MERAH</span>
+                            </div>
+                            <div class="relative hidden" id="p-input-wrap-1">
+                                <input type="text" id="input-player-name-1" maxlength="15" value="Pembalap 2" placeholder="Nama Pemain 2..."
+                                    class="w-full pl-3 pr-20 py-2.5 rounded-xl bg-slate-900/90 border-2 border-sky-500/60 focus:border-sky-400 focus:outline-none text-sm font-bold text-white">
+                                <span class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-sky-500/25 text-sky-300 text-[10px] font-extrabold">P2 BIRU</span>
+                            </div>
+                            <div class="relative hidden" id="p-input-wrap-2">
+                                <input type="text" id="input-player-name-2" maxlength="15" value="Pembalap 3" placeholder="Nama Pemain 3..."
+                                    class="w-full pl-3 pr-20 py-2.5 rounded-xl bg-slate-900/90 border-2 border-amber-500/60 focus:border-amber-400 focus:outline-none text-sm font-bold text-white">
+                                <span class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-amber-500/25 text-amber-300 text-[10px] font-extrabold">P3 KUNING</span>
+                            </div>
+                            <div class="relative hidden" id="p-input-wrap-3">
+                                <input type="text" id="input-player-name-3" maxlength="15" value="Pembalap 4" placeholder="Nama Pemain 4..."
+                                    class="w-full pl-3 pr-20 py-2.5 rounded-xl bg-slate-900/90 border-2 border-emerald-500/60 focus:border-emerald-400 focus:outline-none text-sm font-bold text-white">
+                                <span class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-emerald-500/25 text-emerald-300 text-[10px] font-extrabold">P4 HIJAU</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pilih Operasi Hitung -->
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wider text-sky-300 mb-2 flex items-center gap-1.5">
+                            <i data-lucide="calculator" class="w-4 h-4"></i>
+                            3. Pilih Operasi Berhitung
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5" id="operation-buttons">
+                            <button type="button" onclick="selectOperation('add')" data-op="add" class="op-btn active-op flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-sky-400 bg-sky-500/25 text-white transition hover:bg-sky-500/30">
+                                <span class="text-2xl font-black font-kids text-sky-300">+</span>
+                                <span class="text-xs font-bold mt-1">Tambah</span>
+                            </button>
+                            <button type="button" onclick="selectOperation('sub')" data-op="sub" class="op-btn flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800">
+                                <span class="text-2xl font-black font-kids text-emerald-300">−</span>
+                                <span class="text-xs font-bold mt-1">Kurang</span>
+                            </button>
+                            <button type="button" onclick="selectOperation('mul')" data-op="mul" class="op-btn flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800">
+                                <span class="text-2xl font-black font-kids text-amber-300">×</span>
+                                <span class="text-xs font-bold mt-1">Kali</span>
+                            </button>
+                            <button type="button" onclick="selectOperation('div')" data-op="div" class="op-btn flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800">
+                                <span class="text-2xl font-black font-kids text-purple-300">÷</span>
+                                <span class="text-xs font-bold mt-1">Bagi</span>
+                            </button>
+                            <button type="button" onclick="selectOperation('mix')" data-op="mix" class="op-btn col-span-2 sm:col-span-1 flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800">
+                                <span class="text-lg font-black font-kids text-rose-300">+−×÷</span>
+                                <span class="text-xs font-bold mt-1">Campuran</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Difficulty Level -->
+                <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wider text-rose-300 mb-2 flex items-center gap-1.5">
+                            <i data-lucide="gauge" class="w-4 h-4"></i>
+                            4. Tingkat Kesulitan Soal & Kecepatan AI
+                        </label>
+                        <div class="space-y-2.5" id="difficulty-buttons">
+                            <!-- Amatir -->
+                            <button type="button" onclick="selectDifficulty('amateur')" data-diff="amateur" class="diff-btn w-full text-left p-3 rounded-2xl border-2 border-emerald-400 bg-emerald-500/20 flex items-center justify-between transition">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-500/30 flex items-center justify-center text-emerald-300 font-black">1</div>
+                                    <div>
+                                        <div class="font-extrabold text-sm text-white">Mode Amatir (Kelas 1–2)</div>
+                                        <div class="text-xs text-emerald-200">Lawan AI: 90–130 km/jam • Angka Dasar</div>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-lg bg-emerald-400 text-slate-950 font-black text-xs">SANTAI</span>
+                            </button>
+
+                            <!-- Jalanan -->
+                            <button type="button" onclick="selectDifficulty('street')" data-diff="street" class="diff-btn w-full text-left p-3 rounded-2xl border-2 border-slate-700 bg-slate-800/70 flex items-center justify-between transition hover:bg-slate-800">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-amber-500/30 flex items-center justify-center text-amber-300 font-black">2</div>
+                                    <div>
+                                        <div class="font-extrabold text-sm text-white">Pembalap Jalanan (Kelas 3–4)</div>
+                                        <div class="text-xs text-slate-300">Lawan AI: 150–200 km/jam • Menantang</div>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-lg bg-amber-400/20 text-amber-300 font-black text-xs">SERU</span>
+                            </button>
+
+                            <!-- F1 -->
+                            <button type="button" onclick="selectDifficulty('f1')" data-diff="f1" class="diff-btn w-full text-left p-3 rounded-2xl border-2 border-slate-700 bg-slate-800/70 flex items-center justify-between transition hover:bg-slate-800">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-rose-500/30 flex items-center justify-center text-rose-300 font-black">3</div>
+                                    <div>
+                                        <div class="font-extrabold text-sm text-white">Pembalap F1 Pro (Kelas 5–6)</div>
+                                        <div class="text-xs text-slate-300">Lawan AI: 210–265 km/jam • Hitung Kilat</div>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 font-black text-xs">EKSTREM</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aturan Singkat & Start Button -->
+            <div class="mt-6 pt-5 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+                    <span class="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30 font-semibold">
+                        <i data-lucide="zap" class="w-4 h-4"></i> Jawaban Benar: +30 km/jam & +100 Poin
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 bg-rose-500/15 text-rose-300 px-3 py-1.5 rounded-xl border border-rose-500/30 font-semibold">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i> Jawaban Salah: -40 km/jam & -30 Poin
+                    </span>
+                </div>
+
+                <button onclick="startRaceSequence()" class="btn-arcade w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-black text-lg tracking-wide flex items-center justify-center gap-3">
+                    <i data-lucide="flag" class="w-6 h-6"></i>
+                    <span>MULAI BALAPAN (5 LAP)</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==========================================
+         LAYAR 2: ARENA BALAPAN 3D & HUD SOAL (SINGLE & VERTICAL SPLIT-SCREEN)
+         ========================================== -->
+    <div id="screen-race" class="ui-layer hidden flex-col justify-between">
+        
+        <!-- GLOBAL TOP BAR (Waktu & Tombol Keluar) -->
+        <div class="w-full flex items-center justify-between px-3 py-2 pointer-events-none z-20">
+            <div class="glass-hud px-3.5 py-1.5 rounded-2xl flex items-center gap-2 shadow-lg border-amber-400/40">
+                <i data-lucide="timer" class="w-5 h-5 text-amber-400"></i>
+                <div>
+                    <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">WAKTU BALAP (5 LAP)</div>
+                    <div class="font-racing font-black text-sm sm:text-lg text-amber-300 tracking-wider" id="hud-timer">00:00.0</div>
+                </div>
+            </div>
+
+            <div id="race-toast" class="opacity-0 transform scale-75 transition-all duration-200 px-4 py-1.5 rounded-2xl font-kids font-black text-sm sm:text-xl tracking-wide shadow-2xl border-2">
+                TURBO BOOST +30 KM/JAM!
+            </div>
+
+            <button onclick="abortRaceToLobby()" class="interactive-panel glass-hud px-3 py-2 rounded-2xl hover:bg-rose-600/40 border-rose-500/40 text-rose-200 flex items-center gap-1.5 text-xs font-bold transition" title="Kembali ke Garasi">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Garasi</span>
+            </button>
+        </div>
+
+        <!-- DYNAMIC COLUMNS CONTAINER FOR 1 TO 4 PLAYERS (VERTICAL SPLIT) -->
+        <div id="split-players-container" class="w-full flex-1 grid grid-cols-1 divide-x-2 divide-slate-700/60 overflow-hidden">
+            <!-- Diisi otomatis oleh JavaScript sesuai jumlah pemain (1, 2, 3, atau 4 kolom vertikal) -->
+        </div>
+
+        <!-- COUNTDOWN OVERLAY (3 - 2 - 1 - GO!) -->
+        <div id="countdown-overlay" class="fixed inset-0 z-30 hidden flex-col items-center justify-center bg-slate-950/60 backdrop-blur-sm pointer-events-none">
+            <div class="glass-dark px-8 py-6 rounded-3xl border-2 border-amber-400/50 flex flex-col items-center gap-4 shadow-2xl">
+                <div class="flex items-center gap-4">
+                    <div id="light-1" class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-4 border-slate-600"></div>
+                    <div id="light-2" class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-4 border-slate-600"></div>
+                    <div id="light-3" class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-4 border-slate-600"></div>
+                </div>
+                <div id="countdown-text" class="font-racing font-black text-6xl sm:text-8xl text-amber-400 drop-shadow-[0_0_25px_rgba(251,191,36,0.8)]">
+                    3
+                </div>
+                <div class="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-300">SIAPKAN JARI & HITUNG CEPAT!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         LAYAR 3: PODIUM FINISH & LEADERBOARD
+         ========================================== -->
+    <div id="screen-result" class="ui-layer hidden items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="interactive-panel glass-dark w-full max-w-4xl rounded-3xl p-5 sm:p-8 shadow-2xl border-t-4 border-emerald-400 my-auto">
+            
+            <!-- Top Banner -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-700">
+                <div class="flex items-center gap-4">
+                    <div id="result-trophy-box" class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-slate-950 shadow-xl">
+                        <i data-lucide="award" class="w-10 h-10"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-extrabold uppercase tracking-widest text-emerald-400">BALAPAN 5 LAP SELESAI!</div>
+                        <h2 id="result-rank-title" class="text-2xl sm:text-4xl font-black font-kids text-white">JUARA 1 PODIUM UTAMA!</h2>
+                        <p id="result-player-summary" class="text-sm text-slate-300">Pembalap: Kapten Turbo • Operasi Penjumlahan</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2.5 w-full sm:w-auto">
+                    <button onclick="replaySameMode()" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg transition">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        <span>Balap Lagi</span>
+                    </button>
+                    <button onclick="backToGarageLobby()" class="flex-1 sm:flex-initial px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                        <span>Ganti Mode</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Score Breakdown Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3.5 text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase">Total Poin Akhir</div>
+                    <div id="res-total-points" class="font-racing font-black text-2xl sm:text-3xl text-amber-400 mt-1">1,450</div>
+                    <div id="res-bonus-note" class="text-[11px] text-emerald-400 font-semibold mt-0.5">+Bonus Podium</div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3.5 text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase">Waktu Finish</div>
+                    <div id="res-finish-time" class="font-racing font-black text-2xl sm:text-3xl text-sky-400 mt-1">48.5s</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">5 Putaran Penuh</div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3.5 text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase">Ketepatan Hitung</div>
+                    <div id="res-accuracy" class="font-racing font-black text-2xl sm:text-3xl text-emerald-400 mt-1">12 / 1</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">Benar vs Salah</div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3.5 text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase">Kecepatan Puncak</div>
+                    <div id="res-top-speed" class="font-racing font-black text-2xl sm:text-3xl text-rose-400 mt-1">300</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">KM / Jam</div>
+                </div>
+            </div>
+
+            <!-- Integrated Leaderboard Section -->
+            <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i>
+                        <h3 class="font-extrabold text-base text-white">Papan Peringkat Terbaik (Leaderboard)</h3>
+                    </div>
+                    <!-- Sort & Filter Controls -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="setLeaderboardSort('points')" id="sort-btn-points" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-950 transition">
+                            Urut Poin Tertinggi
+                        </button>
+                        <button onclick="setLeaderboardSort('time')" id="sort-btn-time" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300 border border-slate-700 transition">
+                            Urut Waktu Tercepat
+                        </button>
+                        <select id="filter-leaderboard-diff" onchange="renderLeaderboardTables()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 border border-slate-700 text-white">
+                            <option value="all">Semua Level</option>
+                            <option value="amateur">Mode Amatir</option>
+                            <option value="street">Pembalap Jalanan</option>
+                            <option value="f1">Pembalap F1</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-52 overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-700 text-slate-400 uppercase text-[11px]">
+                                <th class="py-2 px-2">#</th>
+                                <th class="py-2 px-2">Pembalap</th>
+                                <th class="py-2 px-2">Operasi & Mode</th>
+                                <th class="py-2 px-2">Posisi</th>
+                                <th class="py-2 px-2 text-right">Poin Akhir</th>
+                                <th class="py-2 px-2 text-right">Waktu (5 Lap)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="result-leaderboard-tbody" class="divide-y divide-slate-800">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL LEADERBOARD (DARI LOBBY)
+         ========================================== -->
+    <div id="modal-leaderboard" class="ui-layer hidden items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md z-40">
+        <div class="interactive-panel glass-dark w-full max-w-3xl rounded-3xl p-6 shadow-2xl border-t-4 border-amber-400">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-700">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="trophy" class="w-7 h-7 text-amber-400"></i>
+                    <div>
+                        <h3 class="text-xl font-black font-kids text-white">PAPAN LEADERBOARD PEMBALAP MEJA</h3>
+                        <p class="text-xs text-slate-400">Rekor tersimpan otomatis di perangkat ini</p>
+                    </div>
+                </div>
+                <button onclick="closeLeaderboardModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 my-4">
+                <div class="flex gap-2">
+                    <button onclick="setLeaderboardSort('points')" id="modal-sort-points" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-950">
+                        Poin Tertinggi
+                    </button>
+                    <button onclick="setLeaderboardSort('time')" id="modal-sort-time" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300 border border-slate-700">
+                        Waktu Finish Tercepat
+                    </button>
+                </div>
+                <button onclick="clearLeaderboardData()" class="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Reset Data
+                </button>
+            </div>
+
+            <div class="overflow-x-auto max-h-72 overflow-y-auto bg-slate-900/70 rounded-2xl p-3 border border-slate-800">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-slate-400 uppercase text-[11px]">
+                            <th class="py-2 px-2">#</th>
+                            <th class="py-2 px-2">Pembalap</th>
+                            <th class="py-2 px-2">Operasi & Mode</th>
+                            <th class="py-2 px-2">Juara</th>
+                            <th class="py-2 px-2 text-right">Poin</th>
+                            <th class="py-2 px-2 text-right">Waktu</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-leaderboard-tbody" class="divide-y divide-slate-800">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         JAVASCRIPT UTAMA: 3D ENGINE, AUDIO, MATH, GAME LOOP
+         ========================================== -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        /**************************************************************
+         * 1. KONFIGURASI STATE GAME & PENYIMPANAN LEADERBOARD
+         **************************************************************/
+        const STORAGE_KEY = 'turbo_desk_racer_leaderboard_v1';
+        
+        const OPERATION_LABELS = {
+            add: 'Penjumlahan (+)',
+            sub: 'Pengurangan (−)',
+            mul: 'Perkalian (×)',
+            div: 'Pembagian (÷)',
+            mix: 'Campuran (+−×÷)'
+        };
+
+        const DIFFICULTY_CONFIG = {
+            amateur: {
+                name: 'Mode Amatir',
+                aiMinSpeed: 92,
+                aiMaxSpeed: 130,
+                podiumBonus: [300, 150, 75, 0]
+            },
+            street: {
+                name: 'Pembalap Jalanan',
+                aiMinSpeed: 152,
+                aiMaxSpeed: 200,
+                podiumBonus: [500, 250, 100, 0]
+            },
+            f1: {
+                name: 'Pembalap F1',
+                aiMinSpeed: 212,
+                aiMaxSpeed: 265,
+                podiumBonus: [800, 400, 200, 0]
+            }
+        };
+
+        const gameState = {
+            mode: 'LOBBY', // 'LOBBY' | 'COUNTDOWN' | 'RACING' | 'FINISHED'
+            playerCount: 1, // 1, 2, 3, or 4 human players
+            playerNames: ['Pembalap 1', 'Pembalap 2', 'Pembalap 3', 'Pembalap 4'],
+            operation: 'add',
+            difficulty: 'amateur',
+            totalLaps: 5,
+            
+            // Race runtime metrics
+            startTime: 0,
+            elapsedTime: 0,
+            
+            // Leaderboard sorting
+            leaderboardSort: 'points', // 'points' | 'time'
+            lobbyOrbitAngle: 0
+        };
+
+        // Load or seed initial leaderboard
+        function getLeaderboardData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    return JSON.parse(raw);
+                }
+            } catch (e) {
+                console.warn('Gagal membaca localStorage:', e);
+            }
+            // Default initial sample records
+            const seed = [
+                { name: 'Raka Juara SD', operation: 'mul', difficulty: 'f1', rank: 1, points: 2150, time: 44.2 },
+                { name: 'Alya Cepat', operation: 'mix', difficulty: 'street', rank: 1, points: 1680, time: 51.8 },
+                { name: 'Bima Turbo', operation: 'add', difficulty: 'amateur', rank: 1, points: 1320, time: 58.4 }
+            ];
+            saveLeaderboardData(seed);
+            return seed;
+        }
+
+        function saveLeaderboardData(list) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+            } catch (e) {
+                console.warn('Gagal menyimpan localStorage:', e);
+            }
+        }
+
+        /**************************************************************
+         * 2. WEB AUDIO API: PROSEDURAL SOUND SYNTHESIZER
+         **************************************************************/
+        const soundEngine = {
+            ctx: null,
+            isMuted: false,
+            engineOsc1: null,
+            engineOsc2: null,
+            engineGain: null,
+            isEngineRunning: false,
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            startEngineHum() {
+                this.init();
+                if (!this.ctx || this.isEngineRunning) return;
+
+                this.engineOsc1 = this.ctx.createOscillator();
+                this.engineOsc2 = this.ctx.createOscillator();
+                const filter = this.ctx.createBiquadFilter();
+                this.engineGain = this.ctx.createGain();
+
+                this.engineOsc1.type = 'sawtooth';
+                this.engineOsc2.type = 'triangle';
+                this.engineOsc1.frequency.value = 55;
+                this.engineOsc2.frequency.value = 110;
+
+                filter.type = 'lowpass';
+                filter.frequency.value = 380;
+
+                this.engineGain.gain.value = this.isMuted ? 0 : 0.06;
+
+                this.engineOsc1.connect(filter);
+                this.engineOsc2.connect(filter);
+                filter.connect(this.engineGain);
+                this.engineGain.connect(this.ctx.destination);
+
+                this.engineOsc1.start();
+                this.engineOsc2.start();
+                this.isEngineRunning = true;
+            },
+
+            updateEnginePitch(speedKmh) {
+                if (!this.isEngineRunning || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const baseFreq = 48 + (speedKmh / 300) * 165;
+                this.engineOsc1.frequency.setTargetAtTime(baseFreq, now, 0.05);
+                this.engineOsc2.frequency.setTargetAtTime(baseFreq * 1.5, now, 0.05);
+                const targetGain = this.isMuted ? 0 : (0.04 + (speedKmh / 300) * 0.06);
+                this.engineGain.gain.setTargetAtTime(targetGain, now, 0.08);
+            },
+
+            stopEngineHum() {
+                if (!this.isEngineRunning) return;
+                try {
+                    this.engineOsc1.stop();
+                    this.engineOsc2.stop();
+                    this.engineOsc1.disconnect();
+                    this.engineOsc2.disconnect();
+                } catch (e) {}
+                this.isEngineRunning = false;
+            },
+
+            playBeep(freq = 440, duration = 0.18, type = 'sine') {
+                if (this.isMuted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+            },
+
+            playTurboWhoosh() {
+                if (this.isMuted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                // Rising synth chord + whoosh
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(280, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.28);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.32);
+            },
+
+            playBrakeScreech() {
+                if (this.isMuted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(95, now + 0.3);
+                gain.gain.setValueAtTime(0.16, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.32);
+            },
+
+            playFinishFanfare() {
+                if (this.isMuted) return;
+                this.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playBeep(freq, 0.28, 'triangle'), idx * 130);
+                });
+            }
+        };
+
+        function toggleAudioMute() {
+            soundEngine.isMuted = !soundEngine.isMuted;
+            const iconEl = document.getElementById('icon-sound');
+            const textEl = document.getElementById('text-sound');
+            if (soundEngine.isMuted) {
+                textEl.textContent = 'Suara: OFF';
+                iconEl.setAttribute('data-lucide', 'volume-x');
+                iconEl.classList.replace('text-emerald-400', 'text-rose-400');
+            } else {
+                textEl.textContent = 'Suara: ON';
+                iconEl.setAttribute('data-lucide', 'volume-2');
+                iconEl.classList.replace('text-rose-400', 'text-emerald-400');
+                soundEngine.playBeep(660, 0.12);
+            }
+            lucide.createIcons();
+        }
+
+        /**************************************************************
+         * 3. THREE.JS 3D SCENE: ARENA MEJA KERJA RAKSASA (BLENDER-STYLE)
+         **************************************************************/
+        let scene, camera, renderer;
+        const playerCameras = []; // 4 cameras for vertical split-screen
+        let trackCurve = null;
+        const TRACK_TOTAL_LENGTH = 650; // Virtual meters per lap
+        const cars = []; // Index 0..3 = Human Players or AI Opponents
+
+        function createWoodProceduralTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // Base warm rich oak wood gradient
+            const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+            grad.addColorStop(0, '#b97a45');
+            grad.addColorStop(0.5, '#c88a51');
+            grad.addColorStop(1, '#a86b38');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1024, 1024);
+
+            // Organic wood grain waves & knots
+            for (let i = 0; i < 420; i++) {
+                ctx.fillStyle = i % 2 === 0 ? 'rgba(110, 62, 24, 0.14)' : 'rgba(240, 195, 145, 0.12)';
+                const y = Math.random() * 1024;
+                const h = 1.5 + Math.random() * 5;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.bezierCurveTo(340, y + (Math.random() - 0.5) * 18, 680, y + (Math.random() - 0.5) * 18, 1024, y);
+                ctx.lineTo(1024, y + h);
+                ctx.lineTo(0, y + h);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Subtle plank seams with bevel highlight
+            for (let y = 128; y < 1024; y += 128) {
+                ctx.fillStyle = 'rgba(72, 38, 12, 0.35)';
+                ctx.fillRect(0, y, 1024, 3);
+                ctx.fillStyle = 'rgba(255, 220, 180, 0.15)';
+                ctx.fillRect(0, y + 3, 1024, 2);
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(6, 4);
+            tex.anisotropy = 4;
+            return tex;
+        }
+
+        function createWoodenTrackTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Rich dark walnut/mahogany wooden race track planks (high contrast & non-glare)
+            const grad = ctx.createLinearGradient(0, 0, 512, 0);
+            grad.addColorStop(0, '#3e210d');
+            grad.addColorStop(0.15, '#522c13');
+            grad.addColorStop(0.5, '#613517');
+            grad.addColorStop(0.85, '#522c13');
+            grad.addColorStop(1, '#3e210d');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Wood grain fibers along the track direction
+            for (let i = 0; i < 520; i++) {
+                const x = Math.random() * 512;
+                const y = Math.random() * 512;
+                const len = 30 + Math.random() * 140;
+                const w = 1.2 + Math.random() * 3.5;
+                ctx.fillStyle = i % 2 === 0 ? 'rgba(25, 10, 2, 0.35)' : 'rgba(195, 130, 72, 0.18)';
+                ctx.fillRect(x, y, w, len);
+            }
+
+            // Wooden slat joints and dowels across the track
+            for (let x = 64; x < 512; x += 64) {
+                ctx.fillStyle = 'rgba(20, 8, 2, 0.55)';
+                ctx.fillRect(x, 0, 3, 512);
+                ctx.fillStyle = 'rgba(235, 180, 125, 0.14)';
+                ctx.fillRect(x + 3, 0, 2, 512);
+            }
+            for (let y = 0; y < 512; y += 128) {
+                ctx.fillStyle = 'rgba(20, 8, 2, 0.45)';
+                ctx.fillRect(0, y, 512, 4);
+                ctx.fillStyle = 'rgba(235, 180, 125, 0.16)';
+                ctx.fillRect(0, y + 4, 512, 2);
+            }
+
+            // Crisp Painted Racing Border Stripes
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(14, 0, 12, 512);
+            ctx.fillRect(486, 0, 12, 512);
+
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(28, 0, 6, 512);
+            ctx.fillRect(478, 0, 6, 512);
+
+            // Center dashed golden-yellow racing line
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(250, 28, 12, 190);
+            ctx.fillRect(250, 284, 12, 190);
+
+            // Authentic dark slot-car guide grooves
+            ctx.fillStyle = 'rgba(12, 5, 1, 0.7)';
+            ctx.fillRect(145, 0, 6, 512);
+            ctx.fillRect(361, 0, 6, 512);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.anisotropy = 4;
+            return tex;
+        }
+
+        // Helper for smooth rounded 3D blocks (width = X, height = Y, depth = Z)
+        function createRoundedBoxGeometry(width, height, depth, radius = 0.5, smoothness = 6) {
+            const shape = new THREE.Shape();
+            const eps = 0.00001;
+            const r = Math.min(radius, width / 2 - eps, height / 2 - eps);
+            const w = width - r * 2;
+            const h = height - r * 2;
+
+            shape.absarc(r, r, r, -Math.PI, -Math.PI / 2, false);
+            shape.absarc(r + w, r, r, -Math.PI / 2, 0, false);
+            shape.absarc(r + w, r + h, r, 0, Math.PI / 2, false);
+            shape.absarc(r, r + h, r, Math.PI / 2, Math.PI, false);
+
+            const geometry = new THREE.ExtrudeGeometry(shape, {
+                depth: Math.max(0.01, depth - r * 2),
+                bevelEnabled: true,
+                bevelSegments: smoothness,
+                steps: 1,
+                bevelSize: r,
+                bevelThickness: r,
+                curveSegments: smoothness
+            });
+            geometry.center();
+            return geometry;
+        }
+
+        // Procedural Studio Environment Map for Realistic Metallic & Clearcoat Reflections
+        function createStudioEnvironmentMap(rendererInstance) {
+            const pmremGenerator = new THREE.PMREMGenerator(rendererInstance);
+            pmremGenerator.compileEquirectangularShader();
+
+            const envScene = new THREE.Scene();
+            envScene.background = new THREE.Color(0x1e293b);
+
+            // Ceiling softbox light panels
+            const panelGeo = new THREE.PlaneGeometry(80, 80);
+            const warmLightMat = new THREE.MeshBasicMaterial({ color: 0xfff7ed, side: THREE.DoubleSide });
+            const coolLightMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
+            const rimLightMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide });
+
+            const topPanel = new THREE.Mesh(panelGeo, warmLightMat);
+            topPanel.position.set(0, 70, 0);
+            topPanel.rotation.x = Math.PI / 2;
+            envScene.add(topPanel);
+
+            const sidePanel1 = new THREE.Mesh(panelGeo, coolLightMat);
+            sidePanel1.position.set(-80, 25, 40);
+            sidePanel1.lookAt(0, 0, 0);
+            envScene.add(sidePanel1);
+
+            const sidePanel2 = new THREE.Mesh(panelGeo, rimLightMat);
+            sidePanel2.position.set(80, 30, -40);
+            sidePanel2.lookAt(0, 0, 0);
+            envScene.add(sidePanel2);
+
+            const envMap = pmremGenerator.fromScene(envScene, 0.04).texture;
+            pmremGenerator.dispose();
+            return envMap;
+        }
+
+        function createCheckerFinishTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const size = 16;
+            for (let y = 0; y < 64; y += size) {
+                for (let x = 0; x < 256; x += size) {
+                    ctx.fillStyle = ((x / size + y / size) % 2 === 0) ? '#ffffff' : '#111827';
+                    ctx.fillRect(x, y, size, size);
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        function createLaptopScreenTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 320;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 512, 320);
+            grad.addColorStop(0, '#0f172a');
+            grad.addColorStop(1, '#1e3a8a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 320);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 34px Orbitron, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('TURBO DESK GRAND PRIX', 256, 95);
+
+            ctx.fillStyle = '#facc15';
+            ctx.font = 'bold 48px sans-serif';
+            ctx.fillText('HITUNG CEPAT = JUARA!', 256, 175);
+
+            ctx.fillStyle = '#4ade80';
+            ctx.font = 'bold 26px sans-serif';
+            ctx.fillText('5 LAP CIRCUIT • MAX 300 KM/H', 256, 245);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function initThreeScene() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1e293b);
+            scene.fog = new THREE.FogExp2(0x1e293b, 0.0009);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1200);
+            for (let i = 0; i < 4; i++) {
+                playerCameras.push(new THREE.PerspectiveCamera(60, (window.innerWidth / 4) / window.innerHeight, 0.1, 1200));
+            }
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            // Balanced exposure so sunlight never washes out the wooden track
+            renderer.toneMappingExposure = 0.78;
+            container.appendChild(renderer.domElement);
+
+            // Apply Studio Environment Map for subtle reflections
+            scene.environment = createStudioEnvironmentMap(renderer);
+
+            // Balanced Study Bedroom Ambient + Soft Sunlight Lighting (Non-blinding)
+            const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x334155, 0.55);
+            scene.add(hemiLight);
+
+            // Controlled Golden Morning Sunlight from the window
+            const sunLight = new THREE.DirectionalLight(0xffedd5, 0.82);
+            sunLight.position.set(110, 155, -140);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 10;
+            sunLight.shadow.camera.far = 480;
+            const d = 175;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            sunLight.shadow.bias = -0.0005;
+            scene.add(sunLight);
+
+            // Gentle Desk Lamp PointLight
+            const deskLampLight = new THREE.PointLight(0xfde68a, 0.45, 220, 1.8);
+            deskLampLight.position.set(-95, 68, -65);
+            scene.add(deskLampLight);
+
+            buildGiantDeskEnvironment();
+            buildDeskCircuitTrack();
+            buildStationeryAndDeskProps();
+            spawnAllRaceCars();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function buildGiantDeskEnvironment() {
+            // 1. Giant Solid Oak Wooden Desk Surface (Top surface strictly at Y = 0)
+            const woodTex = createWoodProceduralTexture();
+            const deskTopGeo = new THREE.BoxGeometry(380, 10, 280);
+            const deskMat = new THREE.MeshStandardMaterial({
+                map: woodTex,
+                color: 0xd69e66,
+                roughness: 0.72,
+                metalness: 0.02
+            });
+            const deskMesh = new THREE.Mesh(deskTopGeo, deskMat);
+            deskMesh.position.set(0, -5.05, 0); // Top face is at Y = -0.05 so track at Y > 0 never clips!
+            deskMesh.receiveShadow = true;
+            scene.add(deskMesh);
+
+            // Wooden Desk Beveled Edge Molding Trim
+            const trimMat = new THREE.MeshStandardMaterial({
+                map: woodTex,
+                color: 0x9a5b2c,
+                roughness: 0.38
+            });
+            const frontBackTrimGeo = new THREE.BoxGeometry(386, 11, 4);
+            const frontTrim = new THREE.Mesh(frontBackTrimGeo, trimMat);
+            frontTrim.position.set(0, -5.2, 141);
+            const backTrim = new THREE.Mesh(frontBackTrimGeo, trimMat);
+            backTrim.position.set(0, -5.2, -141);
+
+            const sideTrimGeo = new THREE.BoxGeometry(4, 11, 286);
+            const leftTrim = new THREE.Mesh(sideTrimGeo, trimMat);
+            leftTrim.position.set(-191, -5.2, 0);
+            const rightTrim = new THREE.Mesh(sideTrimGeo, trimMat);
+            rightTrim.position.set(191, -5.2, 0);
+            scene.add(frontTrim, backTrim, leftTrim, rightTrim);
+
+            // 2. Cozy Bedroom / Study Room Walls (Back, Left, Right)
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.88 });
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(820, 420), wallMat);
+            backWall.position.set(0, 130, -210);
+            scene.add(backWall);
+
+            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(600, 420), wallMat);
+            leftWall.position.set(-340, 130, 0);
+            leftWall.rotation.y = Math.PI / 2;
+            scene.add(leftWall);
+
+            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(600, 420), wallMat);
+            rightWall.position.set(340, 130, 0);
+            rightWall.rotation.y = -Math.PI / 2;
+            scene.add(rightWall);
+
+            // Wooden Wainscoting / Baseboard on Back Wall
+            const wainscotGeo = new THREE.BoxGeometry(820, 48, 3);
+            const wainscotMat = new THREE.MeshStandardMaterial({ map: woodTex, color: 0x854d27, roughness: 0.55 });
+            const wainscot = new THREE.Mesh(wainscotGeo, wainscotMat);
+            wainscot.position.set(0, 14, -208);
+            scene.add(wainscot);
+
+            // 3. Large Bedroom Window with Outside Sky, Sun, Clouds & Volumetric Sunbeams
+            const windowGroup = new THREE.Group();
+            windowGroup.position.set(95, 118, -206);
+
+            // Outdoor Sky & Sun Canvas Texture
+            const skyCanvas = document.createElement('canvas');
+            skyCanvas.width = 512;
+            skyCanvas.height = 512;
+            const sCtx = skyCanvas.getContext('2d');
+            const skyGrad = sCtx.createLinearGradient(0, 0, 0, 512);
+            skyGrad.addColorStop(0, '#38bdf8');
+            skyGrad.addColorStop(0.55, '#bae6fd');
+            skyGrad.addColorStop(1, '#fef3c7');
+            sCtx.fillStyle = skyGrad;
+            sCtx.fillRect(0, 0, 512, 512);
+
+            // Glowing Morning Sun Disc
+            const sunGrad = sCtx.createRadialGradient(370, 130, 10, 370, 130, 150);
+            sunGrad.addColorStop(0, '#ffffff');
+            sunGrad.addColorStop(0.25, '#fde047');
+            sunGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+            sCtx.fillStyle = sunGrad;
+            sCtx.beginPath();
+            sCtx.arc(370, 130, 150, 0, Math.PI * 2);
+            sCtx.fill();
+
+            // Soft Distant Clouds & Green Tree Silhouettes at Bottom of Window
+            sCtx.fillStyle = 'rgba(255, 255, 255, 0.78)';
+            sCtx.beginPath();
+            sCtx.arc(130, 210, 42, 0, Math.PI * 2);
+            sCtx.arc(175, 200, 52, 0, Math.PI * 2);
+            sCtx.arc(220, 215, 38, 0, Math.PI * 2);
+            sCtx.fill();
+
+            sCtx.fillStyle = '#15803d';
+            sCtx.beginPath();
+            sCtx.arc(90, 500, 85, 0, Math.PI * 2);
+            sCtx.arc(240, 520, 110, 0, Math.PI * 2);
+            sCtx.arc(420, 495, 95, 0, Math.PI * 2);
+            sCtx.fill();
+
+            const skyTex = new THREE.CanvasTexture(skyCanvas);
+            const glassPane = new THREE.Mesh(
+                new THREE.PlaneGeometry(185, 135),
+                new THREE.MeshBasicMaterial({ map: skyTex })
+            );
+            windowGroup.add(glassPane);
+
+            // White Wooden Window Frame & Mullion Bars
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 });
+            const topFrame = new THREE.Mesh(new THREE.BoxGeometry(198, 7, 6), frameMat);
+            topFrame.position.y = 68;
+            const botSill = new THREE.Mesh(new THREE.BoxGeometry(206, 8, 12), frameMat);
+            botSill.position.set(0, -68, 3);
+            const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(7, 142, 6), frameMat);
+            leftFrame.position.x = -94;
+            const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(7, 142, 6), frameMat);
+            rightFrame.position.x = 94;
+
+            // Window Crossbars
+            const vBar1 = new THREE.Mesh(new THREE.BoxGeometry(4, 135, 4), frameMat);
+            vBar1.position.set(-31, 0, 1);
+            const vBar2 = new THREE.Mesh(new THREE.BoxGeometry(4, 135, 4), frameMat);
+            vBar2.position.set(31, 0, 1);
+            const hBar = new THREE.Mesh(new THREE.BoxGeometry(185, 4, 4), frameMat);
+            hBar.position.set(0, 5, 1);
+
+            windowGroup.add(topFrame, botSill, leftFrame, rightFrame, vBar1, vBar2, hBar);
+            scene.add(windowGroup);
+
+            // 4. Subtle Volumetric Golden Sunbeams Streaming from Window (Low opacity so track stays clear)
+            const sunbeamMat = new THREE.MeshBasicMaterial({
+                color: 0xfef3c7,
+                transparent: true,
+                opacity: 0.038,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+
+            for (let i = 0; i < 3; i++) {
+                const beamGeo = new THREE.ConeGeometry(42 + i * 10, 280, 24, 1, true);
+                const beamMesh = new THREE.Mesh(beamGeo, sunbeamMat);
+                beamMesh.position.set(55 - i * 28, 78, -95 + i * 18);
+                beamMesh.rotation.z = 0.38;
+                beamMesh.rotation.x = 0.52;
+                scene.add(beamMesh);
+            }
+
+            // 5. Floating Bedroom Wall Shelf & Framed Poster on Left Wall
+            const shelfGroup = new THREE.Group();
+            shelfGroup.position.set(-130, 112, -204);
+            const shelfBoard = new THREE.Mesh(new THREE.BoxGeometry(110, 4.5, 18), deskMat);
+            shelfGroup.add(shelfBoard);
+
+            // Decorative Trophy & Globe on the Wall Shelf
+            const miniTrophy = new THREE.Mesh(
+                new THREE.CylinderGeometry(4, 2.5, 14, 16),
+                new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 })
+            );
+            miniTrophy.position.set(-30, 9, 0);
+            const miniPlantPot = new THREE.Mesh(
+                new THREE.CylinderGeometry(5.5, 4, 10, 16),
+                new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.6 })
+            );
+            miniPlantPot.position.set(28, 7, 0);
+            const miniFoliage = new THREE.Mesh(
+                new THREE.SphereGeometry(8.5, 16, 16),
+                new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7 })
+            );
+            miniFoliage.position.set(28, 16, 0);
+            shelfGroup.add(miniTrophy, miniPlantPot, miniFoliage);
+            scene.add(shelfGroup);
+        }
+
+        function buildDeskCircuitTrack() {
+            // Closed-loop racing circuit waypoints on top of the giant desk
+            const waypoints = [
+                new THREE.Vector3(0, 0, 74),
+                new THREE.Vector3(82, 0, 72),
+                new THREE.Vector3(128, 0, 32),
+                new THREE.Vector3(116, 0, -34),
+                new THREE.Vector3(56, 0, -68),
+                new THREE.Vector3(0, 0, -45),
+                new THREE.Vector3(-58, 0, -70),
+                new THREE.Vector3(-120, 0, -34),
+                new THREE.Vector3(-126, 0, 34),
+                new THREE.Vector3(-76, 0, 72)
+            ];
+            trackCurve = new THREE.CatmullRomCurve3(waypoints, true, 'catmullrom', 0.5);
+
+            const segments = 320;
+            const roadWidth = 17.5;
+            const curbWidth = 20.2;
+
+            // Helper to build a smooth flat track ribbon along trackCurve
+            function createRibbonMesh(width, yOffset, material, repeatLength = 50) {
+                const positions = [];
+                const normals = [];
+                const uvs = [];
+                const indices = [];
+
+                for (let i = 0; i <= segments; i++) {
+                    const u = i / segments;
+                    const pt = trackCurve.getPointAt(u);
+                    const tangent = trackCurve.getTangentAt(u).normalize();
+                    const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+
+                    const left = pt.clone().addScaledVector(normal, -width * 0.5);
+                    const right = pt.clone().addScaledVector(normal, width * 0.5);
+
+                    positions.push(left.x, yOffset, left.z);
+                    positions.push(right.x, yOffset, right.z);
+
+                    normals.push(0, 1, 0, 0, 1, 0);
+
+                    const vCoord = u * repeatLength;
+                    uvs.push(0, vCoord, 1, vCoord);
+
+                    if (i < segments) {
+                        const a = i * 2;
+                        const b = i * 2 + 1;
+                        const c = (i + 1) * 2;
+                        const d = (i + 1) * 2 + 1;
+                        indices.push(a, b, c, b, d, c);
+                    }
+                }
+
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+                geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+                geo.setIndex(indices);
+
+                const mesh = new THREE.Mesh(geo, material);
+                mesh.receiveShadow = true;
+                return mesh;
+            }
+
+            // Red-White Racing Curbs Texture
+            const curbCanvas = document.createElement('canvas');
+            curbCanvas.width = 64;
+            curbCanvas.height = 128;
+            const cCtx = curbCanvas.getContext('2d');
+            cCtx.fillStyle = '#ef4444';
+            cCtx.fillRect(0, 0, 64, 64);
+            cCtx.fillStyle = '#f8fafc';
+            cCtx.fillRect(0, 64, 64, 64);
+            const curbTex = new THREE.CanvasTexture(curbCanvas);
+            curbTex.wrapS = THREE.RepeatWrapping;
+            curbTex.wrapT = THREE.RepeatWrapping;
+
+            const curbMat = new THREE.MeshStandardMaterial({ map: curbTex, roughness: 0.65 });
+            scene.add(createRibbonMesh(curbWidth, 0.08, curbMat, 90));
+
+            // Realistic Matte-Satin Wooden Plank Race Track Ribbon (Clear visibility under any light)
+            const roadTex = createWoodenTrackTexture();
+            const roadMat = new THREE.MeshStandardMaterial({
+                map: roadTex,
+                roughness: 0.68,
+                metalness: 0.02
+            });
+            scene.add(createRibbonMesh(roadWidth, 0.16, roadMat, 42));
+
+            // Start / Finish Checkered Line & Arch Truss Gate at t = 0
+            const startPt = trackCurve.getPointAt(0);
+            const startTan = trackCurve.getTangentAt(0).normalize();
+            const angle = Math.atan2(startTan.x, startTan.z);
+
+            const finishGroup = new THREE.Group();
+            finishGroup.position.copy(startPt);
+            finishGroup.rotation.y = angle;
+
+            const checkerTex = createCheckerFinishTexture();
+            const lineGeo = new THREE.PlaneGeometry(roadWidth, 3.4);
+            const lineMat = new THREE.MeshBasicMaterial({ map: checkerTex });
+            const lineMesh = new THREE.Mesh(lineGeo, lineMat);
+            lineMesh.rotation.x = -Math.PI / 2;
+            lineMesh.position.y = 0.18;
+            finishGroup.add(lineMesh);
+
+            // Cylindrical Metallic Racing Gantry Pillars
+            const pillarGeo = new THREE.CylinderGeometry(0.65, 0.85, 14.5, 24);
+            const pillarMat = new THREE.MeshPhysicalMaterial({
+                color: 0xe2e8f0,
+                metalness: 0.75,
+                roughness: 0.2,
+                clearcoat: 0.5
+            });
+            const leftPillar = new THREE.Mesh(pillarGeo, pillarMat);
+            leftPillar.position.set(-roadWidth / 2 - 1.2, 7.2, 0);
+            leftPillar.castShadow = true;
+            const rightPillar = new THREE.Mesh(pillarGeo, pillarMat);
+            rightPillar.position.set(roadWidth / 2 + 1.2, 7.2, 0);
+            rightPillar.castShadow = true;
+
+            // Smooth Rounded Arch Banner
+            const bannerGeo = createRoundedBoxGeometry(roadWidth + 5, 3.2, 1.8, 0.6, 5);
+            const bannerMat = new THREE.MeshPhysicalMaterial({
+                color: 0xdc2626,
+                roughness: 0.25,
+                metalness: 0.15,
+                clearcoat: 0.6
+            });
+            const bannerMesh = new THREE.Mesh(bannerGeo, bannerMat);
+            bannerMesh.position.set(0, 13.2, 0);
+            bannerMesh.castShadow = true;
+
+            finishGroup.add(leftPillar, rightPillar, bannerMesh);
+            scene.add(finishGroup);
+        }
+
+        function buildStationeryAndDeskProps() {
+            // 1. Stacks of Realistic Hardcover Textbooks with Rounded Spines & Page Grooves
+            function createBookStack(x, z, rotY, booksConfig) {
+                const group = new THREE.Group();
+                let currentY = 0;
+                booksConfig.forEach((b) => {
+                    const bookItem = new THREE.Group();
+                    const coverMat = new THREE.MeshPhysicalMaterial({
+                        color: b.color,
+                        roughness: 0.35,
+                        clearcoat: 0.35
+                    });
+
+                    // Bottom & Top Hardcovers (Rounded)
+                    const coverThickness = 0.45;
+                    const coverGeo = createRoundedBoxGeometry(b.w, coverThickness, b.d, 0.2, 4);
+                    const botCover = new THREE.Mesh(coverGeo, coverMat);
+                    botCover.position.y = coverThickness / 2;
+                    botCover.castShadow = true;
+                    botCover.receiveShadow = true;
+
+                    const topCover = new THREE.Mesh(coverGeo, coverMat);
+                    topCover.position.y = b.h - coverThickness / 2;
+                    topCover.castShadow = true;
+                    topCover.receiveShadow = true;
+
+                    // Curved Book Spine Cylinder along the left edge
+                    const spineGeo = new THREE.CylinderGeometry(b.h / 2, b.h / 2, b.d - 0.3, 24, 1, false, 0, Math.PI);
+                    spineGeo.rotateX(Math.PI / 2);
+                    spineGeo.rotateZ(Math.PI / 2);
+                    const spineMesh = new THREE.Mesh(spineGeo, coverMat);
+                    spineMesh.position.set(-b.w / 2 + 0.2, b.h / 2, 0);
+                    spineMesh.castShadow = true;
+
+                    // Cream Paper Pages Block inside
+                    const pagesGeo = createRoundedBoxGeometry(b.w * 0.94, b.h - coverThickness * 1.8, b.d * 0.94, 0.25, 4);
+                    const pagesMat = new THREE.MeshStandardMaterial({ color: 0xfefce8, roughness: 0.75 });
+                    const pagesMesh = new THREE.Mesh(pagesGeo, pagesMat);
+                    pagesMesh.position.set(0.35, b.h / 2, 0);
+
+                    bookItem.add(botCover, topCover, spineMesh, pagesMesh);
+                    bookItem.position.y = currentY;
+                    bookItem.rotation.y = b.rot || 0;
+
+                    group.add(bookItem);
+                    currentY += b.h;
+                });
+                group.position.set(x, 0, z);
+                group.rotation.y = rotY;
+                scene.add(group);
+            }
+
+            // Center island book stack & corners
+            createBookStack(-25, 8, 0.2, [
+                { w: 34, h: 5, d: 24, color: 0x2563eb, rot: 0 },
+                { w: 30, h: 4.5, d: 22, color: 0xdc2626, rot: 0.12 },
+                { w: 26, h: 4, d: 19, color: 0x16a34a, rot: -0.08 }
+            ]);
+
+            createBookStack(-148, -75, 0.4, [
+                { w: 38, h: 6, d: 28, color: 0x9333ea, rot: 0 },
+                { w: 34, h: 5, d: 25, color: 0xf59e0b, rot: -0.15 }
+            ]);
+
+            createBookStack(142, 72, -0.5, [
+                { w: 36, h: 5.5, d: 26, color: 0x0284c7, rot: 0 },
+                { w: 32, h: 5, d: 22, color: 0xe11d48, rot: 0.1 }
+            ]);
+
+            // 2. Realistic Glazed Ceramic Coffee Mug (Hollow Rim & Glossy Coffee)
+            const mugGroup = new THREE.Group();
+            const mugMat = new THREE.MeshPhysicalMaterial({
+                color: 0xf8fafc,
+                roughness: 0.12,
+                metalness: 0.05,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.08
+            });
+
+            // Lathe profile for thick rounded mug walls
+            const mugPoints = [
+                new THREE.Vector2(0, 0),
+                new THREE.Vector2(12.5, 0),
+                new THREE.Vector2(13.8, 2),
+                new THREE.Vector2(14.2, 26),
+                new THREE.Vector2(13.5, 28),
+                new THREE.Vector2(12.2, 28),
+                new THREE.Vector2(12.0, 23),
+                new THREE.Vector2(0, 23)
+            ];
+            const mugBodyGeo = new THREE.LatheGeometry(mugPoints, 48);
+            const mugBody = new THREE.Mesh(mugBodyGeo, mugMat);
+            mugBody.castShadow = true;
+            mugBody.receiveShadow = true;
+            mugGroup.add(mugBody);
+
+            // Glossy Espresso Coffee Liquid & Crema Ring
+            const coffeeGeo = new THREE.CylinderGeometry(12.3, 12.3, 0.8, 40);
+            const coffeeMat = new THREE.MeshPhysicalMaterial({
+                color: 0x2e1503,
+                roughness: 0.05,
+                clearcoat: 1.0
+            });
+            const coffeeMesh = new THREE.Mesh(coffeeGeo, coffeeMat);
+            coffeeMesh.position.y = 24.8;
+            mugGroup.add(coffeeMesh);
+
+            // Smooth Curved Mug Handle
+            const handleGeo = new THREE.TorusGeometry(7.8, 2.0, 24, 48, Math.PI);
+            const handleMesh = new THREE.Mesh(handleGeo, mugMat);
+            handleMesh.rotation.z = -Math.PI / 2;
+            handleMesh.position.set(13.2, 14.5, 0);
+            handleMesh.castShadow = true;
+            mugGroup.add(handleMesh);
+
+            mugGroup.position.set(35, 0, -5);
+            scene.add(mugGroup);
+
+            // 3. Sleek Unibody Aluminum Laptop with Beveled Chassis & Individual Keys
+            const laptopGroup = new THREE.Group();
+            const metalMat = new THREE.MeshPhysicalMaterial({
+                color: 0xcbd5e1,
+                roughness: 0.22,
+                metalness: 0.82,
+                clearcoat: 0.3
+            });
+
+            const baseGeo = createRoundedBoxGeometry(58, 2.0, 38, 0.8, 6);
+            const laptopBase = new THREE.Mesh(baseGeo, metalMat);
+            laptopBase.position.y = 1.0;
+            laptopBase.castShadow = true;
+            laptopBase.receiveShadow = true;
+            laptopGroup.add(laptopBase);
+
+            // Recessed Dark Keyboard Well & Trackpad
+            const kbGeo = createRoundedBoxGeometry(50, 0.3, 21, 0.4, 4);
+            const kbMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+            const kbMesh = new THREE.Mesh(kbGeo, kbMat);
+            kbMesh.position.set(0, 2.0, -3);
+            laptopGroup.add(kbMesh);
+
+            const trackpadGeo = createRoundedBoxGeometry(16, 0.2, 9, 0.3, 4);
+            const trackpadMesh = new THREE.Mesh(trackpadGeo, metalMat);
+            trackpadMesh.position.set(0, 2.02, 12.5);
+            laptopGroup.add(trackpadMesh);
+
+            // Hinged Screen Lid
+            const lidGroup = new THREE.Group();
+            lidGroup.position.set(0, 2.0, -18);
+            lidGroup.rotation.x = -0.22;
+
+            const lidGeo = createRoundedBoxGeometry(58, 36, 1.4, 0.7, 6);
+            const lidMesh = new THREE.Mesh(lidGeo, metalMat);
+            lidMesh.position.y = 18;
+            lidMesh.castShadow = true;
+            lidGroup.add(lidMesh);
+
+            const screenGeo = new THREE.PlaneGeometry(54, 32);
+            const screenMat = new THREE.MeshBasicMaterial({ map: createLaptopScreenTexture() });
+            const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+            screenMesh.position.set(0, 18, 0.75);
+            lidGroup.add(screenMesh);
+
+            laptopGroup.add(lidGroup);
+            laptopGroup.position.set(0, 0, -102);
+            scene.add(laptopGroup);
+
+            // 4. Giant Architect Desk Lamp casting warm pool of light
+            const lampGroup = new THREE.Group();
+            const lampDarkMat = new THREE.MeshPhysicalMaterial({
+                color: 0x1e293b,
+                metalness: 0.6,
+                roughness: 0.3,
+                clearcoat: 0.5
+            });
+            const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(12, 14, 3, 32), lampDarkMat);
+            lampBase.position.y = 1.5;
+            lampBase.castShadow = true;
+            lampGroup.add(lampBase);
+
+            const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 42, 16), lampDarkMat);
+            arm1.position.set(-4, 21, 0);
+            arm1.rotation.z = 0.22;
+            lampGroup.add(arm1);
+
+            const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 38, 16), lampDarkMat);
+            arm2.position.set(6, 48, 0);
+            arm2.rotation.z = -0.65;
+            lampGroup.add(arm2);
+
+            const shadeGeo = new THREE.ConeGeometry(10, 14, 32, 1, true);
+            const shadeMesh = new THREE.Mesh(shadeGeo, lampDarkMat);
+            shadeMesh.position.set(20, 56, 0);
+            shadeMesh.rotation.z = -0.45;
+            lampGroup.add(shadeMesh);
+
+            const bulbMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(4.2, 24, 24),
+                new THREE.MeshBasicMaterial({ color: 0xfffbeb })
+            );
+            bulbMesh.position.set(21, 53, 0);
+            lampGroup.add(bulbMesh);
+
+            lampGroup.position.set(-125, 0, -78);
+            lampGroup.rotation.y = 0.6;
+            scene.add(lampGroup);
+
+            // 5. Giant Wooden Pencils with Metal Ferrule & Rounded Eraser
+            function createGiantPencil(x, z, rotY, bodyColor = 0xfacc15) {
+                const pGroup = new THREE.Group();
+                const shaftGeo = new THREE.CylinderGeometry(1.65, 1.65, 34, 6);
+                const shaftMat = new THREE.MeshPhysicalMaterial({ color: bodyColor, roughness: 0.35, clearcoat: 0.4 });
+                const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+                shaft.rotation.z = Math.PI / 2;
+                shaft.castShadow = true;
+                pGroup.add(shaft);
+
+                // Silver crimped ferrule ring
+                const ferruleGeo = new THREE.CylinderGeometry(1.68, 1.68, 3.2, 24);
+                const ferruleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.2 });
+                const ferrule = new THREE.Mesh(ferruleGeo, ferruleMat);
+                ferrule.rotation.z = Math.PI / 2;
+                ferrule.position.x = -18.2;
+                pGroup.add(ferrule);
+
+                const coneGeo = new THREE.ConeGeometry(1.65, 5.5, 24);
+                const woodMat = new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.65 });
+                const cone = new THREE.Mesh(coneGeo, woodMat);
+                cone.rotation.z = -Math.PI / 2;
+                cone.position.x = 19.7;
+                pGroup.add(cone);
+
+                const tipGeo = new THREE.ConeGeometry(0.62, 2.2, 24);
+                const tipMat = new THREE.MeshPhysicalMaterial({ color: 0x1e293b, roughness: 0.25, metalness: 0.3 });
+                const tip = new THREE.Mesh(tipGeo, tipMat);
+                tip.rotation.z = -Math.PI / 2;
+                tip.position.x = 21.6;
+                pGroup.add(tip);
+
+                const eraserGeo = new THREE.CylinderGeometry(1.62, 1.62, 3.5, 24);
+                const eraserMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.7 });
+                const eraser = new THREE.Mesh(eraserGeo, eraserMat);
+                eraser.rotation.z = Math.PI / 2;
+                eraser.position.x = -21.2;
+                pGroup.add(eraser);
+
+                pGroup.position.set(x, 1.65, z);
+                pGroup.rotation.y = rotY;
+                scene.add(pGroup);
+            }
+
+            createGiantPencil(-85, -18, 0.45, 0xfacc15);
+            createGiantPencil(88, 12, -0.8, 0x22c55e);
+            createGiantPencil(-45, 98, 0.15, 0x38bdf8);
+
+            // Smooth Beveled Dual-Color Erasers as Trackside Chicanes
+            function createGiantEraser(x, z, rotY) {
+                const eGroup = new THREE.Group();
+                const redGeo = createRoundedBoxGeometry(8.2, 3.6, 6.2, 0.65, 5);
+                const redMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.65 });
+                const redMesh = new THREE.Mesh(redGeo, redMat);
+                redMesh.position.x = -3.8;
+                redMesh.castShadow = true;
+                redMesh.receiveShadow = true;
+
+                const blueGeo = createRoundedBoxGeometry(4.4, 3.6, 6.2, 0.65, 5);
+                const blueMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.65 });
+                const blueMesh = new THREE.Mesh(blueGeo, blueMat);
+                blueMesh.position.x = 2.0;
+                blueMesh.castShadow = true;
+                blueMesh.receiveShadow = true;
+
+                // Cardboard sleeve band around middle
+                const sleeveGeo = createRoundedBoxGeometry(3.2, 3.75, 6.4, 0.5, 4);
+                const sleeveMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+                const sleeveMesh = new THREE.Mesh(sleeveGeo, sleeveMat);
+                sleeveMesh.position.x = -1.2;
+
+                eGroup.add(redMesh, blueMesh, sleeveMesh);
+                eGroup.position.set(x, 1.8, z);
+                eGroup.rotation.y = rotY;
+                scene.add(eGroup);
+            }
+
+            createGiantEraser(62, 52, 0.6);
+            createGiantEraser(-72, -48, -0.5);
+            createGiantEraser(95, -55, 1.1);
+        }
+
+        /**************************************************************
+         * 4. PEMBUATAN MODEL MOBIL BALAP MINI 3D REALISTIS (CURVED F1/GT)
+         **************************************************************/
+        let sharedTireTreadTex = null;
+        function getTireTreadTexture() {
+            if (sharedTireTreadTex) return sharedTireTreadTex;
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#18181b';
+            ctx.fillRect(0, 0, 128, 128);
+            ctx.fillStyle = '#09090b';
+            for (let y = 0; y < 128; y += 16) {
+                ctx.fillRect(0, y, 128, 6);
+            }
+            sharedTireTreadTex = new THREE.CanvasTexture(canvas);
+            sharedTireTreadTex.wrapS = THREE.RepeatWrapping;
+            sharedTireTreadTex.wrapT = THREE.RepeatWrapping;
+            return sharedTireTreadTex;
+        }
+
+        function createMiniRaceCarMesh(mainColorHex) {
+            const carGroup = new THREE.Group();
+            const bodyTiltGroup = new THREE.Group();
+            carGroup.add(bodyTiltGroup);
+
+            // Automotive Metallic Paint with Glossy Clearcoat
+            const bodyMat = new THREE.MeshPhysicalMaterial({
+                color: mainColorHex,
+                roughness: 0.16,
+                metalness: 0.55,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.08
+            });
+
+            // Carbon Fiber Material for Splitter, Diffuser & Spoiler
+            const carbonMat = new THREE.MeshStandardMaterial({
+                color: 0x1e293b,
+                roughness: 0.35,
+                metalness: 0.4
+            });
+
+            // White Racing Livery Stripe Material
+            const stripeMat = new THREE.MeshPhysicalMaterial({
+                color: 0xf8fafc,
+                roughness: 0.2,
+                clearcoat: 0.8
+            });
+
+            // 1. Sleek Curved Aerodynamic Main Body Profile (Extruded with Smooth Bevel)
+            const profileShape = new THREE.Shape();
+            profileShape.moveTo(-2.7, 0.22);
+            profileShape.lineTo(2.9, 0.20);
+            // Curved front nose cone
+            profileShape.quadraticCurveTo(3.35, 0.25, 3.15, 0.58);
+            // Sloping hood to windshield base
+            profileShape.quadraticCurveTo(2.2, 0.88, 1.15, 0.98);
+            // Aerodynamic cabin spine
+            profileShape.quadraticCurveTo(0.0, 1.32, -1.25, 1.08);
+            // Rear engine deck
+            profileShape.lineTo(-2.55, 0.88);
+            profileShape.quadraticCurveTo(-2.85, 0.58, -2.7, 0.22);
+
+            const fuselageGeo = new THREE.ExtrudeGeometry(profileShape, {
+                depth: 1.35,
+                bevelEnabled: true,
+                bevelSegments: 8,
+                steps: 2,
+                bevelSize: 0.26,
+                bevelThickness: 0.26,
+                curveSegments: 24
+            });
+            fuselageGeo.center();
+            fuselageGeo.rotateY(Math.PI / 2); // Align length along Z axis
+            const fuselageMesh = new THREE.Mesh(fuselageGeo, bodyMat);
+            fuselageMesh.position.set(0, 0.78, 0.15);
+            fuselageMesh.castShadow = true;
+            fuselageMesh.receiveShadow = true;
+            bodyTiltGroup.add(fuselageMesh);
+
+            // 2. Sculpted Left & Right Aerodynamic Sidepods (Rounded)
+            const sidepodGeo = createRoundedBoxGeometry(0.75, 0.62, 3.1, 0.26, 6);
+            const leftPod = new THREE.Mesh(sidepodGeo, bodyMat);
+            leftPod.position.set(-1.05, 0.62, -0.1);
+            leftPod.castShadow = true;
+            const rightPod = new THREE.Mesh(sidepodGeo, bodyMat);
+            rightPod.position.set(1.05, 0.62, -0.1);
+            rightPod.castShadow = true;
+            bodyTiltGroup.add(leftPod, rightPod);
+
+            // Center Racing Stripe along the hood
+            const stripeGeo = createRoundedBoxGeometry(0.45, 0.08, 2.2, 0.03, 3);
+            const stripeMesh = new THREE.Mesh(stripeGeo, stripeMat);
+            stripeMesh.position.set(0, 1.05, 1.55);
+            stripeMesh.rotation.x = 0.14;
+            bodyTiltGroup.add(stripeMesh);
+
+            // 3. Smooth Tinted Bubble Glass Cockpit Canopy (Ellipsoid Sphere)
+            const canopyGeo = new THREE.SphereGeometry(0.88, 32, 24);
+            canopyGeo.scale(0.88, 0.62, 1.55);
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0x090d16,
+                roughness: 0.05,
+                metalness: 0.2,
+                clearcoat: 1.0,
+                reflectivity: 1.0
+            });
+            const canopyMesh = new THREE.Mesh(canopyGeo, glassMat);
+            canopyMesh.position.set(0, 1.26, -0.15);
+            bodyTiltGroup.add(canopyMesh);
+
+            // 4. Front Carbon Fiber Aero Splitter Wing
+            const frontWingGeo = createRoundedBoxGeometry(2.85, 0.14, 0.85, 0.06, 4);
+            const frontWing = new THREE.Mesh(frontWingGeo, carbonMat);
+            frontWing.position.set(0, 0.32, 2.95);
+            frontWing.castShadow = true;
+            bodyTiltGroup.add(frontWing);
+
+            // Bright LED Headlights & Red Rear Tail Light Bar
+            const headlightGeo = createRoundedBoxGeometry(0.48, 0.14, 0.18, 0.05, 3);
+            const headlightMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+            const hlLeft = new THREE.Mesh(headlightGeo, headlightMat);
+            hlLeft.position.set(-0.62, 0.68, 2.75);
+            const hlRight = new THREE.Mesh(headlightGeo, headlightMat);
+            hlRight.position.set(0.62, 0.68, 2.75);
+            bodyTiltGroup.add(hlLeft, hlRight);
+
+            const taillightGeo = createRoundedBoxGeometry(1.5, 0.16, 0.15, 0.05, 3);
+            const taillightMat = new THREE.MeshBasicMaterial({ color: 0xff1133 });
+            const tailLight = new THREE.Mesh(taillightGeo, taillightMat);
+            tailLight.position.set(0, 0.82, -2.65);
+            bodyTiltGroup.add(tailLight);
+
+            // 5. Curved GT/F1 Rear Spoiler Wing with Endplates
+            const wingGroup = new THREE.Group();
+            const strutGeo = createRoundedBoxGeometry(0.14, 0.85, 0.45, 0.05, 3);
+            const leftStrut = new THREE.Mesh(strutGeo, carbonMat);
+            leftStrut.position.set(-0.75, 1.45, -2.35);
+            leftStrut.rotation.x = -0.18;
+            const rightStrut = new THREE.Mesh(strutGeo, carbonMat);
+            rightStrut.position.set(0.75, 1.45, -2.35);
+            rightStrut.rotation.x = -0.18;
+
+            const wingBladeGeo = createRoundedBoxGeometry(2.95, 0.16, 0.88, 0.07, 5);
+            const wingBlade = new THREE.Mesh(wingBladeGeo, bodyMat);
+            wingBlade.position.set(0, 1.86, -2.45);
+            wingBlade.rotation.x = 0.12;
+            wingBlade.castShadow = true;
+
+            const endplateGeo = createRoundedBoxGeometry(0.12, 0.55, 1.0, 0.05, 4);
+            const epLeft = new THREE.Mesh(endplateGeo, carbonMat);
+            epLeft.position.set(-1.48, 1.82, -2.45);
+            const epRight = new THREE.Mesh(endplateGeo, carbonMat);
+            epRight.position.set(1.48, 1.82, -2.45);
+
+            wingGroup.add(leftStrut, rightStrut, wingBlade, epLeft, epRight);
+            bodyTiltGroup.add(wingGroup);
+
+            // Chrome Dual Exhaust Pipes
+            const pipeGeo = new THREE.CylinderGeometry(0.18, 0.2, 0.5, 16);
+            pipeGeo.rotateX(Math.PI / 2);
+            const chromeMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.9, roughness: 0.15 });
+            const pipeL = new THREE.Mesh(pipeGeo, chromeMat);
+            pipeL.position.set(-0.48, 0.55, -2.68);
+            const pipeR = new THREE.Mesh(pipeGeo, chromeMat);
+            pipeR.position.set(0.48, 0.55, -2.68);
+            bodyTiltGroup.add(pipeL, pipeR);
+
+            // 6. Detailed 3D Racing Wheels (Rounded Sidewall Tire + Alloy Spokes + Center Lock Nut)
+            const tireMat = new THREE.MeshStandardMaterial({
+                color: 0x18181b,
+                map: getTireTreadTexture(),
+                roughness: 0.75
+            });
+            const alloyMat = new THREE.MeshStandardMaterial({
+                color: 0xe2e8f0,
+                metalness: 0.85,
+                roughness: 0.2
+            });
+            const centerCapMat = new THREE.MeshStandardMaterial({
+                color: mainColorHex,
+                metalness: 0.6,
+                roughness: 0.2
+            });
+
+            const wheels = [];
+            const wheelPositions = [
+                [-1.48, 0.72, 1.82],
+                [1.48, 0.72, 1.82],
+                [-1.52, 0.76, -1.78],
+                [1.52, 0.76, -1.78]
+            ];
+
+            wheelPositions.forEach((pos, idx) => {
+                const isRear = idx >= 2;
+                const radius = isRear ? 0.76 : 0.72;
+                const width = isRear ? 0.68 : 0.58;
+
+                const wGroup = new THREE.Group();
+
+                // Main Tire Cylinder
+                const tireGeo = new THREE.CylinderGeometry(radius, radius, width, 32);
+                tireGeo.rotateZ(Math.PI / 2);
+                const tireMesh = new THREE.Mesh(tireGeo, tireMat);
+                tireMesh.castShadow = true;
+                wGroup.add(tireMesh);
+
+                // Rounded Tire Sidewall Torus Rings for non-blocky look
+                const torusGeo = new THREE.TorusGeometry(radius * 0.78, width * 0.24, 16, 32);
+                torusGeo.rotateY(Math.PI / 2);
+                const sideOuter = new THREE.Mesh(torusGeo, tireMat);
+                sideOuter.position.x = (pos[0] < 0 ? -1 : 1) * (width * 0.28);
+                wGroup.add(sideOuter);
+
+                // Metallic Alloy Rim Hub
+                const rimGeo = new THREE.CylinderGeometry(radius * 0.62, radius * 0.62, width + 0.04, 24);
+                rimGeo.rotateZ(Math.PI / 2);
+                wGroup.add(new THREE.Mesh(rimGeo, alloyMat));
+
+                // 5-Spoke Star Pattern so wheel rotation is visibly crisp
+                const spokeGeo = new THREE.BoxGeometry(width + 0.07, radius * 1.15, 0.11);
+                for (let s = 0; s < 3; s++) {
+                    const spoke = new THREE.Mesh(spokeGeo, alloyMat);
+                    spoke.rotation.x = (s * Math.PI) / 3;
+                    wGroup.add(spoke);
+                }
+
+                // Center Lock Nut
+                const nutGeo = new THREE.CylinderGeometry(0.16, 0.16, width + 0.1, 16);
+                nutGeo.rotateZ(Math.PI / 2);
+                wGroup.add(new THREE.Mesh(nutGeo, centerCapMat));
+
+                wGroup.position.set(pos[0], pos[1], pos[2]);
+                carGroup.add(wGroup);
+                wheels.push(wGroup);
+            });
+
+            // 7. Layered Glowing Nitro Afterburner Plumes
+            const flameOuterGeo = new THREE.ConeGeometry(0.32, 2.4, 16);
+            flameOuterGeo.rotateX(-Math.PI / 2);
+            const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
+            const flameLeft = new THREE.Mesh(flameOuterGeo, flameMat);
+            flameLeft.position.set(-0.48, 0.55, -3.7);
+            const flameRight = new THREE.Mesh(flameOuterGeo, flameMat);
+            flameRight.position.set(0.48, 0.55, -3.7);
+            flameLeft.visible = false;
+            flameRight.visible = false;
+            bodyTiltGroup.add(flameLeft, flameRight);
+
+            return {
+                mesh: carGroup,
+                bodyTiltGroup,
+                wheels,
+                flames: [flameLeft, flameRight]
+            };
+        }
+
+        function spawnAllRaceCars() {
+            // Clear existing if any
+            cars.forEach(c => scene.remove(c.mesh));
+            cars.length = 0;
+
+            const specs = [
+                { id: 'p0', defaultName: 'Pembalap 1', aiName: 'Robo Merah', color: 0xef4444, hexStr: '#ef4444', laneOffset: -3.9 },
+                { id: 'p1', defaultName: 'Pembalap 2', aiName: 'Robo Biru', color: 0x3b82f6, hexStr: '#3b82f6', laneOffset: -1.3 },
+                { id: 'p2', defaultName: 'Pembalap 3', aiName: 'Kilat Kuning', color: 0xfacc15, hexStr: '#facc15', laneOffset: 1.3 },
+                { id: 'p3', defaultName: 'Pembalap 4', aiName: 'Hijau Turbo', color: 0x22c55e, hexStr: '#22c55e', laneOffset: 3.9 }
+            ];
+
+            specs.forEach((sp, idx) => {
+                const isHuman = idx < gameState.playerCount;
+                const model = createMiniRaceCarMesh(sp.color);
+                scene.add(model.mesh);
+
+                const customName = gameState.playerNames[idx] || sp.defaultName;
+
+                cars.push({
+                    index: idx,
+                    id: sp.id,
+                    name: isHuman ? customName : sp.aiName,
+                    hexStr: sp.hexStr,
+                    isPlayer: isHuman,
+                    mesh: model.mesh,
+                    bodyTiltGroup: model.bodyTiltGroup,
+                    wheels: model.wheels,
+                    flames: model.flames,
+                    laneOffset: sp.laneOffset,
+                    distance: -idx * 2.0,
+                    speed: 0, // km/h
+                    lap: 1,
+                    finished: false,
+                    finishTime: 0,
+                    score: 0,
+                    correctCount: 0,
+                    wrongCount: 0,
+                    topSpeedReached: 60,
+                    currentQuestion: null,
+                    aiPhase: Math.random() * Math.PI * 2
+                });
+            });
+
+            updateCars3DTransform(0);
+        }
+
+        function updateCars3DTransform(dt) {
+            if (!trackCurve) return;
+
+            cars.forEach((car) => {
+                const rawLapProgress = car.distance / TRACK_TOTAL_LENGTH;
+                const u = ((rawLapProgress % 1) + 1) % 1;
+                const uAhead = (u + 0.015) % 1;
+
+                const pt = trackCurve.getPointAt(u);
+                const tangent = trackCurve.getTangentAt(u).normalize();
+                const tangentAhead = trackCurve.getTangentAt(uAhead).normalize();
+                const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+
+                // Position car on its assigned lane on top of the wooden track (Y = 0.18)
+                const finalPos = pt.clone().addScaledVector(normal, car.laneOffset);
+                finalPos.y = 0.18;
+                car.mesh.position.copy(finalPos);
+
+                // Orient car along track tangent
+                const headingAngle = Math.atan2(tangent.x, tangent.z);
+                car.mesh.rotation.y = headingAngle;
+
+                // Subtle realistic chassis body roll when cornering at speed
+                if (car.bodyTiltGroup) {
+                    const turnCross = tangent.x * tangentAhead.z - tangent.z * tangentAhead.x;
+                    const targetRoll = THREE.MathUtils.clamp(turnCross * (car.speed / 180) * 1.8, -0.18, 0.18);
+                    car.bodyTiltGroup.rotation.z += (targetRoll - car.bodyTiltGroup.rotation.z) * Math.min(1, dt * 10);
+                }
+
+                // Spin all 4 wheels proportional to car speed
+                const wheelSpin = (car.speed * 0.25) * dt;
+                car.wheels.forEach((w) => {
+                    w.rotation.x += wheelSpin;
+                });
+
+                // Show nitro exhaust flames when speed > 180 km/h
+                const isHighSpeed = car.speed >= 180 && gameState.mode === 'RACING';
+                car.flames.forEach((flame) => {
+                    flame.visible = isHighSpeed;
+                    if (isHighSpeed) {
+                        const flicker = 0.8 + Math.random() * 0.55;
+                        flame.scale.set(1, 1, flicker);
+                    }
+                });
+            });
+        }
+
+        function onWindowResize() {
+            if (!renderer || !camera) return;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+
+        /**************************************************************
+         * 5. GENERATOR SOAL BERHITUNG DINAMIS & AKURAT
+         **************************************************************/
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateMathQuestion(operation, difficulty) {
+            let op = operation;
+            if (op === 'mix') {
+                const ops = ['add', 'sub', 'mul', 'div'];
+                op = ops[randInt(0, ops.length - 1)];
+            }
+
+            let a = 1, b = 1, answer = 2, symbol = '+';
+
+            if (op === 'add') {
+                symbol = '+';
+                if (difficulty === 'amateur') {
+                    a = randInt(1, 25);
+                    b = randInt(1, 25);
+                } else if (difficulty === 'street') {
+                    a = randInt(12, 65);
+                    b = randInt(12, 55);
+                } else {
+                    a = randInt(35, 160);
+                    b = randInt(25, 140);
+                }
+                answer = a + b;
+            } else if (op === 'sub') {
+                symbol = '−';
+                if (difficulty === 'amateur') {
+                    a = randInt(8, 40);
+                    b = randInt(1, a - 1);
+                } else if (difficulty === 'street') {
+                    a = randInt(25, 100);
+                    b = randInt(10, a - 5);
+                } else {
+                    a = randInt(60, 240);
+                    b = randInt(25, a - 10);
+                }
+                answer = a - b;
+            } else if (op === 'mul') {
+                symbol = '×';
+                if (difficulty === 'amateur') {
+                    a = randInt(1, 10);
+                    b = randInt(1, 10);
+                } else if (difficulty === 'street') {
+                    a = randInt(3, 12);
+                    b = randInt(3, 12);
+                } else {
+                    a = randInt(5, 15);
+                    b = randInt(4, 15);
+                }
+                answer = a * b;
+            } else if (op === 'div') {
+                symbol = '÷';
+                if (difficulty === 'amateur') {
+                    b = randInt(2, 9);
+                    answer = randInt(1, 10);
+                } else if (difficulty === 'street') {
+                    b = randInt(3, 12);
+                    answer = randInt(2, 12);
+                } else {
+                    b = randInt(4, 15);
+                    answer = randInt(4, 15);
+                }
+                a = b * answer; // Guarantees exact integer division without remainder
+            }
+
+            const choicesSet = new Set([answer]);
+            const offsets = [-10, -5, -3, -2, -1, 1, 2, 3, 5, 10, 12, -8, 8];
+
+            while (choicesSet.size < 4) {
+                const delta = offsets[randInt(0, offsets.length - 1)] + randInt(-2, 2);
+                let candidate = answer + delta;
+                if (candidate < 0) candidate = answer + Math.abs(delta) + randInt(1, 5);
+                if (candidate !== answer) {
+                    choicesSet.add(candidate);
+                }
+            }
+
+            // Shuffle choices
+            const choices = Array.from(choicesSet);
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+
+            return {
+                text: `${a} ${symbol} ${b} = ?`,
+                answer,
+                choices
+            };
+        }
+
+        function loadNextMathQuestionForPlayer(playerIdx) {
+            const car = cars[playerIdx];
+            if (!car || !car.isPlayer) return;
+
+            const q = generateMathQuestion(gameState.operation, gameState.difficulty);
+            car.currentQuestion = q;
+
+            const qTextEl = document.getElementById(`math-q-text-${playerIdx}`);
+            if (qTextEl) {
+                qTextEl.textContent = q.text;
+                qTextEl.classList.remove('animate-pulse-fast');
+                void qTextEl.offsetWidth;
+                qTextEl.classList.add('animate-pulse-fast');
+            }
+
+            for (let i = 0; i < 4; i++) {
+                const btnVal = document.getElementById(`ans-val-${playerIdx}-${i}`);
+                if (btnVal) {
+                    btnVal.textContent = q.choices[i];
+                }
+            }
+        }
+
+        /**************************************************************
+         * 6. INTERAKSI UI LOBBY, BALAPAN, DAN JAWABAN SOAL (1 - 4 PEMAIN)
+         **************************************************************/
+        function selectPlayerCount(count) {
+            gameState.playerCount = count;
+            soundEngine.playBeep(560, 0.08);
+
+            document.querySelectorAll('.pcount-btn').forEach(btn => {
+                const bCount = Number(btn.getAttribute('data-pcount'));
+                if (bCount === count) {
+                    btn.className = 'pcount-btn flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 border-emerald-400 bg-emerald-500/25 text-white transition';
+                } else {
+                    btn.className = 'pcount-btn flex flex-col items-center justify-center p-2.5 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800';
+                }
+            });
+
+            // Show/hide player name inputs
+            for (let i = 0; i < 4; i++) {
+                const wrap = document.getElementById(`p-input-wrap-${i}`);
+                if (wrap) {
+                    if (i < count) wrap.classList.remove('hidden');
+                    else wrap.classList.add('hidden');
+                }
+            }
+        }
+
+        function selectOperation(op) {
+            gameState.operation = op;
+            soundEngine.playBeep(520, 0.08);
+            document.querySelectorAll('.op-btn').forEach(btn => {
+                if (btn.getAttribute('data-op') === op) {
+                    btn.className = 'op-btn flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-sky-400 bg-sky-500/25 text-white transition';
+                } else {
+                    btn.className = 'op-btn flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-700 bg-slate-800/70 text-slate-300 transition hover:bg-slate-800';
+                }
+            });
+        }
+
+        function selectDifficulty(diff) {
+            gameState.difficulty = diff;
+            soundEngine.playBeep(620, 0.08);
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                if (btn.getAttribute('data-diff') === diff) {
+                    btn.classList.add('border-emerald-400', 'bg-emerald-500/20');
+                    btn.classList.remove('border-slate-700', 'bg-slate-800/70');
+                } else {
+                    btn.classList.remove('border-emerald-400', 'bg-emerald-500/20');
+                    btn.classList.add('border-slate-700', 'bg-slate-800/70');
+                }
+            });
+        }
+
+        function showRaceToast(message, isPositive = true) {
+            const toast = document.getElementById('race-toast');
+            toast.textContent = message;
+            if (isPositive) {
+                toast.className = 'opacity-100 transform scale-100 transition-all duration-200 px-4 py-1.5 rounded-2xl font-kids font-black text-sm sm:text-xl tracking-wide shadow-2xl border-2 bg-emerald-500/90 text-slate-950 border-emerald-200';
+            } else {
+                toast.className = 'opacity-100 transform scale-100 transition-all duration-200 px-4 py-1.5 rounded-2xl font-kids font-black text-sm sm:text-xl tracking-wide shadow-2xl border-2 bg-rose-600/90 text-white border-rose-300';
+            }
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => {
+                toast.classList.replace('opacity-100', 'opacity-0');
+                toast.classList.replace('scale-100', 'scale-75');
+            }, 900);
+        }
+
+        function triggerFeedbackFlash(isCorrect) {
+            const flash = document.getElementById('feedback-flash');
+            flash.style.backgroundColor = isCorrect ? 'rgba(16, 185, 129, 0.16)' : 'rgba(239, 68, 68, 0.2)';
+            flash.classList.replace('opacity-0', 'opacity-100');
+            setTimeout(() => {
+                flash.classList.replace('opacity-100', 'opacity-0');
+            }, 160);
+        }
+
+        function buildSplitScreenColumnsUI() {
+            const container = document.getElementById('split-players-container');
+            const pCount = gameState.playerCount;
+            container.className = `w-full flex-1 grid grid-cols-${pCount} divide-x-2 divide-slate-700/70 overflow-hidden`;
+            container.style.gridTemplateColumns = `repeat(${pCount}, minmax(0, 1fr))`;
+
+            const keyHints = [
+                ['1', '2', '3', '4'],
+                ['Q', 'W', 'E', 'R'],
+                ['U', 'I', 'O', 'P'],
+                ['7', '8', '9', '0']
+            ];
+
+            let html = '';
+            for (let p = 0; p < pCount; p++) {
+                const car = cars[p];
+                const isCompact = pCount >= 3;
+                const circumference = 2 * Math.PI * 26; // r=26 -> ~163.36
+
+                html += `
+                <div class="relative h-full flex flex-col justify-between p-1.5 sm:p-3 pointer-events-none select-none">
+                    <!-- TOP HUD PER PLAYER: Rank/Lap on Left, Circular Radial Speedometer on Right -->
+                    <div class="flex items-start justify-between gap-1.5">
+                        <!-- Player Badge, Rank, Lap & Points -->
+                        <div class="glass-hud rounded-2xl px-2.5 py-1.5 shadow-lg border-l-4" style="border-left-color: ${car.hexStr}">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-6 h-6 rounded-lg font-racing font-black text-xs flex items-center justify-center text-slate-950" style="background:${car.hexStr}" id="hud-pos-badge-${p}">1</span>
+                                <span class="font-extrabold text-xs sm:text-sm text-white truncate max-w-[90px] sm:max-w-[140px]">${car.name}</span>
+                            </div>
+                            <div class="flex items-center gap-2 mt-1 text-[10px] sm:text-xs font-bold">
+                                <span class="text-sky-300 font-racing" id="hud-lap-${p}">LAP 1/5</span>
+                                <span class="text-emerald-400 font-racing" id="hud-score-${p}">0 pts</span>
+                            </div>
+                        </div>
+
+                        <!-- CIRCULAR RADIAL SPEEDOMETER IN CORNER -->
+                        <div class="glass-hud rounded-full p-1.5 flex items-center justify-center shadow-xl relative w-16 h-16 sm:w-20 sm:h-20 shrink-0">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                                <circle cx="32" cy="32" r="26" stroke="rgba(51,65,85,0.8)" stroke-width="6" fill="none" />
+                                <circle id="hud-speed-circle-${p}" cx="32" cy="32" r="26" stroke="${car.hexStr}" stroke-width="6"
+                                    stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${(circumference * 0.8).toFixed(1)}"
+                                    stroke-linecap="round" fill="none" class="transition-all duration-150" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center leading-none">
+                                <span id="hud-speed-num-${p}" class="font-racing font-black text-sm sm:text-lg text-white">60</span>
+                                <span class="text-[7px] sm:text-[8px] font-racing font-bold text-amber-400">KM/J</span>
+                                <span id="hud-gear-${p}" class="text-[7px] font-bold text-sky-300 mt-0.5">G2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CENTER SPACE LEFT CLEAR SO CAR & WOODEN TRACK ARE ALWAYS VISIBLE -->
+                    <div class="my-auto flex justify-center">
+                        <div id="p-finish-banner-${p}" class="hidden glass-dark px-4 py-2 rounded-2xl border-2 border-emerald-400 text-center">
+                            <div class="font-kids font-black text-base sm:text-xl text-emerald-400">FINISH 5 LAP!</div>
+                            <div class="text-xs text-white font-bold" id="p-finish-sub-${p}">Menunggu pemain lain...</div>
+                        </div>
+                    </div>
+
+                    <!-- BOTTOM COMPACT MATH CHALLENGE PANEL -->
+                    <div class="interactive-panel glass-hud rounded-2xl p-2 sm:p-2.5 shadow-xl border border-white/15 w-full max-w-md mx-auto">
+                        <div class="bg-slate-900/90 rounded-xl px-2.5 py-1.5 mb-2 border border-slate-700 flex items-center justify-between">
+                            <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded text-slate-950 hidden sm:inline-block" style="background:${car.hexStr}">P${p + 1}</span>
+                            <div id="math-q-text-${p}" class="font-kids font-black ${isCompact ? 'text-lg sm:text-2xl' : 'text-xl sm:text-3xl'} text-white tracking-wider mx-auto">
+                                12 + 8 = ?
+                            </div>
+                            <span class="text-[9px] font-bold text-emerald-400">✓<b id="hud-cor-${p}">0</b></span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+                            ${[0, 1, 2, 3].map(btnIdx => {
+                                const bgColors = [
+                                    'from-sky-500 to-sky-600 border-sky-300/60 text-white',
+                                    'from-emerald-500 to-emerald-600 border-emerald-300/60 text-white',
+                                    'from-amber-500 to-amber-600 border-amber-200/80 text-slate-950',
+                                    'from-purple-500 to-purple-600 border-purple-300/60 text-white'
+                                ];
+                                return `
+                                <button type="button" onclick="submitPlayerAnswer(${p}, ${btnIdx})"
+                                    class="btn-answer relative py-2 sm:py-3 rounded-xl bg-gradient-to-b ${bgColors[btnIdx]} font-kids font-black ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-2xl'} border flex items-center justify-center">
+                                    <span class="absolute top-0.5 left-1 text-[8px] font-sans font-extrabold bg-slate-950/35 px-1 rounded text-white/90">${keyHints[p][btnIdx]}</span>
+                                    <span id="ans-val-${p}-${btnIdx}">20</span>
+                                </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function submitPlayerAnswer(playerIdx, choiceIndex) {
+            if (gameState.mode !== 'RACING') return;
+            const playerCar = cars[playerIdx];
+            if (!playerCar || !playerCar.isPlayer || playerCar.finished || !playerCar.currentQuestion) return;
+
+            const chosenVal = playerCar.currentQuestion.choices[choiceIndex];
+            const isCorrect = (chosenVal === playerCar.currentQuestion.answer);
+
+            if (isCorrect) {
+                playerCar.speed = Math.min(300, playerCar.speed + 30);
+                if (playerCar.speed > playerCar.topSpeedReached) {
+                    playerCar.topSpeedReached = Math.round(playerCar.speed);
+                }
+                playerCar.score += 100;
+                playerCar.correctCount += 1;
+
+                soundEngine.playTurboWhoosh();
+                triggerFeedbackFlash(true);
+                showRaceToast(`${playerCar.name}: BENAR! +30 KM/J`, true);
+            } else {
+                playerCar.speed = Math.max(40, playerCar.speed - 40);
+                playerCar.score = Math.max(0, playerCar.score - 30);
+                playerCar.wrongCount += 1;
+
+                soundEngine.playBrakeScreech();
+                triggerFeedbackFlash(false);
+                showRaceToast(`${playerCar.name}: REM -40 KM/J`, false);
+            }
+
+            updateRaceHUD();
+            loadNextMathQuestionForPlayer(playerIdx);
+        }
+
+        // Keyboard shortcuts for up to 4 players simultaneously on laptop/keyboard
+        window.addEventListener('keydown', (e) => {
+            if (gameState.mode !== 'RACING') return;
+            const k = e.key.toUpperCase();
+            // Player 1: 1, 2, 3, 4
+            if (k === '1') submitPlayerAnswer(0, 0);
+            else if (k === '2') submitPlayerAnswer(0, 1);
+            else if (k === '3') submitPlayerAnswer(0, 2);
+            else if (k === '4') submitPlayerAnswer(0, 3);
+            // Player 2: Q, W, E, R
+            else if (k === 'Q') submitPlayerAnswer(1, 0);
+            else if (k === 'W') submitPlayerAnswer(1, 1);
+            else if (k === 'E') submitPlayerAnswer(1, 2);
+            else if (k === 'R') submitPlayerAnswer(1, 3);
+            // Player 3: U, I, O, P
+            else if (k === 'U') submitPlayerAnswer(2, 0);
+            else if (k === 'I') submitPlayerAnswer(2, 1);
+            else if (k === 'O') submitPlayerAnswer(2, 2);
+            else if (k === 'P') submitPlayerAnswer(2, 3);
+            // Player 4: 7, 8, 9, 0
+            else if (k === '7') submitPlayerAnswer(3, 0);
+            else if (k === '8') submitPlayerAnswer(3, 1);
+            else if (k === '9') submitPlayerAnswer(3, 2);
+            else if (k === '0') submitPlayerAnswer(3, 3);
+        });
+
+        /**************************************************************
+         * 7. ALUR MULAI BALAPAN, COUNTDOWN, DAN UPDATE LOOP
+         **************************************************************/
+        function startRaceSequence() {
+            for (let i = 0; i < 4; i++) {
+                const inp = document.getElementById(`input-player-name-${i}`);
+                const val = inp ? inp.value.trim() : '';
+                gameState.playerNames[i] = val || `Pembalap ${i + 1}`;
+            }
+
+            gameState.elapsedTime = 0;
+
+            spawnAllRaceCars();
+            buildSplitScreenColumnsUI();
+
+            // Hide Lobby & Result, Show Race HUD + Countdown Overlay
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-race').classList.remove('hidden');
+            document.getElementById('screen-race').classList.add('flex');
+
+            for (let p = 0; p < gameState.playerCount; p++) {
+                loadNextMathQuestionForPlayer(p);
+            }
+            updateRaceHUD();
+
+            runCountdownSequence();
+        }
+
+        function runCountdownSequence() {
+            gameState.mode = 'COUNTDOWN';
+            const overlay = document.getElementById('countdown-overlay');
+            const textEl = document.getElementById('countdown-text');
+            const l1 = document.getElementById('light-1');
+            const l2 = document.getElementById('light-2');
+            const l3 = document.getElementById('light-3');
+
+            l1.className = 'w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-4 border-slate-600';
+            l2.className = 'w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-4 border-slate-600';
+            l3.className = 'w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-4 border-slate-600';
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+
+            let step = 3;
+            textEl.textContent = '3';
+            l1.classList.replace('bg-slate-800', 'bg-red-500');
+            soundEngine.playBeep(440, 0.2, 'square');
+
+            const timer = setInterval(() => {
+                step--;
+                if (step === 2) {
+                    textEl.textContent = '2';
+                    l2.classList.replace('bg-slate-800', 'bg-amber-400');
+                    soundEngine.playBeep(440, 0.2, 'square');
+                } else if (step === 1) {
+                    textEl.textContent = '1';
+                    l3.classList.replace('bg-slate-800', 'bg-amber-400');
+                    soundEngine.playBeep(440, 0.2, 'square');
+                } else if (step === 0) {
+                    textEl.textContent = 'GO!';
+                    l1.className = 'w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-emerald-400 border-4 border-white shadow-[0_0_25px_#34d399]';
+                    l2.className = 'w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-emerald-400 border-4 border-white shadow-[0_0_25px_#34d399]';
+                    l3.className = 'w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-emerald-400 border-4 border-white shadow-[0_0_25px_#34d399]';
+                    soundEngine.playBeep(880, 0.4, 'sawtooth');
+
+                    // Start Racing!
+                    gameState.mode = 'RACING';
+                    gameState.startTime = performance.now();
+                    cars.forEach(c => {
+                        if (c.isPlayer) c.speed = 60;
+                    });
+                    soundEngine.startEngineHum();
+                } else {
+                    clearInterval(timer);
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }
+            }, 850);
+        }
+
+        function updateRacePhysics(dt) {
+            const diffCfg = DIFFICULTY_CONFIG[gameState.difficulty];
+
+            // Update Human Players & AI Cars Speed
+            cars.forEach((car, i) => {
+                if (car.finished) return;
+
+                if (car.isPlayer) {
+                    // Natural aerodynamic track friction pulls human player speed gently toward base 60 km/h
+                    if (car.speed > 60) {
+                        car.speed = Math.max(60, car.speed - 7.0 * dt);
+                    } else if (car.speed < 60) {
+                        car.speed = Math.min(60, car.speed + 5 * dt);
+                    }
+                } else {
+                    car.aiPhase += dt * (1.2 + i * 0.3);
+                    const wave = (Math.sin(car.aiPhase) + 1) * 0.5;
+                    const targetSpeed = diffCfg.aiMinSpeed + wave * (diffCfg.aiMaxSpeed - diffCfg.aiMinSpeed);
+                    car.speed += (targetSpeed - car.speed) * 3 * dt;
+                }
+            });
+
+            // Advance all cars along the 5-lap circuit
+            const finishDistance = TRACK_TOTAL_LENGTH * gameState.totalLaps;
+
+            cars.forEach((car, idx) => {
+                if (car.finished) return;
+
+                const unitsPerSec = car.speed * 0.48;
+                car.distance += unitsPerSec * dt;
+
+                // Calculate current lap (1 to 5)
+                const newLap = Math.min(gameState.totalLaps, Math.floor(Math.max(0, car.distance) / TRACK_TOTAL_LENGTH) + 1);
+                if (car.isPlayer && newLap > car.lap) {
+                    car.lap = newLap;
+                    soundEngine.playBeep(740, 0.25, 'triangle');
+                    showRaceToast(`${car.name}: LAP ${car.lap} / ${gameState.totalLaps}!`, true);
+                } else {
+                    car.lap = newLap;
+                }
+
+                // Check if car crossed 5-lap finish line
+                if (car.distance >= finishDistance) {
+                    car.finished = true;
+                    car.finishTime = gameState.elapsedTime;
+                    car.speed = 45;
+
+                    if (car.isPlayer) {
+                        const finBanner = document.getElementById(`p-finish-banner-${idx}`);
+                        if (finBanner) finBanner.classList.remove('hidden');
+                        soundEngine.playBeep(880, 0.3, 'triangle');
+                    }
+                }
+            });
+
+            // Check if all human players have finished 5 laps
+            const allHumansFinished = cars.filter(c => c.isPlayer).every(c => c.finished);
+            if (allHumansFinished) {
+                completePlayerRace();
+                return;
+            }
+
+            // Engine pitch follows fastest active human player
+            const maxHumanSpeed = Math.max(...cars.filter(c => c.isPlayer).map(c => c.speed), 60);
+            soundEngine.updateEnginePitch(maxHumanSpeed);
+            updateCars3DTransform(dt);
+            updateRaceHUD();
+        }
+
+        function getCarRank(carIndex) {
+            const sorted = [...cars].sort((a, b) => b.distance - a.distance);
+            return sorted.findIndex(c => c.index === carIndex) + 1;
+        }
+
+        function updateRaceHUD() {
+            // Global Stopwatch Timer 00:00.0
+            const totalSecs = gameState.elapsedTime;
+            const mins = Math.floor(totalSecs / 60);
+            const secs = Math.floor(totalSecs % 60);
+            const tenths = Math.floor((totalSecs % 1) * 10);
+            const timerEl = document.getElementById('hud-timer');
+            if (timerEl) {
+                timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${tenths}`;
+            }
+
+            const circumference = 2 * Math.PI * 26; // 163.36
+
+            for (let p = 0; p < gameState.playerCount; p++) {
+                const car = cars[p];
+                if (!car) continue;
+
+                const rank = getCarRank(p);
+                const posBadge = document.getElementById(`hud-pos-badge-${p}`);
+                const lapEl = document.getElementById(`hud-lap-${p}`);
+                const scoreEl = document.getElementById(`hud-score-${p}`);
+                const corEl = document.getElementById(`hud-cor-${p}`);
+                const spdNumEl = document.getElementById(`hud-speed-num-${p}`);
+                const spdCircleEl = document.getElementById(`hud-speed-circle-${p}`);
+                const gearEl = document.getElementById(`hud-gear-${p}`);
+
+                if (posBadge) posBadge.textContent = rank;
+                if (lapEl) lapEl.textContent = `LAP ${car.lap}/${gameState.totalLaps}`;
+                if (scoreEl) scoreEl.textContent = `${car.score} pts`;
+                if (corEl) corEl.textContent = car.correctCount;
+
+                const spd = Math.round(car.speed);
+                if (spdNumEl) spdNumEl.textContent = spd;
+                if (spdCircleEl) {
+                    const ratio = Math.min(1, Math.max(0.05, spd / 300));
+                    const offset = circumference * (1 - ratio);
+                    spdCircleEl.style.strokeDashoffset = offset.toFixed(1);
+                }
+
+                const gear = Math.min(6, Math.max(1, Math.ceil(spd / 50)));
+                if (gearEl) gearEl.textContent = `G${gear}`;
+            }
+        }
+
+        function updateSingleCarChaseCamera(cam, targetCar, dt, aspect) {
+            if (!targetCar || !trackCurve) return;
+            cam.aspect = aspect;
+
+            const rawLapProgress = targetCar.distance / TRACK_TOTAL_LENGTH;
+            const u = ((rawLapProgress % 1) + 1) % 1;
+            const tangent = trackCurve.getTangentAt(u).normalize();
+
+            const carPos = targetCar.mesh.position.clone();
+            const chaseDistance = 13.5;
+            const chaseHeight = 5.8;
+
+            const desiredCamPos = carPos.clone()
+                .addScaledVector(tangent, -chaseDistance)
+                .add(new THREE.Vector3(0, chaseHeight, 0));
+
+            cam.position.lerp(desiredCamPos, Math.min(1, dt * 10));
+
+            const lookAheadPos = carPos.clone()
+                .addScaledVector(tangent, 6.0)
+                .add(new THREE.Vector3(0, 0.2, 0));
+            cam.lookAt(lookAheadPos);
+
+            const targetFov = 55 + ((targetCar.speed - 60) / 240) * 20;
+            cam.fov += (Math.max(54, targetFov) - cam.fov) * dt * 5;
+            cam.updateProjectionMatrix();
+        }
+
+        function renderSceneViews(dt) {
+            if (!renderer || !scene || !trackCurve) return;
+
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            if (gameState.mode === 'LOBBY' || gameState.mode === 'FINISHED') {
+                renderer.setScissorTest(false);
+                renderer.setViewport(0, 0, w, h);
+
+                const playerCar = cars[0];
+                if (playerCar) {
+                    gameState.lobbyOrbitAngle += dt * 0.35;
+                    const radius = 32;
+                    const carPos = playerCar.mesh.position;
+                    camera.aspect = w / h;
+                    camera.position.set(
+                        carPos.x + Math.cos(gameState.lobbyOrbitAngle) * radius,
+                        carPos.y + 14,
+                        carPos.z + Math.sin(gameState.lobbyOrbitAngle) * radius
+                    );
+                    camera.lookAt(carPos.x, carPos.y + 2, carPos.z);
+                    camera.fov = 58;
+                    camera.updateProjectionMatrix();
+                }
+                renderer.render(scene, camera);
+                return;
+            }
+
+            // Split-Screen Vertical Rendering for 1, 2, 3, or 4 Players
+            const pCount = gameState.playerCount;
+            if (pCount === 1) {
+                renderer.setScissorTest(false);
+                renderer.setViewport(0, 0, w, h);
+                updateSingleCarChaseCamera(playerCameras[0], cars[0], dt, w / h);
+                renderer.render(scene, playerCameras[0]);
+            } else {
+                renderer.setScissorTest(true);
+                const sliceWidth = Math.floor(w / pCount);
+
+                for (let p = 0; p < pCount; p++) {
+                    const left = p * sliceWidth;
+                    const width = (p === pCount - 1) ? (w - left) : sliceWidth;
+
+                    renderer.setViewport(left, 0, width, h);
+                    renderer.setScissor(left, 0, width, h);
+
+                    updateSingleCarChaseCamera(playerCameras[p], cars[p], dt, width / h);
+                    renderer.render(scene, playerCameras[p]);
+                }
+                renderer.setScissorTest(false);
+            }
+        }
+
+        /**************************************************************
+         * 8. PENYELESAIAN BALAPAN (5 LAP FINISH) & LEADERBOARD
+         **************************************************************/
+        function completePlayerRace() {
+            gameState.mode = 'FINISHED';
+            soundEngine.stopEngineHum();
+            soundEngine.playFinishFanfare();
+            document.getElementById('speed-lines-overlay').style.opacity = '0';
+
+            const diffCfg = DIFFICULTY_CONFIG[gameState.difficulty];
+            const list = getLeaderboardData();
+
+            // Save all human players' scores to leaderboard & find the best human winner
+            const humanCars = cars.filter(c => c.isPlayer);
+            let bestHuman = humanCars[0];
+            let bestPoints = -1;
+
+            humanCars.forEach((hc) => {
+                const r = getCarRank(hc.index);
+                const fSecs = Number((hc.finishTime || gameState.elapsedTime).toFixed(1));
+                const rBonus = diffCfg.podiumBonus[r - 1] || 0;
+                const totPts = Math.max(0, hc.score + rBonus);
+                hc.finalRank = r;
+                hc.finalPoints = totPts;
+                hc.finalSeconds = fSecs;
+
+                list.push({
+                    name: hc.name,
+                    operation: gameState.operation,
+                    difficulty: gameState.difficulty,
+                    rank: r,
+                    points: totPts,
+                    time: fSecs
+                });
+
+                if (totPts > bestPoints) {
+                    bestPoints = totPts;
+                    bestHuman = hc;
+                }
+            });
+
+            saveLeaderboardData(list);
+
+            // Populate Result UI
+            const rankTitles = [
+                'JUARA 1 PODIUM UTAMA!',
+                'JUARA 2 PODIUM PERAK!',
+                'JUARA 3 PODIUM PERUNGGU!',
+                'PERINGKAT 4 — TERUS BERLATIH!'
+            ];
+
+            if (gameState.playerCount > 1) {
+                document.getElementById('result-rank-title').textContent = `PEMENANG VS: ${bestHuman.name.toUpperCase()}!`;
+                const summaryParts = humanCars.map(hc => `${hc.name}: ${hc.finalPoints} pts (${hc.finalSeconds}s)`).join(' • ');
+                document.getElementById('result-player-summary').textContent = summaryParts;
+            } else {
+                document.getElementById('result-rank-title').textContent = rankTitles[(bestHuman.finalRank || 1) - 1];
+                document.getElementById('result-player-summary').textContent =
+                    `Pembalap: ${bestHuman.name} • ${OPERATION_LABELS[gameState.operation]} • ${diffCfg.name}`;
+            }
+
+            document.getElementById('res-total-points').textContent = bestHuman.finalPoints.toLocaleString('id-ID');
+            document.getElementById('res-bonus-note').textContent = `Peringkat #${bestHuman.finalRank} (${bestHuman.name})`;
+            document.getElementById('res-finish-time').textContent = `${bestHuman.finalSeconds}s`;
+            document.getElementById('res-accuracy').textContent = `${bestHuman.correctCount} Benar / ${bestHuman.wrongCount} Salah`;
+            document.getElementById('res-top-speed').textContent = `${bestHuman.topSpeedReached}`;
+
+            renderLeaderboardTables();
+
+            // Switch Screen
+            document.getElementById('screen-race').classList.add('hidden');
+            document.getElementById('screen-race').classList.remove('flex');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('screen-result').classList.add('flex');
+        }
+
+        function setLeaderboardSort(sortBy) {
+            gameState.leaderboardSort = sortBy;
+            soundEngine.playBeep(580, 0.08);
+
+            const activeClass = 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-950 transition';
+            const inactiveClass = 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300 border border-slate-700 transition';
+
+            ['sort-btn-points', 'modal-sort-points'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.className = (sortBy === 'points') ? activeClass : inactiveClass;
+            });
+            ['sort-btn-time', 'modal-sort-time'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.className = (sortBy === 'time') ? activeClass : inactiveClass;
+            });
+
+            renderLeaderboardTables();
+        }
+
+        function renderLeaderboardTables() {
+            const rawList = getLeaderboardData();
+            const filterDiff = document.getElementById('filter-leaderboard-diff')?.value || 'all';
+
+            let filtered = rawList.filter(item => filterDiff === 'all' || item.difficulty === filterDiff);
+
+            if (gameState.leaderboardSort === 'points') {
+                filtered.sort((a, b) => b.points - a.points || a.time - b.time);
+            } else {
+                filtered.sort((a, b) => a.time - b.time || b.points - a.points);
+            }
+
+            const htmlRows = filtered.slice(0, 15).map((item, idx) => {
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+                const diffName = DIFFICULTY_CONFIG[item.difficulty]?.name || item.difficulty;
+                const opName = OPERATION_LABELS[item.operation] || item.operation;
+                return `
+                    <tr class="hover:bg-slate-800/60 transition">
+                        <td class="py-2.5 px-2 font-black text-amber-400">${medal}</td>
+                        <td class="py-2.5 px-2 font-bold text-white">${item.name}</td>
+                        <td class="py-2.5 px-2 text-slate-300">${opName} <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-sky-300 ml-1">${diffName}</span></td>
+                        <td class="py-2.5 px-2 font-bold text-emerald-400">Juara ${item.rank}</td>
+                        <td class="py-2.5 px-2 text-right font-racing font-bold text-amber-300">${item.points.toLocaleString('id-ID')}</td>
+                        <td class="py-2.5 px-2 text-right font-racing font-bold text-sky-300">${item.time.toFixed(1)}s</td>
+                    </tr>
+                `;
+            }).join('') || `<tr><td colspan="6" class="py-6 text-center text-slate-400">Belum ada data balapan di kategori ini.</td></tr>`;
+
+            const resTbody = document.getElementById('result-leaderboard-tbody');
+            const modTbody = document.getElementById('modal-leaderboard-tbody');
+            if (resTbody) resTbody.innerHTML = htmlRows;
+            if (modTbody) modTbody.innerHTML = htmlRows;
+        }
+
+        function openLeaderboardModal() {
+            soundEngine.playBeep(600, 0.1);
+            renderLeaderboardTables();
+            const modal = document.getElementById('modal-leaderboard');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeLeaderboardModal() {
+            const modal = document.getElementById('modal-leaderboard');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function clearLeaderboardData() {
+            localStorage.removeItem(STORAGE_KEY);
+            renderLeaderboardTables();
+            soundEngine.playBeep(320, 0.15);
+        }
+
+        function replaySameMode() {
+            startRaceSequence();
+        }
+
+        function backToGarageLobby() {
+            soundEngine.stopEngineHum();
+            gameState.mode = 'LOBBY';
+            document.getElementById('screen-race').classList.add('hidden');
+            document.getElementById('screen-race').classList.remove('flex');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('flex');
+            document.getElementById('screen-lobby').classList.remove('hidden');
+        }
+
+        function abortRaceToLobby() {
+            backToGarageLobby();
+        }
+
+        /**************************************************************
+         * 9. MAIN ANIMATION LOOP
+         **************************************************************/
+        let lastFrameTime = performance.now();
+
+        function animateLoop(now) {
+            requestAnimationFrame(animateLoop);
+
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+
+            if (gameState.mode === 'RACING') {
+                gameState.elapsedTime = (now - gameState.startTime) / 1000;
+                updateRacePhysics(dt);
+            }
+
+            renderSceneViews(dt);
+        }
+
+        window.onload = function () {
+            initThreeScene();
+            renderLeaderboardTables();
+            requestAnimationFrame(animateLoop);
+        };
+    </script>
+</body>
+</html>

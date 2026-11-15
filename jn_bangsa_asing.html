@@ -1,0 +1,2831 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jejak Nusantara 3D: Ekspedisi Kemerdekaan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js & OrbitControls CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- jsPDF CDN untuk Unduh Sertifikat & Rapor PDF Berwarna -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --parchment: #FDF8EC;
+            --parchment-dark: #F3E5C8;
+            --gold: #D97706;
+            --emerald: #059669;
+            --ocean: #0284C7;
+        }
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0369a1;
+            touch-action: none;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .interactive-panel {
+            pointer-events: auto;
+        }
+        .parchment-card {
+            background: linear-gradient(145deg, #FFFDF7 0%, #F7EBD2 100%);
+            border: 3px solid #D97706;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.45), inset 0 0 20px rgba(217, 119, 6, 0.12);
+        }
+        .btn-adventure {
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 5px 0 #92400e;
+        }
+        .btn-adventure:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #92400e;
+        }
+        .btn-emerald {
+            transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 5px 0 #065f46;
+        }
+        .btn-emerald:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #065f46;
+        }
+        /* Custom Scrollbar for Panels */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(217, 119, 6, 0.1);
+            border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #D97706;
+            border-radius: 99px;
+        }
+        /* Floating 3D HTML Labels */
+        .pin-label {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            white-space: nowrap;
+        }
+        .pin-label:hover {
+            transform: translate(-50%, -108%) scale(1.08);
+            z-index: 30;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+            70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(245, 158, 11, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .pulse-badge {
+            animation: pulse-ring 2s infinite;
+        }
+        @media print {
+            #canvas-container, .no-print {
+                display: none !important;
+            }
+            body {
+                overflow: visible !important;
+                background: white !important;
+            }
+            #screen-certificate {
+                position: static !important;
+                display: block !important;
+                background: white !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <!-- 3D CANVAS CONTAINER -->
+    <div id="canvas-container"></div>
+
+    <!-- HTML FLOATING LABELS FOR 3D PINS & ISLANDS -->
+    <div id="labels-container" class="fixed inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+    <!-- ========================================== -->
+    <!-- LAYAR 1: BERANDA / GERBANG EKSPEDISI       -->
+    <!-- ========================================== -->
+    <section id="screen-home" class="ui-layer fixed inset-0 flex items-center justify-center p-3 md:p-4 bg-slate-900/45 backdrop-blur-[3px] transition-opacity duration-500 overflow-y-auto">
+        <div class="interactive-panel parchment-card w-full max-w-2xl rounded-3xl p-5 md:p-7 relative overflow-hidden my-auto">
+            <!-- Decorative Compass Icon -->
+            <div class="absolute -right-10 -top-10 text-amber-500/15 pointer-events-none">
+                <i data-lucide="compass" class="w-48 h-48"></i>
+            </div>
+
+            <div class="flex flex-col items-center text-center relative z-10">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-100 border-2 border-amber-400 text-amber-900 font-bold text-xs md:text-sm mb-2 shadow-sm">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-600"></i>
+                    <span>MEDIA INTERAKTIF SEJARAH SD KELAS 5 & 6 • CLOUD DATABASE</span>
+                </div>
+
+                <h1 class="text-2xl md:text-4xl font-bold text-amber-900 tracking-tight leading-tight drop-shadow-sm">
+                    JEJAK NUSANTARA 3D
+                </h1>
+                <p class="text-base md:text-lg font-display text-emerald-700 font-semibold mt-0.5 mb-3">
+                    Ekspedisi Kemerdekaan Indonesia (1511 – 1945)
+                </p>
+
+                <!-- Tab Switcher: Masuk (Login) vs Daftar Siswa Baru -->
+                <div class="w-full max-w-lg bg-amber-200/70 p-1.5 rounded-2xl flex gap-2 mb-4 border-2 border-amber-400">
+                    <button type="button" id="tab-auth-login" onclick="switchAuthMode('login')"
+                        class="flex-1 py-2.5 px-4 rounded-xl font-display font-bold text-sm md:text-base bg-amber-600 text-white shadow flex items-center justify-center gap-2 transition cursor-pointer">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                        Masuk (Sudah Terdaftar)
+                    </button>
+                    <button type="button" id="tab-auth-register" onclick="switchAuthMode('register')"
+                        class="flex-1 py-2.5 px-4 rounded-xl font-display font-bold text-sm md:text-base text-amber-950 hover:bg-amber-100 flex items-center justify-center gap-2 transition cursor-pointer">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        Daftar Siswa Baru
+                    </button>
+                </div>
+
+                <!-- FORM 1: MASUK (LOGIN) -->
+                <div id="form-login-box" class="w-full max-w-lg space-y-3.5 bg-white/85 p-4 md:p-5 rounded-2xl border-2 border-amber-300 shadow-inner mb-4 text-left">
+                    <div>
+                        <label for="login-name" class="block text-xs md:text-sm font-bold text-amber-950 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="user-check" class="w-4 h-4 text-amber-600"></i>
+                            Nama Lengkap Siswa:
+                        </label>
+                        <input id="login-name" type="text" placeholder="Masukkan nama lengkapmu..." maxlength="40"
+                            class="w-full px-3.5 py-2.5 text-sm md:text-base font-semibold rounded-xl border-2 border-amber-300 focus:border-amber-600 focus:outline-none bg-amber-50/50 text-slate-800">
+                    </div>
+
+                    <div>
+                        <label for="login-password" class="block text-xs md:text-sm font-bold text-amber-950 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="key-round" class="w-4 h-4 text-amber-600"></i>
+                            Password:
+                        </label>
+                        <input id="login-password" type="password" placeholder="Masukkan password..." maxlength="32"
+                            class="w-full px-3.5 py-2.5 text-sm md:text-base font-semibold rounded-xl border-2 border-amber-300 focus:border-amber-600 focus:outline-none bg-amber-50/50 text-slate-800">
+                    </div>
+
+                    <p class="text-xs text-slate-500">
+                        Belum punya akun penjelajah? Klik tab <strong>"Daftar Siswa Baru"</strong> di atas.
+                    </p>
+                </div>
+
+                <!-- FORM 2: DAFTAR SISWA BARU (REGISTER) -->
+                <div id="form-register-box" class="hidden w-full max-w-lg space-y-3 bg-white/85 p-4 md:p-5 rounded-2xl border-2 border-emerald-400 shadow-inner mb-4 text-left">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="reg-name" class="block text-xs font-bold text-amber-950 mb-1 flex items-center gap-1">
+                                <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-600"></i> Nama Siswa:
+                            </label>
+                            <input id="reg-name" type="text" placeholder="Nama lengkap..." maxlength="40"
+                                class="w-full px-3 py-2 text-sm font-semibold rounded-xl border-2 border-amber-300 focus:border-emerald-600 focus:outline-none bg-amber-50/40">
+                        </div>
+                        <div>
+                            <label for="reg-password" class="block text-xs font-bold text-amber-950 mb-1 flex items-center gap-1">
+                                <i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-600"></i> Buat Password:
+                            </label>
+                            <input id="reg-password" type="password" placeholder="Buat password..." maxlength="32"
+                                class="w-full px-3 py-2 text-sm font-semibold rounded-xl border-2 border-amber-300 focus:border-emerald-600 focus:outline-none bg-amber-50/40">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label for="reg-school" class="block text-xs font-bold text-amber-950 mb-1 flex items-center gap-1">
+                                <i data-lucide="school" class="w-3.5 h-3.5 text-emerald-600"></i> Nama Sekolah:
+                            </label>
+                            <input id="reg-school" type="text" placeholder="Contoh: SDN 1 Nusantara" maxlength="50"
+                                class="w-full px-3 py-2 text-sm font-semibold rounded-xl border-2 border-amber-300 focus:border-emerald-600 focus:outline-none bg-amber-50/40">
+                        </div>
+                        <div>
+                            <label for="reg-npsn" class="block text-xs font-bold text-amber-950 mb-1 flex items-center gap-1">
+                                <i data-lucide="hash" class="w-3.5 h-3.5 text-emerald-600"></i> NPSN:
+                            </label>
+                            <input id="reg-npsn" type="text" inputmode="numeric" placeholder="8 Digit NPSN" maxlength="12"
+                                class="w-full px-3 py-2 text-sm font-semibold rounded-xl border-2 border-amber-300 focus:border-emerald-600 focus:outline-none bg-amber-50/40">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-amber-950 mb-1 flex items-center gap-1">
+                            <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-emerald-600"></i> Pilih Kelas:
+                        </label>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <button type="button" onclick="selectClass('Kelas 5 SD')" id="btn-class-5"
+                                class="class-option py-2 px-3 rounded-xl font-bold text-sm border-2 border-amber-500 bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer">
+                                <i data-lucide="award" class="w-4 h-4"></i> Kelas 5 SD
+                            </button>
+                            <button type="button" onclick="selectClass('Kelas 6 SD')" id="btn-class-6"
+                                class="class-option py-2 px-3 rounded-xl font-bold text-sm border-2 border-amber-300 bg-white text-amber-900 hover:bg-amber-50 flex items-center justify-center gap-1.5 transition cursor-pointer">
+                                <i data-lucide="star" class="w-4 h-4"></i> Kelas 6 SD
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Loading / Info Server -->
+                <div id="auth-status-msg" class="hidden w-full max-w-lg mb-3 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold"></div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 w-full max-w-lg">
+                    <button id="btn-submit-auth" onclick="handleAuthSubmit()"
+                        class="btn-emerald flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-lg md:text-xl flex items-center justify-center gap-2.5 cursor-pointer">
+                        <i data-lucide="compass" class="w-6 h-6"></i>
+                        <span id="btn-submit-auth-text">Masuk & Mulai Ekspedisi!</span>
+                    </button>
+                    <button onclick="openLeaderboardModal()"
+                        class="btn-adventure py-3.5 px-5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-display font-bold text-base md:text-lg flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="trophy" class="w-5 h-5"></i>
+                        Papan Skor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- LAYAR 2: HUD PETA 3D & ARENA BELAJAR       -->
+    <!-- ========================================== -->
+    <section id="screen-hud" class="ui-layer fixed inset-0 hidden flex-col justify-between p-3 md:p-5">
+        <!-- TOP HUD BAR -->
+        <div class="flex flex-wrap items-center justify-between gap-2 md:gap-4">
+            <!-- Player Profile & Progress -->
+            <div class="interactive-panel parchment-card px-4 py-2.5 rounded-2xl flex items-center gap-3 md:gap-5 shadow-lg">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center font-display font-bold text-xl shadow">
+                        <i data-lucide="shield" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span id="hud-name" class="font-bold text-amber-950 text-sm md:text-base">Penjelajah</span>
+                            <span id="hud-class" class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">Kelas 5 SD</span>
+                            <span id="hud-school" class="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full hidden sm:inline-block">SD Nusantara</span>
+                        </div>
+                        <!-- Stamp Progress Bar -->
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="w-28 md:w-36 h-3 bg-amber-200 rounded-full overflow-hidden border border-amber-400">
+                                <div id="hud-progress-bar" class="h-full bg-emerald-600 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <span id="hud-stamp-count" class="text-xs font-extrabold text-emerald-800">0/8 Pos</span>
+                            <span id="cloud-sync-badge" class="text-[10px] font-bold text-sky-700 bg-sky-100 px-1.5 py-0.5 rounded hidden">☁️ Tersimpan</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Score Badge -->
+                <div class="border-l-2 border-amber-300 pl-3 md:pl-4 flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-amber-100 border border-amber-400 flex items-center justify-center text-amber-600">
+                        <i data-lucide="star" class="w-5 h-5 fill-amber-500"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-bold uppercase text-amber-800 leading-none">Skor Poin</div>
+                        <div id="hud-score" class="font-display font-bold text-lg md:text-xl text-amber-950">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Controls: Timeline Mode, Reset Camera, Sound, Finish -->
+            <div class="interactive-panel flex items-center gap-2">
+                <button onclick="openTimelineOverviewModal()"
+                    class="btn-adventure px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-xs md:text-sm flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Linimasa (1511–1945)</span>
+                </button>
+                <button onclick="resetCameraView()"
+                    class="btn-adventure px-3.5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs md:text-sm flex items-center gap-1.5 cursor-pointer"
+                    title="Reset Kamera Peta">
+                    <i data-lucide="locate-fixed" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">Reset Peta</span>
+                </button>
+                <button onclick="toggleSound()" id="btn-sound"
+                    class="btn-adventure p-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold cursor-pointer"
+                    title="Suara Efek">
+                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                </button>
+                <button onclick="showCertificateScreen()"
+                    class="btn-emerald px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs md:text-sm flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                    <span>Selesai & Rapor</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ACTIVE MISSION BANNER (MUNCUL SAAT MISI CARI LOKASI PETA 3D) -->
+        <div id="map-hunt-banner" class="hidden self-center interactive-panel bg-emerald-700 text-white px-6 py-3.5 rounded-2xl border-2 border-amber-300 shadow-2xl max-w-xl w-full items-center justify-between gap-4 animate-bounce">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-amber-400 text-amber-950 font-bold">
+                    <i data-lucide="map-pin" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="text-xs font-extrabold uppercase tracking-wider text-amber-200">Misi Tantangan Lokasi Peta 3D Aktif!</div>
+                    <div id="map-hunt-instruction" class="font-display font-bold text-sm md:text-base">Ketuk pulau yang tepat pada peta 3D!</div>
+                </div>
+            </div>
+            <button onclick="cancelMapHunt()" class="px-3 py-1.5 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-xs font-bold shrink-0 cursor-pointer">
+                Batal
+            </button>
+        </div>
+
+        <!-- BOTTOM TIMELINE BAR & GESTURE HINT -->
+        <div class="flex flex-col gap-2">
+            <!-- Gesture Helper Pill -->
+            <div class="self-center bg-slate-900/75 text-amber-100 px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-4 backdrop-blur-xs border border-amber-400/30">
+                <span class="flex items-center gap-1"><i data-lucide="move" class="w-3.5 h-3.5 text-amber-400"></i> Geser: Putar Peta</span>
+                <span class="flex items-center gap-1"><i data-lucide="zoom-in" class="w-3.5 h-3.5 text-amber-400"></i> Cubit/Scroll: Zoom</span>
+                <span class="flex items-center gap-1"><i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-amber-400"></i> Ketuk Pin Kristal: Buka Pos</span>
+            </div>
+
+            <!-- 8 POS TIMELINE BAR -->
+            <div class="interactive-panel parchment-card p-2.5 md:p-3 rounded-2xl w-full max-w-5xl mx-auto">
+                <div id="timeline-buttons-container" class="flex items-center gap-2 overflow-x-auto custom-scroll pb-1">
+                    <!-- Diisi secara dinamis oleh JavaScript dari HISTORI_POS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- MODAL KARTU MATERI & MISI INTERAKTIF       -->
+    <!-- ========================================== -->
+    <div id="modal-pos" class="ui-layer fixed inset-0 hidden items-center justify-center p-3 md:p-6 bg-slate-950/60 backdrop-blur-xs z-30">
+        <div class="interactive-panel parchment-card w-full max-w-3xl max-h-[90vh] rounded-3xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 text-white px-5 py-4 flex items-center justify-between border-b-2 border-amber-400">
+                <div class="flex items-center gap-3">
+                    <div id="modal-pos-badge" class="px-3 py-1 rounded-xl bg-amber-950/50 border border-amber-300 font-display font-bold text-sm md:text-base">
+                        POS 1 • 1511
+                    </div>
+                    <div>
+                        <h2 id="modal-pos-title" class="font-display font-bold text-lg md:text-2xl leading-tight">Judul Pos Sejarah</h2>
+                        <div class="flex items-center gap-1.5 text-amber-100 text-xs md:text-sm font-semibold">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                            <span id="modal-pos-location">Lokasi Pulau</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closePosModal()" class="p-2 rounded-xl bg-amber-900/50 hover:bg-amber-900 text-white transition cursor-pointer">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Modal Navigation Tabs -->
+            <div class="flex bg-amber-100/90 border-b-2 border-amber-300 px-4 pt-2 gap-2">
+                <button id="tab-btn-materi" onclick="switchModalTab('materi')"
+                    class="flex-1 py-3 px-4 rounded-t-2xl font-display font-bold text-base md:text-lg flex items-center justify-center gap-2 bg-[#FFFDF7] text-amber-950 border-t-2 border-x-2 border-amber-400 cursor-pointer">
+                    <i data-lucide="book-open" class="w-5 h-5 text-amber-600"></i>
+                    1. Pelajari Materi Sejarah
+                </button>
+                <button id="tab-btn-misi" onclick="switchModalTab('misi')"
+                    class="flex-1 py-3 px-4 rounded-t-2xl font-display font-bold text-base md:text-lg flex items-center justify-center gap-2 bg-amber-200/60 text-amber-900 hover:bg-amber-200 cursor-pointer">
+                    <i data-lucide="gamepad-2" class="w-5 h-5 text-emerald-700"></i>
+                    <span>2. Misi Tantangan</span>
+                    <span id="modal-stamp-status" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-amber-500 text-white">Belum</span>
+                </button>
+            </div>
+
+            <!-- Modal Body Content -->
+            <div class="p-5 md:p-6 overflow-y-auto custom-scroll flex-1 space-y-4">
+                <!-- TAB 1: MATERI ENSIKLOPEDIA MINI -->
+                <div id="tab-content-materi" class="space-y-4">
+                    <!-- Tokoh & Info Kunci -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="bg-amber-100/70 p-3.5 rounded-2xl border border-amber-300 flex items-start gap-3">
+                            <div class="p-2.5 rounded-xl bg-amber-500 text-white shrink-0">
+                                <i data-lucide="users" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-extrabold uppercase text-amber-800">Tokoh Penting</div>
+                                <div id="materi-figures" class="font-bold text-amber-950 text-sm md:text-base mt-0.5">-</div>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-300 flex items-start gap-3">
+                            <div class="p-2.5 rounded-xl bg-emerald-600 text-white shrink-0">
+                                <i data-lucide="key-round" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-extrabold uppercase text-emerald-800">Kata Kunci Sejarah</div>
+                                <div id="materi-keywords" class="font-bold text-emerald-950 text-sm md:text-base mt-0.5">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cerita Sejarah -->
+                    <div class="bg-white/90 p-4 md:p-5 rounded-2xl border-2 border-amber-200 space-y-3 text-slate-800 leading-relaxed text-base md:text-lg" id="materi-story">
+                    </div>
+
+                    <!-- Poin Penting -->
+                    <div class="bg-amber-50/90 p-4 rounded-2xl border border-amber-300">
+                        <h4 class="font-display font-bold text-amber-950 text-base mb-2 flex items-center gap-2">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i>
+                            Poin Penting untuk Diingat:
+                        </h4>
+                        <ul id="materi-points" class="list-disc list-inside space-y-1.5 text-sm md:text-base font-medium text-slate-700"></ul>
+                    </div>
+
+                    <!-- Fakta Unik -->
+                    <div class="bg-gradient-to-r from-sky-100 to-indigo-50 p-4 rounded-2xl border-2 border-sky-300 flex items-start gap-3">
+                        <div class="p-2.5 rounded-xl bg-sky-600 text-white shrink-0 mt-0.5">
+                            <i data-lucide="lightbulb" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-extrabold uppercase text-sky-800">Tahukah Kamu? (Fakta Unik Sejarah)</div>
+                            <p id="materi-funfact" class="text-sm md:text-base font-semibold text-sky-950 mt-0.5"></p>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex justify-end">
+                        <button onclick="switchModalTab('misi')"
+                            class="btn-emerald py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-lg flex items-center gap-2 cursor-pointer">
+                            <span>Lanjut ke Misi Tantangan</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 2: MISI TANTANGAN INTERAKTIF -->
+                <div id="tab-content-misi" class="hidden space-y-4">
+                    <div id="misi-container" class="space-y-4">
+                        <!-- Diisi oleh JS sesuai tipe misi pos (Quiz / Map Hunt / Chronological Order) -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL RINGKASAN LINIMASA (1511 - 1945)     -->
+    <!-- ========================================== -->
+    <div id="modal-timeline-overview" class="ui-layer fixed inset-0 hidden items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs z-40">
+        <div class="interactive-panel parchment-card w-full max-w-4xl max-h-[88vh] rounded-3xl flex flex-col overflow-hidden">
+            <div class="bg-amber-700 text-white px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="compass" class="w-6 h-6 text-amber-300"></i>
+                    <h2 class="font-display font-bold text-xl md:text-2xl">Peta Linimasa Sejarah Nusantara (1511 – 1945)</h2>
+                </div>
+                <button onclick="closeTimelineOverviewModal()" class="p-2 rounded-xl bg-amber-900/50 hover:bg-amber-900 text-white cursor-pointer">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto custom-scroll grid grid-cols-1 md:grid-cols-2 gap-3.5" id="timeline-overview-list">
+                <!-- Diisi otomatis oleh JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL PAPAN SKOR KELAS (CLOUD SPREADSHEET) -->
+    <!-- ========================================== -->
+    <div id="modal-leaderboard" class="ui-layer fixed inset-0 hidden items-center justify-center p-4 bg-slate-950/65 backdrop-blur-xs z-40">
+        <div class="interactive-panel parchment-card w-full max-w-2xl max-h-[85vh] rounded-3xl flex flex-col overflow-hidden">
+            <div class="bg-amber-600 text-white px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="trophy" class="w-6 h-6"></i>
+                    <div>
+                        <h2 class="font-display font-bold text-xl md:text-2xl leading-tight">Papan Skor Penjelajah Nusantara</h2>
+                        <div class="text-xs text-amber-100">Terhubung dengan Database Google Spreadsheet</div>
+                    </div>
+                </div>
+                <button onclick="closeLeaderboardModal()" class="p-2 rounded-xl bg-amber-900/40 hover:bg-amber-900 text-white cursor-pointer">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto custom-scroll flex-1">
+                <div id="leaderboard-list" class="space-y-2.5"></div>
+            </div>
+            <div class="p-4 bg-amber-100/80 border-t border-amber-300 flex justify-between items-center">
+                <button onclick="openLeaderboardModal(true)" class="text-xs font-bold text-emerald-800 hover:underline flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Muat Ulang Skor Cloud
+                </button>
+                <button onclick="closeLeaderboardModal()" class="px-5 py-2.5 rounded-xl bg-amber-600 text-white font-bold text-sm cursor-pointer">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LAYAR 3: SERTIFIKAT & REKAP HASIL          -->
+    <!-- ========================================== -->
+    <section id="screen-certificate" class="ui-layer fixed inset-0 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm z-40 overflow-y-auto">
+        <div class="interactive-panel parchment-card w-full max-w-3xl rounded-3xl p-6 md:p-8 my-auto relative">
+            <div class="text-center border-4 border-double border-amber-600/60 rounded-2xl p-5 md:p-7 bg-white/70">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500 text-white shadow-lg mb-3">
+                    <i data-lucide="award" class="w-10 h-10"></i>
+                </div>
+                <div class="text-xs font-extrabold uppercase tracking-widest text-amber-800">Sertifikat & Rapor Apresiasi Digital</div>
+                <h2 class="font-display font-bold text-2xl md:text-4xl text-amber-950 mt-1">PENJELAJAH SEJARAH NUSANTARA</h2>
+                <p class="text-slate-600 text-sm mt-1">Diberikan dengan bangga kepada:</p>
+
+                <div id="cert-name" class="font-display font-bold text-2xl md:text-3xl text-emerald-700 underline decoration-amber-500 decoration-wavy underline-offset-8 my-2">
+                    Nama Siswa
+                </div>
+                <div class="flex flex-wrap items-center justify-center gap-2 mb-4">
+                    <span id="cert-class" class="px-3.5 py-1 rounded-full bg-amber-200 text-amber-950 font-bold text-xs md:text-sm">
+                        Kelas 5 SD
+                    </span>
+                    <span id="cert-school" class="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs md:text-sm border border-emerald-300">
+                        SDN Nusantara (NPSN: -)
+                    </span>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-3 gap-3 max-w-lg mx-auto mb-5">
+                    <div class="bg-amber-50 p-3 rounded-2xl border border-amber-300">
+                        <div class="text-xs font-bold text-amber-800">Total Skor</div>
+                        <div id="cert-score" class="font-display font-bold text-2xl text-amber-950">0</div>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-300">
+                        <div class="text-xs font-bold text-emerald-800">Stempel Era</div>
+                        <div id="cert-stamps" class="font-display font-bold text-2xl text-emerald-900">0 / 8</div>
+                    </div>
+                    <div class="bg-sky-50 p-3 rounded-2xl border border-sky-300">
+                        <div class="text-xs font-bold text-sky-800">Predikat</div>
+                        <div id="cert-rank" class="font-display font-bold text-base md:text-lg text-sky-950">Pemula</div>
+                    </div>
+                </div>
+
+                <!-- Koleksi Stempel -->
+                <div class="text-left mb-4">
+                    <div class="text-xs font-bold uppercase text-amber-900 mb-2">Koleksi Stempel Pos Sejarah (1511 – 1945):</div>
+                    <div id="cert-stamp-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                </div>
+
+                <!-- Rekomendasi Evaluasi -->
+                <div id="cert-review-box" class="text-left bg-amber-100/70 p-3.5 rounded-xl border border-amber-300 text-xs md:text-sm text-amber-950 mb-5"></div>
+
+                <!-- Action Buttons -->
+                <div class="no-print flex flex-wrap items-center justify-center gap-3">
+                    <button onclick="backToMapFromCert()"
+                        class="btn-adventure py-3 px-5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-sm flex items-center gap-2 cursor-pointer">
+                        <i data-lucide="map" class="w-4 h-4"></i> Kembali ke Peta 3D
+                    </button>
+                    <button onclick="downloadAttractivePdfReport()"
+                        class="btn-emerald py-3 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center gap-2 cursor-pointer">
+                        <i data-lucide="file-down" class="w-5 h-5"></i> Unduh Sertifikat & Rapor (.PDF Berwarna)
+                    </button>
+                    <button onclick="window.print()"
+                        class="py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm flex items-center gap-2 shadow cursor-pointer">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Cetak
+                    </button>
+                    <button onclick="restartNewPlayer()"
+                        class="py-3 px-4 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-sm flex items-center gap-1.5 cursor-pointer">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Keluar / Ganti Siswa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TOAST FEEDBACK FLOATING -->
+    <div id="toast-notification" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl font-display font-bold text-white transition-all">
+        <span id="toast-text">Notifikasi</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT: DATA, AUDIO, 3D MAP, & GAME    -->
+    <!-- ========================================== -->
+    <script>
+        /* ----------------------------------------------------------
+         * 1. DATA LENGKAP 8 POS SEJARAH NUSANTARA (1511 - 1945)
+         * ---------------------------------------------------------- */
+        const HISTORI_POS = [
+            {
+                id: 1,
+                year: "1511",
+                shortTitle: "Portugis & 3G",
+                title: "Kedatangan Bangsa Portugis di Malaka & Sumatra",
+                location: "Selat Malaka & Pesisir Sumatra",
+                islandKey: "sumatra",
+                coords: { x: -32, y: 2.5, z: -8 },
+                color: 0xf59e0b,
+                figures: "Alfonso de Albuquerque (Portugis) & Sultan Mahmud Syah",
+                keywords: "Rempah-Rempah, Semboyan 3G (Gold, Glory, Gospel), Selat Malaka",
+                story: [
+                    "Pada awal abad ke-16, rempah-rempah dari kepulauan Nusantara seperti lada, cengkih, dan pala sangat berharga di Eropa—bahkan harganya setara dengan emas! Rempah digunakan untuk menghangatkan tubuh di musim dingin, mengawetkan makanan, dan obat-obatan.",
+                    "Bangsa Portugis menjadi bangsa Eropa pertama yang berlayar hingga ke Asia Tenggara. Pada tahun 1511, armada Portugis yang dipimpin oleh Alfonso de Albuquerque menyerang dan menguasai bandar perdagangan Selat Malaka di dekat Pulau Sumatra.",
+                    "Kedatangan bangsa Eropa ini didorong oleh semboyan 3G: Gold (mencari kekayaan dengan memonopoli rempah), Glory (mencari kejayaan dan wilayah kekuasaan), serta Gospel (menyebarkan agama)."
+                ],
+                points: [
+                    "Tahun 1511: Portugis di bawah pimpinan Alfonso de Albuquerque menguasai Malaka.",
+                    "Tujuan 3G: Gold (Kekayaan), Glory (Kejayaan), dan Gospel (Penyebaran Agama).",
+                    "Jatuhnya Malaka mendorong pedagang Nusantara memindahkan jalur dagang ke Aceh dan Banten."
+                ],
+                funFact: "Tahukah kamu? Pada tahun 1500-an di Eropa, satu karung kecil lada dan pala dari Nusantara nilainya bisa digunakan untuk membeli sebuah rumah mewah!",
+                gameType: "quiz",
+                quiz: {
+                    question: "Apa arti dari semboyan 'Gold, Glory, dan Gospel' (3G) yang dibawa oleh bangsa Portugis saat datang ke Nusantara pada tahun 1511?",
+                    options: [
+                        "Mencari kekayaan rempah, meraih kejayaan, dan menyebarkan agama",
+                        "Membeli kapal layar, membangun candi, dan membuka sekolah rakyat",
+                        "Menanam padi, membagi tanah gratis, dan membangun rel kereta",
+                        "Membantu kerajaan lokal mengusir tentara Jepang dari Nusantara"
+                    ],
+                    correctIndex: 0,
+                    explanation: "Tepat sekali! Gold berarti memburu kekayaan rempah-rempah, Glory mencari kejayaan wilayah, dan Gospel menyebarkan agama."
+                }
+            },
+            {
+                id: 2,
+                year: "1521 – 1575",
+                shortTitle: "Spanyol & Maluku",
+                title: "Perebutan Rempah Maluku & Perlawanan Sultan Baabullah",
+                location: "Ternate & Tidore (Kepulauan Maluku)",
+                islandKey: "maluku",
+                coords: { x: 25, y: 2.5, z: -2 },
+                color: 0xec4899,
+                figures: "Sebastian del Cano, Sultan Hairun, & Sultan Baabullah",
+                keywords: "Cengkih & Pala, Ternate-Tidore, Pengusiran Portugis (1575)",
+                story: [
+                    "Setelah Portugis tiba di Ternate (Maluku) pada 1512, bangsa Spanyol yang dipimpin Sebastian del Cano menyusul tiba di Pulau Tidore pada tahun 1521. Kedua bangsa Eropa ini bersaing memperebutkan monopoli rempah cengkih dan pala.",
+                    "Persaingan tersebut diselesaikan lewat Perjanjian Saragosa (1529) yang menetapkan Spanyol harus meninggalkan Maluku menuju Filipina, sementara Portugis tetap berada di Maluku. Sayangnya, Portugis semakin serakah dan bahkan melakukan tipu muslihat yang menewaskan Sultan Hairun dari Ternate pada tahun 1570.",
+                    "Putra Sultan Hairun, yaitu Sultan Baabullah, bangkit memimpin perlawanan besar rakyat Maluku. Setelah mengepung Benteng Sao Paulo selama 5 tahun, rakyat Ternate berhasil mengusir Portugis dari Maluku pada tahun 1575!"
+                ],
+                points: [
+                    "Kepulauan Maluku adalah penghasil utama rempah cengkih dan pala dunia.",
+                    "Tahun 1521: Armada Spanyol mendarat di Tidore sehingga memicu persaingan dengan Portugis di Ternate.",
+                    "Sultan Baabullah berhasil mempersatukan rakyat Maluku dan mengusir Portugis pada tahun 1575."
+                ],
+                funFact: "Sultan Baabullah mendapat julukan kehormatan 'Penguasa 72 Pulau' karena keberhasilannya menyatukan pulau-pulau di sekitar Maluku untuk menjaga kedaulatan Nusantara!",
+                gameType: "map_hunt",
+                mapHunt: {
+                    prompt: "Sultan Baabullah berhasil mempertahankan kepulauan penghasil cengkih dan pala di antara Pulau Sulawesi dan Papua. Ketuk langsung KEPULAUAN MALUKU pada Peta 3D untuk meraih stempel Pos 2!",
+                    targetIsland: "maluku",
+                    successMessage: "Hebat! Kamu berhasil menemukan Kepulauan Maluku, pusat cengkih dan pala yang dipertahankan dengan gagah berani oleh Sultan Baabullah!"
+                }
+            },
+            {
+                id: 3,
+                year: "1596 & 1602",
+                shortTitle: "Belanda & VOC",
+                title: "Kedatangan Belanda di Banten & Berdirinya VOC",
+                location: "Pelabuhan Banten & Batavia (Pulau Jawa)",
+                islandKey: "jawa",
+                coords: { x: -16, y: 2.5, z: 13 },
+                color: 0xf97316,
+                figures: "Cornelis de Houtman & Jan Pieterszoon Coen",
+                keywords: "Banten (1596), Kongsi Dagang VOC (1602), Hak Oktroi, Politik Adu Domba",
+                story: [
+                    "Pada tanggal 27 Juni 1596, armada kapal Belanda pertama yang dipimpin oleh Cornelis de Houtman mendarat di Pelabuhan Banten, ujung barat Pulau Jawa. Awalnya mereka disambut baik, namun karena sikap Cornelis de Houtman yang kasar dan sombong, rakyat Banten mengusir rombongan tersebut.",
+                    "Agar para pedagang Belanda tidak saling bersaing sendiri, pemerintah Belanda mendirikan kongsi dagang bernama VOC (Vereenigde Oostindische Compagnie) pada 20 Maret 1602. Gubernur Jenderal J.P. Coen kemudian menjadikan Batavia (Jakarta) sebagai markas besar VOC.",
+                    "VOC diberi hak istimewa yang disebut Hak Oktroi: mereka boleh mencetak uang sendiri, memiliki tentara, membangun benteng, dan memonopoli perdagangan. VOC juga sering menggunakan politik Devide et Impera (politik adu domba) terhadap kerajaan-kerajaan di Nusantara."
+                ],
+                points: [
+                    "Tahun 1596: Cornelis de Houtman memimpin kapal Belanda pertama mendarat di Pelabuhan Banten.",
+                    "Tahun 1602: VOC didirikan dengan Hak Oktroi (hak istimewa layaknya sebuah negara).",
+                    "Politik Devide et Impera adalah taktik mengadu domba kerajaan lokal agar mudah dikuasai."
+                ],
+                funFact: "VOC mengalami kebangkrutan dan resmi dibubarkan pada 31 Desember 1799 karena banyaknya pegawai yang melakukan korupsi serta besarnya biaya menghadapi perlawanan rakyat Nusantara!",
+                gameType: "order",
+                orderGame: {
+                    instruction: "Susunlah 4 peristiwa kedatangan bangsa Belanda hingga berakhirnya VOC berikut ini secara berurutan dari yang paling AWAL hingga paling AKHIR!",
+                    items: [
+                        { id: "a", text: "Armada Belanda pimpinan Cornelis de Houtman tiba di Pelabuhan Banten (1596)", order: 1 },
+                        { id: "b", text: "Kongsi dagang VOC resmi berdiri dengan berbagai hak istimewa / Hak Oktroi (1602)", order: 2 },
+                        { id: "c", text: "Gubernur Jenderal J.P. Coen menjadikan Batavia sebagai pusat kekuasaan VOC (1619)", order: 3 },
+                        { id: "d", text: "VOC bangkrut akibat korupsi serta biaya perang dan resmi dibubarkan (1799)", order: 4 }
+                    ],
+                    explanation: "Luar biasa! Kamu berhasil menyusun kronologi sejarah kedatangan Belanda di Banten (1596), berdirinya VOC (1602), markas Batavia (1619), hingga bubarnya VOC (1799)."
+                }
+            },
+            {
+                id: 4,
+                year: "1811 – 1816",
+                shortTitle: "Inggris (Raffles)",
+                title: "Masa Pemerintahan Inggris & Kebijakan Raffles",
+                location: "Pulau Jawa (Batavia & Bogor)",
+                islandKey: "jawa",
+                coords: { x: -12, y: 2.5, z: 14.2 },
+                color: 0x06b6d4,
+                figures: "Thomas Stamford Raffles",
+                keywords: "Kapitulasi Tuntang (1811), Sistem Sewa Tanah (Landrent), Buku History of Java",
+                story: [
+                    "Setelah VOC bubar, kekuasaan di Hindia Belanda sempat dipengaruhi perang besar di Eropa. Pada tahun 1811, armada Inggris berhasil merebut Pulau Jawa dari tangan Belanda melalui perjanjian Kapitulasi Tuntang, dan menunjuk Thomas Stamford Raffles sebagai Letnan Gubernur.",
+                    "Raffles menghapus kerja paksa penyerahan hasil bumi dan menggantinya dengan Sistem Sewa Tanah (Landrent). Dalam sistem ini, seluruh tanah dianggap milik pemerintah dan petani wajib membayar pajak sewa tanah menggunakan uang atau beras.",
+                    "Di balik kebijakannya yang tetap memberatkan petani, Raffles sangat tertarik pada ilmu pengetahuan dan budaya Nusantara. Ia menulis buku terkenal berjudul 'The History of Java', mendukung penemuan kembali Candi Borobudur, dan merintis Kebun Raya Bogor bersama istrinya, Olivia Mariamne."
+                ],
+                points: [
+                    "Pemerintahan Inggris di Jawa berlangsung tahun 1811–1816 dipimpin Thomas Stamford Raffles.",
+                    "Raffles menerapkan sistem pajak sewa tanah yang disebut Landrent.",
+                    "Peninggalan ilmiah masa Raffles antara lain buku 'History of Java' dan rintisan Kebun Raya Bogor."
+                ],
+                funFact: "Nama bunga raksasa langka kebanggaan Indonesia di Sumatra, yaitu Rafflesia arnoldii, diambil dari gabungan nama Thomas Stamford Raffles dan peneliti botani Dr. Joseph Arnold!",
+                gameType: "quiz",
+                quiz: {
+                    question: "Saat memerintah di Pulau Jawa pada tahun 1811–1816, Letnan Gubernur Inggris Thomas Stamford Raffles memperkenalkan sistem pajak tanah baru yang disebut...",
+                    options: [
+                        "Sistem Sewa Tanah (Landrent)",
+                        "Sistem Semboyan 3G (Gold, Glory, Gospel)",
+                        "Sumpah Pemuda Nusantara",
+                        "Romusha dan Seinendan"
+                    ],
+                    correctIndex: 0,
+                    explanation: "Benar! Raffles memberlakukan Sistem Sewa Tanah (Landrent) di mana petani harus menyewa tanah kepada pemerintah kolonial."
+                }
+            },
+            {
+                id: 5,
+                year: "1825 – 1830",
+                shortTitle: "Perang Diponegoro",
+                title: "Perlawanan Pangeran Diponegoro (Perang Jawa)",
+                location: "Yogyakarta & Jawa Tengah",
+                islandKey: "jawa",
+                coords: { x: -6.5, y: 2.5, z: 15.2 },
+                color: 0x10b981,
+                figures: "Pangeran Diponegoro, Sentot Prawirodirjo, & Nyi Ageng Serang",
+                keywords: "Perang Jawa (1825-1830), Taktik Gerilya, Patok Jalan Tegalrejo, Benteng Stelsel",
+                story: [
+                    "Setelah Inggris menyerahkan kembali kekuasaan kepada Belanda pada 1816, rakyat Pulau Jawa semakin menderita akibat pajak yang mencekik dan campur tangan Belanda dalam urusan Keraton Yogyakarta. Pangeran Diponegoro sangat prihatin melihat penderitaan rakyat kecil.",
+                    "Puncak kemarahan terjadi pada Juli 1825 ketika pihak Belanda memasang patok-patok pembuatan jalan secara sepihak melewati tanah dan makam leluhur Pangeran Diponegoro di Tegalrejo tanpa izin. Pangeran Diponegoro mencabut patok tersebut dan mengobarkan Perang Jawa (1825–1830).",
+                    "Dengan strategi perang gerilya (menyerang secara cepat lalu bersembunyi di perbukitan seperti Goa Selarong), pasukan Diponegoro membuat Belanda kewalahan. Belanda yang dipimpin Jenderal De Kock terpaksa memakai siasat Benteng Stelsel dan akhirnya menangkap Pangeran Diponegoro secara licik saat berunding di Magelang pada Maret 1830."
+                ],
+                points: [
+                    "Perang Diponegoro (1825–1830) dipicu penderitaan rakyat dan pemasangan patok jalan Belanda di makam leluhur Tegalrejo.",
+                    "Pangeran Diponegoro menggunakan taktik Perang Gerilya yang didukung luas oleh rakyat dan ulama.",
+                    "Akibat kas Belanda habis usai perang ini, Gubernur Jenderal Van den Bosch memberlakukan Sistem Tanam Paksa (Cultuurstelsel) pada 1830."
+                ],
+                funFact: "Perang Diponegoro adalah perang terbesar yang dihadapi Belanda di Pulau Jawa! Karena kas keuangan Belanda terkuras habis, Belanda kemudian memaksa rakyat menanam tanaman ekspor lewat Tanam Paksa (Cultuurstelsel).",
+                gameType: "quiz",
+                quiz: {
+                    question: "Apa peristiwa khusus yang menjadi pemicu langsung meletusnya Perang Diponegoro di Tegalrejo, Yogyakarta pada tahun 1825?",
+                    options: [
+                        "Belanda memasang patok jalan melewati tanah dan makam leluhur Pangeran Diponegoro tanpa izin",
+                        "Kedatangan kapal Spanyol di Kepulauan Maluku untuk membeli cengkih",
+                        "Pembentukan organisasi Budi Utomo oleh mahasiswa STOVIA di Batavia",
+                        "Penyerahan kekuasaan Belanda kepada tentara Jepang di Kalijati"
+                    ],
+                    correctIndex: 0,
+                    explanation: "Tepat! Tindakan sewenang-wenang Belanda memasang patok jalan di atas makam leluhur di Tegalrejo menyulut perlawanan besar Pangeran Diponegoro."
+                }
+            },
+            {
+                id: 6,
+                year: "1821 – 1862",
+                shortTitle: "Pahlawan Daerah",
+                title: "Perlawanan Pahlawan Sumatra & Kalimantan",
+                location: "Sumatra Barat & Banjarmasin (Kalimantan)",
+                islandKey: "kalimantan",
+                coords: { x: -7, y: 2.5, z: -3 },
+                color: 0x8b5cf6,
+                figures: "Tuanku Imam Bonjol, Pangeran Antasari, & Sultan Hasanuddin",
+                keywords: "Perang Padri (Sumatra), Perang Banjar (Kalimantan), Semboyan Haram Manyarah",
+                story: [
+                    "Perlawanan terhadap penjajahan Belanda tidak hanya terjadi di Jawa, tetapi berkobar di seluruh kepulauan Nusantara! Di Sumatra Barat, Tuanku Imam Bonjol memimpin Perang Padri (1821–1837). Masyarakat Minangkabau bersatu padu mempertahankan Benteng Bonjol dari kepungan tentara Belanda.",
+                    "Sementara itu di Kalimantan Selatan, meletus Perang Banjar (1859–1862) yang dipimpin oleh Pangeran Antasari. Beliau menentang kesewenang-wenangan Belanda yang mencampuri urusan Kesultanan Banjar dan menguasai tambang batu bara.",
+                    "Pangeran Antasari membakar semangat juang rakyat Kalimantan dengan semboyan legendaris dalam bahasa Banjar: 'Haram Manyarah! Waja Sampai Kaputing!' yang artinya pantang menyerah dan berjuang terus hingga titik darah penghabisan."
+                ],
+                points: [
+                    "Tuanku Imam Bonjol memimpin perjuangan rakyat Sumatra Barat dalam Perang Padri (1821–1837).",
+                    "Pangeran Antasari memimpin Perang Banjar di Kalimantan Selatan melawan monopoli dan intervensi Belanda.",
+                    "Semboyan 'Haram Manyarah, Waja Sampai Kaputing' mengajarkan keteguhan hati membela tanah air."
+                ],
+                funFact: "Selain di Sumatra dan Kalimantan, perlawanan hebat juga dipimpin oleh Pattimura di Maluku (1817), I Gusti Ketut Jelantik di Bali (Perang Puputan), serta Teuku Umar dan Cut Nyak Dien di Aceh!",
+                gameType: "map_hunt",
+                mapHunt: {
+                    prompt: "Pangeran Antasari memimpin Perang Banjar dengan semboyan 'Waja Sampai Kaputing'. Ketuk langsung PULAU KALIMANTAN pada Peta 3D untuk meraih stempel Pos 6!",
+                    targetIsland: "kalimantan",
+                    successMessage: "Tepat sasaran! Pulau Kalimantan adalah lokasi perjuangan gigih Pangeran Antasari dalam Perang Banjar melawan penjajah!"
+                }
+            },
+            {
+                id: 7,
+                year: "1908 & 1928",
+                shortTitle: "Sumpah Pemuda",
+                title: "Kebangkitan Nasional & Ikrar Sumpah Pemuda",
+                location: "Batavia / Jakarta",
+                islandKey: "jawa",
+                coords: { x: -14.2, y: 2.5, z: 12.2 },
+                color: 0x3b82f6,
+                figures: "Dr. Sutomo, Dr. Wahidin Sudirohusodo, Muh. Yamin, & W.R. Supratman",
+                keywords: "Budi Utomo (20 Mei 1908), Sumpah Pemuda (28 Oktober 1928), Lagu Indonesia Raya",
+                story: [
+                    "Memasuki abad ke-20, para pemuda terpelajar Indonesia menyadari bahwa perlawanan yang bersifat kedaerahan mudah dipatahkan oleh Belanda. Karena itu, strategi perjuangan berubah dari senjata fisik menjadi perjuangan melalui organisasi modern, pendidikan, dan persatuan nasional.",
+                    "Tonggak pertama dimulai pada 20 Mei 1908 ketika Dr. Sutomo dan para mahasiswa kedokteran STOVIA di Batavia mendirikan organisasi modern pertama bernama Budi Utomo. Tanggal 20 Mei kini kita peringati sebagai Hari Kebangkitan Nasional.",
+                    "Dua puluh tahun kemudian, pemuda dari berbagai suku (Jong Java, Jong Sumatranen Bond, Jong Ambon, Jong Celebes, dll.) berkumpul dalam Kongres Pemuda II di Jakarta. Pada 28 Oktober 1928, mereka mengikrarkan Sumpah Pemuda: bertumpah darah satu, berbangsa satu, dan menjunjung bahasa persatuan, Bahasa Indonesia!"
+                ],
+                points: [
+                    "20 Mei 1908: Berdirinya Budi Utomo menjadi awal masa Pergerakan dan Kebangkitan Nasional.",
+                    "28 Oktober 1928: Ikrar Sumpah Pemuda menyatukan seluruh pemuda dari berbagai pulau menjadi satu bangsa Indonesia.",
+                    "Pada Kongres Pemuda II, W.R. Supratman pertama kali memperdengarkan lagu kebangsaan 'Indonesia Raya' dengan biola."
+                ],
+                funFact: "Gedung tempat pembacaan ikrar Sumpah Pemuda di Jalan Kramat Raya 106 Jakarta dulunya adalah rumah kos milik warga keturunan Tionghoa bernama Sie Kong Liong, dan kini menjadi Museum Sumpah Pemuda!",
+                gameType: "quiz",
+                quiz: {
+                    question: "Mengapa peristiwa berdirinya Budi Utomo (1908) dan Sumpah Pemuda (1928) disebut sebagai titik balik penting dalam sejarah perjuangan bangsa Indonesia?",
+                    options: [
+                        "Karena perjuangan tidak lagi terpecah-pecah per daerah, melainkan bersatu secara nasional melalui organisasi dan persatuan",
+                        "Karena bangsa Belanda langsung memberikan kemerdekaan pada tahun 1908",
+                        "Karena seluruh pemuda sepakat untuk kembali menggunakan bahasa daerah masing-masing",
+                        "Karena VOC baru saja didirikan di Batavia"
+                    ],
+                    correctIndex: 0,
+                    explanation: "Sangat tepat! Sejak 1908 dan 1928, bangsa Indonesia berjuang menggunakan kekuatan organisasi modern dan persatuan seluruh Nusantara."
+                }
+            },
+            {
+                id: 8,
+                year: "1942 – 17 Agu 1945",
+                shortTitle: "Proklamasi 1945",
+                title: "Masa Pendudukan Jepang hingga Proklamasi Kemerdekaan",
+                location: "Rengasdengklok & Jl. Pegangsaan Timur 56 Jakarta",
+                islandKey: "jawa",
+                coords: { x: -13.0, y: 2.9, z: 13.0 },
+                color: 0xef4444,
+                figures: "Ir. Soekarno, Drs. Moh. Hatta, Ahmad Soebardjo, Fatmawati, & Sayuti Melik",
+                keywords: "BPUPKI & PPKI, Peristiwa Rengasdengklok, Proklamasi 17 Agustus 1945",
+                story: [
+                    "Pada Maret 1942, tentara Jepang mengalahkan Belanda dan menduduki Indonesia. Selama 3,5 tahun masa pendudukan Jepang, rakyat mengalami penderitaan berat akibat kerja paksa (Romusha). Namun di akhir Perang Dunia II saat posisi Jepang terdesak, dibentuklah BPUPKI (yang merumuskan dasar negara Pancasila) dan PPKI.",
+                    "Pada 14–15 Agustus 1945, Jepang menyerah kepada Sekutu setelah kota Hiroshima dan Nagasaki dijatuhkan bom atom. Golongan pemuda mendesak agar Soekarno-Hatta segera memproklamasikan kemerdekaan tanpa campur tangan Jepang. Terjadilah Peristiwa Rengasdengklok pada 16 Agustus 1945 untuk mengamankan Soekarno-Hatta dari pengaruh Jepang.",
+                    "Malam harinya, naskah Proklamasi dirumuskan di rumah Laksamana Maeda oleh Ir. Soekarno, Drs. Moh. Hatta, dan Mr. Ahmad Soebardjo, lalu diketik oleh Sayuti Melik. Tepat pada hari Jumat, 17 Agustus 1945 pukul 10.00 pagi di Jl. Pegangsaan Timur No. 56 Jakarta, Soekarno-Hatta membacakan Proklamasi Kemerdekaan Indonesia dan Sang Saka Merah Putih hasil jahitan Ibu Fatmawati berkibar dengan gagah!"
+                ],
+                points: [
+                    "16 Agustus 1945: Peristiwa Rengasdengklok dan perumusan teks Proklamasi di kediaman Laksamana Maeda.",
+                    "Teks Proklamasi ditulis tangan oleh Ir. Soekarno dan diketik rapi oleh Sayuti Melik.",
+                    "17 Agustus 1945 pukul 10.00 WIB: Pembacaan Proklamasi Kemerdekaan RI oleh Soekarno-Hatta di Jl. Pegangsaan Timur No. 56 Jakarta."
+                ],
+                funFact: "Mikrofon yang digunakan Bung Karno saat membacakan Proklamasi 17 Agustus 1945 dibuat secara mandiri oleh para teknisi radio pemuda Indonesia, sehingga suara kemerdekaan dapat disiarkan ke seluruh penjuru negeri!",
+                gameType: "order",
+                orderGame: {
+                    instruction: "Susunlah 4 rangkaian peristiwa bersejarah menjelang detik-detik Proklamasi Kemerdekaan Indonesia secara berurutan!",
+                    items: [
+                        { id: "p1", text: "Sidang BPUPKI merumuskan dasar negara bagi Indonesia merdeka (Mei–Juni 1945)", order: 1 },
+                        { id: "p2", text: "Jepang menyerah kepada Sekutu dan terjadinya Peristiwa Rengasdengklok (15–16 Agustus 1945)", order: 2 },
+                        { id: "p3", text: "Perumusan teks Proklamasi di rumah Laksamana Maeda dan pengetikan oleh Sayuti Melik (Malam 16 Agustus 1945)", order: 3 },
+                        { id: "p4", text: "Ir. Soekarno & Drs. Moh. Hatta membacakan Proklamasi Kemerdekaan di Jl. Pegangsaan Timur 56 (17 Agustus 1945)", order: 4 }
+                    ],
+                    explanation: "Merdeka! Kamu berhasil menyusun kronologi detik-detik lahirnya Negara Kesatuan Republik Indonesia pada 17 Agustus 1945!"
+                }
+            }
+        ];
+
+        /* ----------------------------------------------------------
+         * 2. STATE APLIKASI, APPS SCRIPT API & LOCALSTORAGE
+         * ---------------------------------------------------------- */
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzdVXVFXp3clOgya_gCczCWdw9rITHs3Z7IH1GfmyjHm82oLliE3RhidQkKFQtgJwPcQ/exec";
+        const STORAGE_KEY_RECORDS = "jejak_nusantara_3d_records_v1";
+        const STORAGE_KEY_ACTIVE = "jejak_nusantara_3d_active_v1";
+
+        let appState = {
+            authMode: "login", // 'login' atau 'register'
+            playerName: "",
+            playerPassword: "",
+            playerSchool: "",
+            playerNpsn: "",
+            playerClass: "Kelas 5 SD",
+            score: 0,
+            completedPos: [], // array of pos id [1..8]
+            activePosId: null,
+            isMapHuntActive: false,
+            mapHuntTargetIsland: null,
+            mapHuntPosId: null,
+            soundEnabled: true,
+            orderGameCurrentList: []
+        };
+
+        /**
+         * Helper komunikasi dengan Google Apps Script menggunakan POST text/plain
+         * agar aman dari pemblokiran CORS preflight browser
+         */
+        async function callAppsScript(payload) {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(payload)
+            });
+            return await response.json();
+        }
+
+        /* ----------------------------------------------------------
+         * 3. WEB AUDIO API (EFEK SUARA PROSEDURAL MURNI)
+         * ---------------------------------------------------------- */
+        let audioCtx = null;
+
+        function ensureAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!appState.soundEnabled) return;
+            try {
+                ensureAudioContext();
+                if (!audioCtx) return;
+
+                const now = audioCtx.currentTime;
+
+                if (type === "click") {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(680, now + 0.07);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === "pin") {
+                    const notes = [440, 659.25];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = "triangle";
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                        gain.gain.setValueAtTime(0.15, now + idx * 0.07);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.16);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.07);
+                        osc.stop(now + idx * 0.07 + 0.16);
+                    });
+                } else if (type === "correct") {
+                    const chord = [523.25, 659.25, 783.99, 1046.5];
+                    chord.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = "triangle";
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.28);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.28);
+                    });
+                } else if (type === "wrong") {
+                    const notes = [300, 240];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = "sawtooth";
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        gain.gain.setValueAtTime(0.1, now + idx * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.2);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.12);
+                        osc.stop(now + idx * 0.12 + 0.2);
+                    });
+                } else if (type === "fanfare") {
+                    const melody = [
+                        { f: 523.25, t: 0, d: 0.15 },
+                        { f: 659.25, t: 0.15, d: 0.15 },
+                        { f: 783.99, t: 0.30, d: 0.15 },
+                        { f: 1046.5, t: 0.45, d: 0.45 }
+                    ];
+                    melody.forEach(n => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = "triangle";
+                        osc.frequency.setValueAtTime(n.f, now + n.t);
+                        gain.gain.setValueAtTime(0.22, now + n.t);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + n.t);
+                        osc.stop(now + n.t + n.d);
+                    });
+                }
+            } catch (e) {
+                // Abaikan jika browser memblokir autoplay audio sebelum interaksi
+            }
+        }
+
+        function toggleSound() {
+            appState.soundEnabled = !appState.soundEnabled;
+            const btn = document.getElementById("btn-sound");
+            btn.innerHTML = appState.soundEnabled
+                ? '<i data-lucide="volume-2" class="w-6 h-6"></i>'
+                : '<i data-lucide="volume-x" class="w-6 h-6 text-rose-600"></i>';
+            lucide.createIcons();
+            if (appState.soundEnabled) playSound("click");
+        }
+
+        /* ----------------------------------------------------------
+         * 4. THREE.JS: PETA KEPULAUAN NUSANTARA 3D & OBJEK INTERAKTIF
+         * ---------------------------------------------------------- */
+        let scene, camera, renderer, controls;
+        let oceanMesh, oceanVerticesOriginal = [];
+        let pinObjects = []; // Menyimpan mesh kristal untuk Raycaster
+        let islandMeshes = []; // Menyimpan mesh pulau untuk misi klik pulau
+        let ships = [];
+        let htmlPinElements = [];
+        let htmlIslandElements = [];
+        let isHomePreview = true;
+        let cameraTargetTween = null;
+
+        // Data Geometri Prosedural Kepulauan Utama Indonesia
+        const ISLANDS_DATA = [
+            {
+                key: "sumatra",
+                name: "Pulau Sumatra",
+                labelPos: { x: -27, y: 2.2, z: -2 },
+                color: 0x10b981,
+                blocks: [
+                    { x: -35, z: -12, sx: 5.5, sz: 4.2, h: 2.1, rot: -0.65 },
+                    { x: -31, z: -8, sx: 6.2, sz: 4.8, h: 2.4, rot: -0.65 },
+                    { x: -27, z: -3.5, sx: 6.5, sz: 5.2, h: 2.3, rot: -0.65 },
+                    { x: -23, z: 1.5, sx: 6.2, sz: 4.8, h: 2.0, rot: -0.65 },
+                    { x: -19.5, z: 6.0, sx: 5.4, sz: 4.2, h: 1.8, rot: -0.65 }
+                ]
+            },
+            {
+                key: "jawa",
+                name: "Pulau Jawa",
+                labelPos: { x: -8, y: 2.2, z: 16.5 },
+                color: 0x059669,
+                blocks: [
+                    { x: -15.5, z: 13.2, sx: 5.2, sz: 3.2, h: 2.1, rot: 0.12 },
+                    { x: -11.0, z: 14.0, sx: 5.6, sz: 3.4, h: 2.3, rot: 0.12 },
+                    { x: -6.0, z: 14.7, sx: 5.8, sz: 3.4, h: 2.4, rot: 0.10 },
+                    { x: -1.0, z: 15.2, sx: 5.4, sz: 3.1, h: 2.1, rot: 0.08 },
+                    { x: 4.5, z: 15.8, sx: 3.2, sz: 2.2, h: 1.6, rot: 0.05 }, // Bali
+                    { x: 9.0, z: 16.2, sx: 3.8, sz: 2.1, h: 1.5, rot: 0.05 }  // Nusa Tenggara
+                ]
+            },
+            {
+                key: "kalimantan",
+                name: "Pulau Kalimantan",
+                labelPos: { x: -7, y: 2.5, z: -6 },
+                color: 0x047857,
+                blocks: [
+                    { x: -10, z: -4, sx: 7.5, sz: 7.2, h: 2.3, rot: 0.2 },
+                    { x: -5, z: -5, sx: 8.2, sz: 8.5, h: 2.7, rot: -0.1 },
+                    { x: -3.5, z: -9, sx: 6.2, sz: 5.8, h: 2.4, rot: 0.3 },
+                    { x: -7, z: -1, sx: 7.5, sz: 5.5, h: 2.0, rot: 0.0 }
+                ]
+            },
+            {
+                key: "sulawesi",
+                name: "Pulau Sulawesi",
+                labelPos: { x: 11, y: 2.3, z: -3 },
+                color: 0x10b981,
+                blocks: [
+                    { x: 9.5, z: -4, sx: 4.2, sz: 4.5, h: 2.3, rot: 0.2 },
+                    { x: 12.5, z: -8.5, sx: 6.5, sz: 2.4, h: 2.0, rot: -0.25 },
+                    { x: 8.5, z: 1.5, sx: 2.6, sz: 6.2, h: 2.1, rot: 0.15 },
+                    { x: 12.5, z: 1.0, sx: 2.5, sz: 5.8, h: 2.0, rot: -0.35 }
+                ]
+            },
+            {
+                key: "maluku",
+                name: "Kepulauan Maluku",
+                labelPos: { x: 24, y: 2.2, z: -5.5 },
+                color: 0xd97706, // Terakota rempah
+                blocks: [
+                    { x: 23.5, z: -5.0, sx: 2.6, sz: 4.2, h: 2.0, rot: 0.2 }, // Halmahera/Ternate
+                    { x: 25.5, z: -2.0, sx: 2.4, sz: 2.4, h: 1.9, rot: 0.0 }, // Tidore
+                    { x: 23.5, z: 2.8, sx: 4.2, sz: 2.4, h: 1.9, rot: 0.1 },  // Seram & Ambon
+                    { x: 20.5, z: 3.2, sx: 2.3, sz: 2.0, h: 1.7, rot: 0.0 }   // Buru
+                ]
+            },
+            {
+                key: "papua",
+                name: "Pulau Papua",
+                labelPos: { x: 38, y: 2.6, z: 3 },
+                color: 0x059669,
+                blocks: [
+                    { x: 31.5, z: -1.5, sx: 5.2, sz: 4.0, h: 2.2, rot: -0.2 }, // Kepala Burung
+                    { x: 36.0, z: 1.5, sx: 6.5, sz: 5.5, h: 2.8, rot: 0.15 },
+                    { x: 41.5, z: 3.5, sx: 7.5, sz: 6.8, h: 3.1, rot: 0.1 },
+                    { x: 45.5, z: 6.0, sx: 5.0, sz: 5.2, h: 2.5, rot: 0.0 }
+                ]
+            }
+        ];
+
+        function init3DScene() {
+            const container = document.getElementById("canvas-container");
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0284c7);
+            scene.fog = new THREE.FogExp2(0x0284c7, 0.0065);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 400);
+            camera.position.set(0, 44, 54);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.maxPolarAngle = Math.PI / 2.25;
+            controls.minPolarAngle = 0.35;
+            controls.minDistance = 18;
+            controls.maxDistance = 95;
+            controls.target.set(0, 0, 2);
+
+            // Pencahayaan Hangat Nusantara
+            const ambientLight = new THREE.AmbientLight(0xfffbeb, 0.78);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfef3c7, 0.95);
+            sunLight.position.set(35, 65, 40);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 10;
+            sunLight.shadow.camera.far = 160;
+            const d = 60;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            scene.add(sunLight);
+
+            createOcean();
+            createArchipelago();
+            createHistoryPins();
+            createDecorativeShips();
+
+            // Event Listeners untuk Raycasting (Klik/Touch Pin & Pulau)
+            setupPointerInteractions();
+            window.addEventListener("resize", onWindowResize);
+
+            animate3D();
+        }
+
+        function createOcean() {
+            const oceanGeo = new THREE.PlaneGeometry(220, 150, 55, 40);
+            oceanGeo.rotateX(-Math.PI / 2);
+
+            const posAttr = oceanGeo.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+                oceanVerticesOriginal.push({
+                    x: posAttr.getX(i),
+                    y: posAttr.getY(i),
+                    z: posAttr.getZ(i)
+                });
+            }
+
+            const oceanMat = new THREE.MeshStandardMaterial({
+                color: 0x0ea5e9,
+                roughness: 0.35,
+                metalness: 0.1,
+                flatShading: true
+            });
+
+            oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
+            oceanMesh.receiveShadow = true;
+            scene.add(oceanMesh);
+
+            // Garis Grid Kompas Peta Laut
+            const gridHelper = new THREE.GridHelper(160, 16, 0x38bdf8, 0x0369a1);
+            gridHelper.position.y = 0.08;
+            scene.add(gridHelper);
+        }
+
+        function createArchipelago() {
+            const labelsContainer = document.getElementById("labels-container");
+
+            ISLANDS_DATA.forEach(island => {
+                const islandGroup = new THREE.Group();
+
+                island.blocks.forEach(b => {
+                    // Pantai Pasir Terakota/Krem di bawah pulau
+                    const coastGeo = new THREE.CylinderGeometry(1, 1.18, 0.7, 7);
+                    const coastMat = new THREE.MeshStandardMaterial({
+                        color: 0xfde68a,
+                        roughness: 0.85,
+                        flatShading: true
+                    });
+                    const coastMesh = new THREE.Mesh(coastGeo, coastMat);
+                    coastMesh.position.set(b.x, 0.35, b.z);
+                    coastMesh.scale.set(b.sx * 0.65, 1, b.sz * 0.65);
+                    coastMesh.rotation.y = b.rot;
+                    coastMesh.receiveShadow = true;
+                    islandGroup.add(coastMesh);
+
+                    // Daratan Utama Hijau Zamrud Timbul
+                    const landGeo = new THREE.CylinderGeometry(0.82, 1.0, b.h, 7);
+                    const landMat = new THREE.MeshStandardMaterial({
+                        color: island.color,
+                        roughness: 0.65,
+                        flatShading: true
+                    });
+                    const landMesh = new THREE.Mesh(landGeo, landMat);
+                    landMesh.position.set(b.x, 0.5 + b.h / 2, b.z);
+                    landMesh.scale.set(b.sx * 0.6, 1, b.sz * 0.6);
+                    landMesh.rotation.y = b.rot;
+                    landMesh.castShadow = true;
+                    landMesh.receiveShadow = true;
+                    landMesh.userData = {
+                        type: "island",
+                        islandKey: island.key,
+                        islandName: island.name
+                    };
+                    islandGroup.add(landMesh);
+                    islandMeshes.push(landMesh);
+
+                    // Gunung Kecil Dekoratif di Tengah Pulau
+                    if (b.h >= 2.2) {
+                        const mtGeo = new THREE.ConeGeometry(1.3, 2.2, 6);
+                        const mtMat = new THREE.MeshStandardMaterial({
+                            color: 0x065f46,
+                            roughness: 0.75,
+                            flatShading: true
+                        });
+                        const mtMesh = new THREE.Mesh(mtGeo, mtMat);
+                        mtMesh.position.set(b.x, 0.5 + b.h + 0.8, b.z);
+                        mtMesh.castShadow = true;
+                        mtMesh.userData = {
+                            type: "island",
+                            islandKey: island.key,
+                            islandName: island.name
+                        };
+                        islandGroup.add(mtMesh);
+                        islandMeshes.push(mtMesh);
+                    }
+                });
+
+                scene.add(islandGroup);
+
+                // Label Nama Pulau
+                const el = document.createElement("div");
+                el.className = "pin-label pointer-events-auto select-none";
+                el.innerHTML = `
+                    <div onclick="handleIslandClick('${island.key}')" class="px-2.5 py-0.5 rounded-full bg-slate-900/60 text-amber-200 border border-amber-400/40 text-[11px] md:text-xs font-bold tracking-wider uppercase shadow backdrop-blur-xs hover:bg-emerald-700 hover:text-white transition">
+                        ${island.name}
+                    </div>
+                `;
+                labelsContainer.appendChild(el);
+                htmlIslandElements.push({
+                    el,
+                    pos: new THREE.Vector3(island.labelPos.x, island.labelPos.y, island.labelPos.z),
+                    key: island.key
+                });
+            });
+        }
+
+        function createHistoryPins() {
+            const labelsContainer = document.getElementById("labels-container");
+
+            HISTORI_POS.forEach((pos, idx) => {
+                const group = new THREE.Group();
+                group.position.set(pos.coords.x, pos.coords.y, pos.coords.z);
+
+                // Alas Monumen Emas
+                const baseGeo = new THREE.CylinderGeometry(1.05, 1.3, 0.6, 8);
+                const baseMat = new THREE.MeshStandardMaterial({
+                    color: 0xf59e0b,
+                    roughness: 0.3,
+                    metalness: 0.4
+                });
+                const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+                baseMesh.castShadow = true;
+                group.add(baseMesh);
+
+                // Kristal Monumen Bercahaya (Berputar & Melayang)
+                const crystalGeo = new THREE.OctahedronGeometry(1.15, 0);
+                const crystalMat = new THREE.MeshStandardMaterial({
+                    color: pos.color,
+                    emissive: pos.color,
+                    emissiveIntensity: 0.35,
+                    roughness: 0.2,
+                    metalness: 0.3,
+                    flatShading: true
+                });
+                const crystalMesh = new THREE.Mesh(crystalGeo, crystalMat);
+                crystalMesh.position.y = 2.0;
+                crystalMesh.castShadow = true;
+                crystalMesh.userData = {
+                    type: "pin",
+                    posId: pos.id
+                };
+                group.add(crystalMesh);
+
+                // Cincin Halo di Sekeliling Pin
+                const ringGeo = new THREE.RingGeometry(1.2, 1.55, 24);
+                ringGeo.rotateX(-Math.PI / 2);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: 0xfef08a,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.75
+                });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.position.y = 0.35;
+                group.add(ringMesh);
+
+                // Hitbox Transparan Lebih Besar untuk Layar Sentuh IFP
+                const hitGeo = new THREE.CylinderGeometry(2.2, 2.2, 4.5, 8);
+                const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+                const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+                hitMesh.position.y = 2.0;
+                hitMesh.userData = {
+                    type: "pin",
+                    posId: pos.id
+                };
+                group.add(hitMesh);
+
+                scene.add(group);
+
+                pinObjects.push({
+                    posId: pos.id,
+                    group,
+                    crystalMesh,
+                    crystalMat,
+                    ringMesh,
+                    hitMesh,
+                    phase: idx * 0.9
+                });
+
+                // Buat Lencana HTML di atas Pin 3D agar sangat mudah diketuk di IFP
+                const labelEl = document.createElement("div");
+                labelEl.id = `html-pin-${pos.id}`;
+                labelEl.className = "pin-label";
+                labelEl.onclick = (e) => {
+                    e.stopPropagation();
+                    onSelectPosPin(pos.id);
+                };
+                labelsContainer.appendChild(labelEl);
+
+                htmlPinElements.push({
+                    posId: pos.id,
+                    el: labelEl,
+                    worldPos: new THREE.Vector3(pos.coords.x, pos.coords.y + 3.6, pos.coords.z)
+                });
+            });
+
+            refreshPinVisualStates();
+        }
+
+        function createDecorativeShips() {
+            const shipRoutes = [
+                { centerX: -28, centerZ: -16, radiusX: 9, radiusZ: 4, speed: 0.35, phase: 0 },
+                { centerX: 0, centerZ: 6, radiusX: 11, radiusZ: 3.5, speed: 0.28, phase: 2.1 },
+                { centerX: 22, centerZ: -10, radiusX: 8, radiusZ: 4.5, speed: 0.32, phase: 4.2 }
+            ];
+
+            shipRoutes.forEach(route => {
+                const shipGroup = new THREE.Group();
+
+                // Lambung Kapal Kayu
+                const hullGeo = new THREE.BoxGeometry(2.2, 0.65, 0.95);
+                const hullMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+                const hull = new THREE.Mesh(hullGeo, hullMat);
+                hull.position.y = 0.35;
+                hull.castShadow = true;
+                shipGroup.add(hull);
+
+                // Tiang & Layar Putih Krem
+                const mastGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.2, 6);
+                const mastMat = new THREE.MeshStandardMaterial({ color: 0x451a03 });
+                const mast = new THREE.Mesh(mastGeo, mastMat);
+                mast.position.y = 1.3;
+                shipGroup.add(mast);
+
+                const sailGeo = new THREE.BoxGeometry(0.15, 1.35, 1.35);
+                const sailMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7 });
+                const sail = new THREE.Mesh(sailGeo, sailMat);
+                sail.position.set(0.1, 1.4, 0);
+                sail.castShadow = true;
+                shipGroup.add(sail);
+
+                scene.add(shipGroup);
+                ships.push({ mesh: shipGroup, ...route });
+            });
+        }
+
+        /* ----------------------------------------------------------
+         * 5. RAYCASTER & INTERAKSI SENTUH PETA 3D
+         * ---------------------------------------------------------- */
+        function setupPointerInteractions() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            let downPos = { x: 0, y: 0 };
+
+            const dom = renderer.domElement;
+
+            dom.addEventListener("pointerdown", (e) => {
+                downPos.x = e.clientX;
+                downPos.y = e.clientY;
+            });
+
+            dom.addEventListener("pointerup", (e) => {
+                if (isHomePreview) return;
+                const dist = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+                // Hanya proses jika ketukan singkat (bukan sedang menggeser kamera)
+                if (dist > 10) return;
+
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+
+                // Jika sedang dalam Misi Tantangan Klik Pulau
+                if (appState.isMapHuntActive) {
+                    const islandHits = raycaster.intersectObjects(islandMeshes, false);
+                    if (islandHits.length > 0) {
+                        const clickedIslandKey = islandHits[0].object.userData.islandKey;
+                        handleIslandClick(clickedIslandKey);
+                        return;
+                    }
+                }
+
+                // Cek ketukan pada Pin Monumen 3D
+                const clickablePins = [];
+                pinObjects.forEach(p => {
+                    clickablePins.push(p.crystalMesh, p.hitMesh);
+                });
+
+                const hits = raycaster.intersectObjects(clickablePins, false);
+                if (hits.length > 0) {
+                    const posId = hits[0].object.userData.posId;
+                    if (posId) {
+                        onSelectPosPin(posId);
+                    }
+                }
+            });
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            const time = performance.now() * 0.001;
+
+            // Animasi Gelombang Laut Halus
+            if (oceanMesh) {
+                const posAttr = oceanMesh.geometry.attributes.position;
+                for (let i = 0; i < posAttr.count; i++) {
+                    const orig = oceanVerticesOriginal[i];
+                    const wave = Math.sin(orig.x * 0.14 + time * 1.6) * 0.22 +
+                                 Math.cos(orig.z * 0.16 + time * 1.3) * 0.22;
+                    posAttr.setY(i, wave);
+                }
+                posAttr.needsUpdate = true;
+            }
+
+            // Animasi Pin Kristal Berputar & Melayang
+            pinObjects.forEach(p => {
+                p.crystalMesh.rotation.y = time * 1.4 + p.phase;
+                p.crystalMesh.position.y = 2.0 + Math.sin(time * 2.5 + p.phase) * 0.32;
+                const scalePulse = 1 + Math.sin(time * 3 + p.phase) * 0.12;
+                p.ringMesh.scale.set(scalePulse, scalePulse, 1);
+            });
+
+            // Animasi Kapal Layar Nusantara
+            ships.forEach(s => {
+                const angle = time * s.speed + s.phase;
+                const nx = s.centerX + Math.cos(angle) * s.radiusX;
+                const nz = s.centerZ + Math.sin(angle) * s.radiusZ;
+                const dx = -Math.sin(angle) * s.radiusX;
+                const dz = Math.cos(angle) * s.radiusZ;
+                s.mesh.position.set(nx, 0.2 + Math.sin(time * 2.5 + s.phase) * 0.12, nz);
+                s.mesh.rotation.y = Math.atan2(dx, dz);
+            });
+
+            // Rotasi Kamera Otomatis saat di Layar Beranda
+            if (isHomePreview) {
+                const camAngle = time * 0.12;
+                camera.position.x = Math.sin(camAngle) * 56;
+                camera.position.z = Math.cos(camAngle) * 56;
+                camera.position.y = 40;
+                controls.target.set(0, 0, 2);
+            } else if (cameraTargetTween) {
+                // Transisi Kamera Halus menuju Pos yang dipilih
+                camera.position.lerp(cameraTargetTween.camPos, 0.08);
+                controls.target.lerp(cameraTargetTween.targetPos, 0.08);
+                if (camera.position.distanceTo(cameraTargetTween.camPos) < 0.4) {
+                    cameraTargetTween = null;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+            updateFloatingLabelsPosition();
+        }
+
+        function updateFloatingLabelsPosition() {
+            const labelsContainer = document.getElementById("labels-container");
+            if (isHomePreview) {
+                labelsContainer.classList.add("hidden");
+                return;
+            }
+            labelsContainer.classList.remove("hidden");
+
+            const widthHalf = window.innerWidth / 2;
+            const heightHalf = window.innerHeight / 2;
+
+            // Update Posisi Pin Sejarah
+            htmlPinElements.forEach(item => {
+                const v = item.worldPos.clone();
+                v.project(camera);
+                if (v.z > 1) {
+                    item.el.style.display = "none";
+                } else {
+                    const x = (v.x * widthHalf) + widthHalf;
+                    const y = -(v.y * heightHalf) + heightHalf;
+                    item.el.style.display = "block";
+                    item.el.style.left = `${x}px`;
+                    item.el.style.top = `${y}px`;
+                }
+            });
+
+            // Update Posisi Label Pulau
+            htmlIslandElements.forEach(item => {
+                const v = item.pos.clone();
+                v.project(camera);
+                if (v.z > 1) {
+                    item.el.style.display = "none";
+                } else {
+                    const x = (v.x * widthHalf) + widthHalf;
+                    const y = -(v.y * heightHalf) + heightHalf;
+                    item.el.style.display = "block";
+                    item.el.style.left = `${x}px`;
+                    item.el.style.top = `${y}px`;
+                }
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function focusCameraOnPos(pos) {
+            cameraTargetTween = {
+                targetPos: new THREE.Vector3(pos.coords.x, 1.5, pos.coords.z),
+                camPos: new THREE.Vector3(pos.coords.x, 24, pos.coords.z + 24)
+            };
+        }
+
+        function resetCameraView() {
+            playSound("click");
+            cameraTargetTween = {
+                targetPos: new THREE.Vector3(0, 0, 2),
+                camPos: new THREE.Vector3(0, 44, 54)
+            };
+        }
+
+        /* ----------------------------------------------------------
+         * 6. ALUR LAYAR, LOGIN/REGISTER & UPDATE VISUAL PIN/HUD
+         * ---------------------------------------------------------- */
+        function switchAuthMode(mode) {
+            playSound("click");
+            appState.authMode = mode;
+
+            const tabLogin = document.getElementById("tab-auth-login");
+            const tabReg = document.getElementById("tab-auth-register");
+            const boxLogin = document.getElementById("form-login-box");
+            const boxReg = document.getElementById("form-register-box");
+            const submitText = document.getElementById("btn-submit-auth-text");
+            const statusMsg = document.getElementById("auth-status-msg");
+
+            statusMsg.classList.add("hidden");
+
+            if (mode === "login") {
+                tabLogin.className = "flex-1 py-2.5 px-4 rounded-xl font-display font-bold text-sm md:text-base bg-amber-600 text-white shadow flex items-center justify-center gap-2 transition cursor-pointer";
+                tabReg.className = "flex-1 py-2.5 px-4 rounded-xl font-display font-bold text-sm md:text-base text-amber-950 hover:bg-amber-100 flex items-center justify-center gap-2 transition cursor-pointer";
+                boxLogin.classList.remove("hidden");
+                boxReg.classList.add("hidden");
+                submitText.textContent = "Masuk & Mulai Ekspedisi!";
+            } else {
+                tabReg.className = "flex-1 py-2.5 px-4 rounded-xl font-display font-bold text-sm md:text-base bg-emerald-600 text-white shadow flex items-center justify-center gap-2 transition cursor-pointer";
+                tabLogin.className = "flex-1 py-2.5 px-4 rounded-xl font-display font-bold text-sm md:text-base text-amber-950 hover:bg-amber-100 flex items-center justify-center gap-2 transition cursor-pointer";
+                boxReg.classList.remove("hidden");
+                boxLogin.classList.add("hidden");
+                submitText.textContent = "Daftar & Mulai Ekspedisi!";
+            }
+        }
+
+        function showAuthStatus(message, type = "info") {
+            const el = document.getElementById("auth-status-msg");
+            el.classList.remove("hidden");
+            if (type === "error") {
+                el.className = "w-full max-w-lg mb-3 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold bg-rose-100 border-2 border-rose-400 text-rose-900";
+            } else if (type === "success") {
+                el.className = "w-full max-w-lg mb-3 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold bg-emerald-100 border-2 border-emerald-400 text-emerald-900";
+            } else {
+                el.className = "w-full max-w-lg mb-3 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold bg-amber-100 border-2 border-amber-400 text-amber-900";
+            }
+            el.textContent = message;
+        }
+
+        function selectClass(className) {
+            playSound("click");
+            appState.playerClass = className;
+            const btn5 = document.getElementById("btn-class-5");
+            const btn6 = document.getElementById("btn-class-6");
+
+            if (className === "Kelas 5 SD") {
+                btn5.className = "class-option py-2 px-3 rounded-xl font-bold text-sm border-2 border-amber-500 bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer";
+                btn6.className = "class-option py-2 px-3 rounded-xl font-bold text-sm border-2 border-amber-300 bg-white text-amber-900 hover:bg-amber-50 flex items-center justify-center gap-1.5 transition cursor-pointer";
+            } else {
+                btn6.className = "class-option py-2 px-3 rounded-xl font-bold text-sm border-2 border-amber-500 bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer";
+                btn5.className = "class-option py-2 px-3 rounded-xl font-bold text-sm border-2 border-amber-300 bg-white text-amber-900 hover:bg-amber-50 flex items-center justify-center gap-1.5 transition cursor-pointer";
+            }
+        }
+
+        async function handleAuthSubmit() {
+            ensureAudioContext();
+            playSound("click");
+
+            const btn = document.getElementById("btn-submit-auth");
+            const btnText = document.getElementById("btn-submit-auth-text");
+
+            if (appState.authMode === "login") {
+                const nama = document.getElementById("login-name").value.trim();
+                const password = document.getElementById("login-password").value.trim();
+
+                if (!nama || !password) {
+                    playSound("wrong");
+                    showAuthStatus("Harap isi Nama Siswa dan Password terlebih dahulu!", "error");
+                    return;
+                }
+
+                btn.disabled = true;
+                btnText.textContent = "Memeriksa Data di Spreadsheet...";
+                showAuthStatus("Menghubungkan ke server Google Spreadsheet...", "info");
+
+                try {
+                    const res = await callAppsScript({
+                        action: "login",
+                        nama: nama,
+                        password: password
+                    });
+
+                    if (res && res.success && res.user) {
+                        appState.playerName = res.user.nama || nama;
+                        appState.playerPassword = password;
+                        appState.playerSchool = res.user.sekolah || "-";
+                        appState.playerNpsn = res.user.npsn || "-";
+                        appState.playerClass = res.user.kelas || "Kelas 5 SD";
+                        appState.score = Number(res.user.skor) || 0;
+                        appState.completedPos = Array.isArray(res.user.completedPos) ? res.user.completedPos : [];
+
+                        enterExpeditionArena();
+                    } else {
+                        playSound("wrong");
+                        showAuthStatus(res.message || "Gagal masuk. Pastikan nama dan password benar atau daftar baru.", "error");
+                    }
+                } catch (err) {
+                    // Fallback ke penyimpanan lokal jika koneksi internet/script sedang terkendala
+                    const localMatch = tryLocalAuthFallback("login", { nama, password });
+                    if (localMatch) {
+                        enterExpeditionArena();
+                    } else {
+                        playSound("wrong");
+                        showAuthStatus("Belum terdaftar atau koneksi Spreadsheet sibuk. Silakan gunakan tab 'Daftar Siswa Baru'.", "error");
+                    }
+                } finally {
+                    btn.disabled = false;
+                    btnText.textContent = "Masuk & Mulai Ekspedisi!";
+                }
+
+            } else {
+                // MODE REGISTER SISWA BARU
+                const nama = document.getElementById("reg-name").value.trim();
+                const password = document.getElementById("reg-password").value.trim();
+                const sekolah = document.getElementById("reg-school").value.trim();
+                const npsn = document.getElementById("reg-npsn").value.trim();
+
+                if (!nama || !password || !sekolah || !npsn) {
+                    playSound("wrong");
+                    showAuthStatus("Harap lengkapi Nama Siswa, Password, Nama Sekolah, dan NPSN!", "error");
+                    return;
+                }
+
+                btn.disabled = true;
+                btnText.textContent = "Mendaftarkan ke Spreadsheet...";
+                showAuthStatus("Menyimpan pendaftaran siswa baru ke Google Spreadsheet...", "info");
+
+                try {
+                    const res = await callAppsScript({
+                        action: "register",
+                        nama: nama,
+                        password: password,
+                        sekolah: sekolah,
+                        npsn: npsn,
+                        kelas: appState.playerClass
+                    });
+
+                    if (res && res.success) {
+                        appState.playerName = nama;
+                        appState.playerPassword = password;
+                        appState.playerSchool = sekolah;
+                        appState.playerNpsn = npsn;
+                        appState.score = 0;
+                        appState.completedPos = [];
+                        saveLocalUserAccount();
+                        enterExpeditionArena();
+                    } else {
+                        playSound("wrong");
+                        showAuthStatus(res.message || "Nama siswa sudah terdaftar, silakan masuk lewat menu Login.", "error");
+                    }
+                } catch (err) {
+                    // Fallback jika offline: tetap izinkan masuk dan simpan lokal + kirim saat online
+                    appState.playerName = nama;
+                    appState.playerPassword = password;
+                    appState.playerSchool = sekolah;
+                    appState.playerNpsn = npsn;
+                    appState.score = 0;
+                    appState.completedPos = [];
+                    saveLocalUserAccount();
+                    enterExpeditionArena();
+                } finally {
+                    btn.disabled = false;
+                    btnText.textContent = "Daftar & Mulai Ekspedisi!";
+                }
+            }
+        }
+
+        function enterExpeditionArena() {
+            playSound("pin");
+            saveActiveSession();
+            saveRecordToLeaderboard();
+
+            isHomePreview = false;
+            document.getElementById("screen-home").classList.add("hidden");
+            const hud = document.getElementById("screen-hud");
+            hud.classList.remove("hidden");
+            hud.classList.add("flex");
+
+            resetCameraView();
+            updateHUD();
+            renderTimelineBar();
+            refreshPinVisualStates();
+
+            showToast(`Selamat datang, ${appState.playerName} (${appState.playerSchool})!`, "emerald");
+        }
+
+        function updateHUD() {
+            document.getElementById("hud-name").textContent = appState.playerName;
+            document.getElementById("hud-class").textContent = appState.playerClass;
+            const schoolEl = document.getElementById("hud-school");
+            if (schoolEl) {
+                schoolEl.textContent = appState.playerSchool ? `${appState.playerSchool} (${appState.playerNpsn || '-'})` : "";
+            }
+            document.getElementById("hud-score").textContent = appState.score;
+
+            const doneCount = appState.completedPos.length;
+            const total = HISTORI_POS.length;
+            const pct = Math.round((doneCount / total) * 100);
+
+            document.getElementById("hud-stamp-count").textContent = `${doneCount}/${total} Pos`;
+            document.getElementById("hud-progress-bar").style.width = `${pct}%`;
+        }
+
+        function refreshPinVisualStates() {
+            // Tentukan pos berikutnya yang disarankan secara berurutan
+            let nextSuggestedId = 1;
+            for (let i = 1; i <= HISTORI_POS.length; i++) {
+                if (!appState.completedPos.includes(i)) {
+                    nextSuggestedId = i;
+                    break;
+                }
+            }
+
+            HISTORI_POS.forEach(pos => {
+                const isDone = appState.completedPos.includes(pos.id);
+                const isNext = pos.id === nextSuggestedId && !isDone;
+
+                // Update Warna Kristal 3D
+                const pinObj = pinObjects.find(p => p.posId === pos.id);
+                if (pinObj) {
+                    if (isDone) {
+                        pinObj.crystalMat.color.setHex(0x10b981);
+                        pinObj.crystalMat.emissive.setHex(0x059669);
+                    } else {
+                        pinObj.crystalMat.color.setHex(pos.color);
+                        pinObj.crystalMat.emissive.setHex(pos.color);
+                    }
+                }
+
+                // Update Badge HTML di atas Pin
+                const el = document.getElementById(`html-pin-${pos.id}`);
+                if (el) {
+                    const bgClass = isDone
+                        ? "bg-emerald-600 border-emerald-200 text-white"
+                        : isNext
+                            ? "bg-amber-500 border-yellow-200 text-amber-950 pulse-badge"
+                            : "bg-amber-800/90 border-amber-300 text-white";
+
+                    const iconHtml = isDone ? "✓" : pos.id;
+                    el.innerHTML = `
+                        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border-2 shadow-lg font-display font-bold text-xs md:text-sm ${bgClass}">
+                            <span class="w-5 h-5 rounded-full bg-black/25 flex items-center justify-center text-xs font-extrabold">${iconHtml}</span>
+                            <span>${pos.year.split(" ")[0]}</span>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function renderTimelineBar() {
+            const container = document.getElementById("timeline-buttons-container");
+            container.innerHTML = "";
+
+            HISTORI_POS.forEach(pos => {
+                const isDone = appState.completedPos.includes(pos.id);
+                const btn = document.createElement("button");
+                btn.onclick = () => onSelectPosPin(pos.id);
+
+                btn.className = `px-3.5 py-2 rounded-xl border-2 font-bold text-left transition flex items-center gap-2.5 shrink-0 cursor-pointer ${
+                    isDone
+                        ? "bg-emerald-600 border-emerald-400 text-white shadow-sm"
+                        : "bg-white/90 hover:bg-amber-100 border-amber-400 text-amber-950"
+                }`;
+
+                btn.innerHTML = `
+                    <div class="w-7 h-7 rounded-lg ${isDone ? 'bg-emerald-800 text-white' : 'bg-amber-500 text-white'} font-display font-bold text-sm flex items-center justify-center shrink-0">
+                        ${isDone ? '✓' : pos.id}
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-extrabold opacity-80 leading-none">${pos.year}</div>
+                        <div class="text-xs md:text-sm font-display font-bold leading-tight">${pos.shortTitle}</div>
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        /* ----------------------------------------------------------
+         * 7. MODAL POS SEJARAH & 3 JENIS MINI-GAME TANTANGAN
+         * ---------------------------------------------------------- */
+        function onSelectPosPin(posId) {
+            if (appState.isMapHuntActive) {
+                cancelMapHunt();
+            }
+
+            playSound("pin");
+            const pos = HISTORI_POS.find(p => p.id === posId);
+            if (!pos) return;
+
+            appState.activePosId = posId;
+            focusCameraOnPos(pos);
+
+            // Isi Konten Materi Ensiklopedia Mini
+            document.getElementById("modal-pos-badge").textContent = `POS ${pos.id} • ${pos.year}`;
+            document.getElementById("modal-pos-title").textContent = pos.title;
+            document.getElementById("modal-pos-location").textContent = pos.location;
+            document.getElementById("materi-figures").textContent = pos.figures;
+            document.getElementById("materi-keywords").textContent = pos.keywords;
+
+            const storyEl = document.getElementById("materi-story");
+            storyEl.innerHTML = pos.story.map(p => `<p>${p}</p>`).join("");
+
+            const pointsEl = document.getElementById("materi-points");
+            pointsEl.innerHTML = pos.points.map(pt => `<li>${pt}</li>`).join("");
+
+            document.getElementById("materi-funfact").textContent = pos.funFact;
+
+            // Update Status Stempel di Tab
+            const isDone = appState.completedPos.includes(pos.id);
+            const stampBadge = document.getElementById("modal-stamp-status");
+            if (isDone) {
+                stampBadge.textContent = "Terkumpul ✓";
+                stampBadge.className = "ml-1 px-2 py-0.5 text-xs rounded-full bg-emerald-600 text-white";
+            } else {
+                stampBadge.textContent = "Belum";
+                stampBadge.className = "ml-1 px-2 py-0.5 text-xs rounded-full bg-amber-500 text-white";
+            }
+
+            renderMissionGame(pos);
+            switchModalTab("materi");
+
+            const modal = document.getElementById("modal-pos");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            lucide.createIcons();
+        }
+
+        function closePosModal() {
+            playSound("click");
+            const modal = document.getElementById("modal-pos");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function switchModalTab(tabName) {
+            playSound("click");
+            const tabMateri = document.getElementById("tab-content-materi");
+            const tabMisi = document.getElementById("tab-content-misi");
+            const btnMateri = document.getElementById("tab-btn-materi");
+            const btnMisi = document.getElementById("tab-btn-misi");
+
+            if (tabName === "materi") {
+                tabMateri.classList.remove("hidden");
+                tabMisi.classList.add("hidden");
+                btnMateri.className = "flex-1 py-3 px-4 rounded-t-2xl font-display font-bold text-base md:text-lg flex items-center justify-center gap-2 bg-[#FFFDF7] text-amber-950 border-t-2 border-x-2 border-amber-400 cursor-pointer";
+                btnMisi.className = "flex-1 py-3 px-4 rounded-t-2xl font-display font-bold text-base md:text-lg flex items-center justify-center gap-2 bg-amber-200/60 text-amber-900 hover:bg-amber-200 cursor-pointer";
+            } else {
+                tabMateri.classList.add("hidden");
+                tabMisi.classList.remove("hidden");
+                btnMisi.className = "flex-1 py-3 px-4 rounded-t-2xl font-display font-bold text-base md:text-lg flex items-center justify-center gap-2 bg-[#FFFDF7] text-amber-950 border-t-2 border-x-2 border-amber-400 cursor-pointer";
+                btnMateri.className = "flex-1 py-3 px-4 rounded-t-2xl font-display font-bold text-base md:text-lg flex items-center justify-center gap-2 bg-amber-200/60 text-amber-900 hover:bg-amber-200 cursor-pointer";
+            }
+        }
+
+        function renderMissionGame(pos) {
+            const container = document.getElementById("misi-container");
+            const isCompleted = appState.completedPos.includes(pos.id);
+
+            // Banner jika sudah selesai
+            const completedBanner = isCompleted ? `
+                <div class="bg-emerald-100 border-2 border-emerald-500 text-emerald-950 p-4 rounded-2xl flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xl">✓</div>
+                        <div>
+                            <div class="font-display font-bold text-base">Stempel Pos ${pos.id} Sudah Terkumpul!</div>
+                            <div class="text-xs text-emerald-800">Kamu tetap bisa mencoba kembali misi di bawah ini untuk berlatih.</div>
+                        </div>
+                    </div>
+                </div>
+            ` : "";
+
+            // 1. TIPE GAME: KUIS DETEKTIF SEJARAH
+            if (pos.gameType === "quiz") {
+                const optionsHtml = pos.quiz.options.map((opt, idx) => `
+                    <button onclick="submitQuizAnswer(${pos.id}, ${idx})" id="quiz-opt-${idx}"
+                        class="w-full text-left p-4 rounded-2xl border-2 border-amber-300 bg-white hover:bg-amber-50 font-semibold text-base md:text-lg text-slate-800 flex items-center gap-3.5 transition cursor-pointer shadow-xs">
+                        <span class="w-9 h-9 rounded-xl bg-amber-500 text-white font-display font-bold flex items-center justify-center shrink-0">
+                            ${String.fromCharCode(65 + idx)}
+                        </span>
+                        <span>${opt}</span>
+                    </button>
+                `).join("");
+
+                container.innerHTML = `
+                    ${completedBanner}
+                    <div class="bg-amber-100/80 p-4 md:p-5 rounded-2xl border-2 border-amber-300">
+                        <div class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-200 px-3 py-1 rounded-full mb-2">
+                            Misi Kuis Detektif Sejarah
+                        </div>
+                        <h3 class="font-display font-bold text-lg md:text-xl text-amber-950 leading-snug">
+                            ${pos.quiz.question}
+                        </h3>
+                    </div>
+                    <div class="space-y-2.5 mt-3">
+                        ${optionsHtml}
+                    </div>
+                    <div id="mission-feedback" class="hidden p-4 rounded-2xl mt-4"></div>
+                `;
+            }
+
+            // 2. TIPE GAME: TANTANGAN LOKASI PETA 3D
+            else if (pos.gameType === "map_hunt") {
+                container.innerHTML = `
+                    ${completedBanner}
+                    <div class="bg-sky-50 p-5 md:p-6 rounded-2xl border-2 border-sky-400 text-center space-y-4">
+                        <div class="w-16 h-16 rounded-2xl bg-sky-600 text-white flex items-center justify-center mx-auto shadow-md">
+                            <i data-lucide="compass" class="w-9 h-9"></i>
+                        </div>
+                        <div class="inline-block px-3 py-1 rounded-full bg-sky-200 text-sky-900 font-bold text-xs uppercase">
+                            Misi Tantangan Eksplorasi Peta 3D
+                        </div>
+                        <h3 class="font-display font-bold text-xl md:text-2xl text-slate-900 max-w-xl mx-auto">
+                            ${pos.mapHunt.prompt}
+                        </h3>
+                        <p class="text-sm md:text-base text-slate-600 max-w-lg mx-auto">
+                            Tekan tombol di bawah untuk menutup jendela ini sementara, lalu putar peta 3D dan <strong>ketuk langsung pulau atau label pulau yang tepat!</strong>
+                        </p>
+                        <div class="pt-2">
+                            <button onclick="activateMapHunt(${pos.id})"
+                                class="btn-emerald py-4 px-7 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-lg inline-flex items-center gap-2.5 cursor-pointer">
+                                <i data-lucide="map-pin" class="w-6 h-6"></i>
+                                Cari & Ketuk Pulau di Peta 3D Sekarang!
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. TIPE GAME: URUTKAN PERISTIWA KRONOLOGIS
+            else if (pos.gameType === "order") {
+                // Acak urutan awal
+                const shuffled = [...pos.orderGame.items];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                // Pastikan tidak langsung terurut sempurna
+                if (shuffled.every((item, idx) => item.order === idx + 1)) {
+                    shuffled.reverse();
+                }
+                appState.orderGameCurrentList = shuffled;
+
+                container.innerHTML = `
+                    ${completedBanner}
+                    <div class="bg-amber-100/80 p-4 rounded-2xl border-2 border-amber-300">
+                        <div class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-800 bg-amber-200 px-3 py-1 rounded-full mb-1">
+                            Misi Menyusun Linimasa Sejarah
+                        </div>
+                        <h3 class="font-display font-bold text-base md:text-lg text-amber-950">
+                            ${pos.orderGame.instruction}
+                        </h3>
+                    </div>
+                    <div id="order-items-wrapper" class="space-y-2.5 mt-3"></div>
+                    <div class="pt-3 flex justify-end">
+                        <button onclick="verifyOrderGame(${pos.id})"
+                            class="btn-emerald py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-lg flex items-center gap-2 cursor-pointer">
+                            <i data-lucide="check-check" class="w-5 h-5"></i>
+                            Periksa Urutan Peristiwa
+                        </button>
+                    </div>
+                    <div id="mission-feedback" class="hidden p-4 rounded-2xl mt-4"></div>
+                `;
+                renderOrderGameItems();
+            }
+
+            lucide.createIcons();
+        }
+
+        function submitQuizAnswer(posId, selectedIdx) {
+            const pos = HISTORI_POS.find(p => p.id === posId);
+            const feedbackEl = document.getElementById("mission-feedback");
+            feedbackEl.classList.remove("hidden");
+
+            const isCorrect = selectedIdx === pos.quiz.correctIndex;
+
+            pos.quiz.options.forEach((_, idx) => {
+                const btn = document.getElementById(`quiz-opt-${idx}`);
+                if (!btn) return;
+                if (idx === pos.quiz.correctIndex) {
+                    btn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-600 bg-emerald-100 font-bold text-base md:text-lg text-emerald-950 flex items-center gap-3.5";
+                } else if (idx === selectedIdx && !isCorrect) {
+                    btn.className = "w-full text-left p-4 rounded-2xl border-2 border-rose-500 bg-rose-100 font-semibold text-base md:text-lg text-rose-950 flex items-center gap-3.5";
+                }
+            });
+
+            if (isCorrect) {
+                playSound("correct");
+                const pointsEarned = completePosStamp(posId);
+                feedbackEl.className = "p-4 rounded-2xl mt-4 bg-emerald-100 border-2 border-emerald-500 text-emerald-950";
+                feedbackEl.innerHTML = `
+                    <div class="font-display font-bold text-lg flex items-center gap-2 text-emerald-800">
+                        <span>🎉 Jawaban Benar! ${pointsEarned > 0 ? `(+${pointsEarned} Poin & Stempel Pos ${posId})` : '(Stempel Sudah Dimiliki)'}</span>
+                    </div>
+                    <p class="text-sm md:text-base mt-1">${pos.quiz.explanation}</p>
+                    ${getNextPosButtonHtml(posId)}
+                `;
+            } else {
+                playSound("wrong");
+                feedbackEl.className = "p-4 rounded-2xl mt-4 bg-rose-100 border-2 border-rose-400 text-rose-950";
+                feedbackEl.innerHTML = `
+                    <div class="font-display font-bold text-base">Belum Tepat, Ayo Coba Lagi!</div>
+                    <p class="text-sm mt-1">Perhatikan kembali petunjuk pada tab Materi Sejarah, lalu pilih jawaban yang paling tepat.</p>
+                `;
+            }
+        }
+
+        function renderOrderGameItems() {
+            const wrapper = document.getElementById("order-items-wrapper");
+            if (!wrapper) return;
+
+            wrapper.innerHTML = appState.orderGameCurrentList.map((item, idx) => `
+                <div class="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-white border-2 border-amber-300 shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-amber-500 text-white font-display font-bold flex items-center justify-center shrink-0">
+                            ${idx + 1}
+                        </span>
+                        <span class="font-semibold text-sm md:text-base text-slate-800">${item.text}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button onclick="moveOrderItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}
+                            class="p-2.5 rounded-xl border ${idx === 0 ? 'bg-slate-100 text-slate-300 border-slate-200' : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-400 cursor-pointer'}">
+                            ▲
+                        </button>
+                        <button onclick="moveOrderItem(${idx}, 1)" ${idx === appState.orderGameCurrentList.length - 1 ? 'disabled' : ''}
+                            class="p-2.5 rounded-xl border ${idx === appState.orderGameCurrentList.length - 1 ? 'bg-slate-100 text-slate-300 border-slate-200' : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-400 cursor-pointer'}">
+                            ▼
+                        </button>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function moveOrderItem(index, direction) {
+            playSound("click");
+            const targetIdx = index + direction;
+            if (targetIdx < 0 || targetIdx >= appState.orderGameCurrentList.length) return;
+            const temp = appState.orderGameCurrentList[index];
+            appState.orderGameCurrentList[index] = appState.orderGameCurrentList[targetIdx];
+            appState.orderGameCurrentList[targetIdx] = temp;
+            renderOrderGameItems();
+        }
+
+        function verifyOrderGame(posId) {
+            const pos = HISTORI_POS.find(p => p.id === posId);
+            const isCorrect = appState.orderGameCurrentList.every((item, idx) => item.order === idx + 1);
+            const feedbackEl = document.getElementById("mission-feedback");
+            feedbackEl.classList.remove("hidden");
+
+            if (isCorrect) {
+                playSound("correct");
+                const pointsEarned = completePosStamp(posId);
+                feedbackEl.className = "p-4 rounded-2xl mt-4 bg-emerald-100 border-2 border-emerald-500 text-emerald-950";
+                feedbackEl.innerHTML = `
+                    <div class="font-display font-bold text-lg text-emerald-800">
+                        🎉 Urutan Kronologis Tepat! ${pointsEarned > 0 ? `(+${pointsEarned} Poin & Stempel Pos ${posId})` : ''}
+                    </div>
+                    <p class="text-sm md:text-base mt-1">${pos.orderGame.explanation}</p>
+                    ${getNextPosButtonHtml(posId)}
+                `;
+            } else {
+                playSound("wrong");
+                feedbackEl.className = "p-4 rounded-2xl mt-4 bg-rose-100 border-2 border-rose-400 text-rose-950";
+                feedbackEl.innerHTML = `
+                    <div class="font-display font-bold text-base">Urutan Masih Belum Tepat!</div>
+                    <p class="text-sm mt-1">Gunakan tombol panah ▲ atau ▼ untuk mengurutkan tahun peristiwa dari yang paling awal terjadi hingga paling akhir.</p>
+                `;
+            }
+        }
+
+        function activateMapHunt(posId) {
+            playSound("pin");
+            const pos = HISTORI_POS.find(p => p.id === posId);
+            if (!pos) return;
+
+            appState.isMapHuntActive = true;
+            appState.mapHuntTargetIsland = pos.mapHunt.targetIsland;
+            appState.mapHuntPosId = posId;
+
+            closePosModal();
+            resetCameraView();
+
+            const banner = document.getElementById("map-hunt-banner");
+            document.getElementById("map-hunt-instruction").textContent = pos.mapHunt.prompt;
+            banner.classList.remove("hidden");
+            banner.classList.add("flex");
+        }
+
+        function cancelMapHunt() {
+            appState.isMapHuntActive = false;
+            appState.mapHuntTargetIsland = null;
+            appState.mapHuntPosId = null;
+            const banner = document.getElementById("map-hunt-banner");
+            banner.classList.add("hidden");
+            banner.classList.remove("flex");
+        }
+
+        function handleIslandClick(islandKey) {
+            if (!appState.isMapHuntActive) return;
+
+            const pos = HISTORI_POS.find(p => p.id === appState.mapHuntPosId);
+            if (!pos) return;
+
+            if (islandKey === appState.mapHuntTargetIsland) {
+                playSound("correct");
+                const pointsEarned = completePosStamp(pos.id);
+                cancelMapHunt();
+                showToast(`🎉 Tepat! ${pos.mapHunt.successMessage} ${pointsEarned > 0 ? `(+${pointsEarned} Poin)` : ''}`, "emerald");
+                setTimeout(() => {
+                    onSelectPosPin(pos.id);
+                    switchModalTab("misi");
+                }, 900);
+            } else {
+                playSound("wrong");
+                const clickedIsland = ISLANDS_DATA.find(i => i.key === islandKey);
+                showToast(`Bukan ${clickedIsland ? clickedIsland.name : 'pulau itu'}, ayo cari pulau yang sesuai petunjuk!`, "rose");
+            }
+        }
+
+        function completePosStamp(posId) {
+            let earned = 0;
+            if (!appState.completedPos.includes(posId)) {
+                appState.completedPos.push(posId);
+                earned = 125; // 8 pos x 125 = 1000 poin sempurna
+                appState.score += earned;
+            }
+
+            updateHUD();
+            renderTimelineBar();
+            refreshPinVisualStates();
+            saveActiveSession();
+            saveRecordToLeaderboard();
+            syncProgressToSpreadsheet();
+
+            // Update lencana di modal jika terbuka
+            const stampBadge = document.getElementById("modal-stamp-status");
+            if (stampBadge) {
+                stampBadge.textContent = "Terkumpul ✓";
+                stampBadge.className = "ml-1 px-2 py-0.5 text-xs rounded-full bg-emerald-600 text-white";
+            }
+
+            // Jika seluruh 8 Pos selesai, bunyikan fanfare kemenangan!
+            if (appState.completedPos.length === HISTORI_POS.length && earned > 0) {
+                setTimeout(() => {
+                    playSound("fanfare");
+                    showToast("🏆 LUAR BIASA! Seluruh 8 Stempel Sejarah Nusantara Berhasil Dikumpulkan!", "emerald");
+                }, 500);
+            }
+
+            return earned;
+        }
+
+        function getNextPosButtonHtml(currentPosId) {
+            if (appState.completedPos.length === HISTORI_POS.length) {
+                return `
+                    <div class="mt-3">
+                        <button onclick="closePosModal(); showCertificateScreen();"
+                            class="btn-emerald py-2.5 px-5 rounded-xl bg-emerald-600 text-white font-bold text-sm inline-flex items-center gap-2 cursor-pointer">
+                            🏆 Semua Misi Selesai! Lihat Sertifikat Kemerdekaan
+                        </button>
+                    </div>
+                `;
+            }
+            const nextId = currentPosId < HISTORI_POS.length ? currentPosId + 1 : 1;
+            return `
+                <div class="mt-3">
+                    <button onclick="onSelectPosPin(${nextId})"
+                        class="btn-adventure py-2.5 px-5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-sm inline-flex items-center gap-2 cursor-pointer">
+                        Lanjut Jelajahi Pos ${nextId} ➔
+                    </button>
+                </div>
+            `;
+        }
+
+        /* ----------------------------------------------------------
+         * 8. MODAL LINIMASA, PAPAN SKOR, & LAYAR SERTIFIKAT
+         * ---------------------------------------------------------- */
+        function openTimelineOverviewModal() {
+            playSound("click");
+            const listEl = document.getElementById("timeline-overview-list");
+            listEl.innerHTML = HISTORI_POS.map(pos => {
+                const isDone = appState.completedPos.includes(pos.id);
+                return `
+                    <div onclick="closeTimelineOverviewModal(); onSelectPosPin(${pos.id});"
+                        class="p-4 rounded-2xl border-2 ${isDone ? 'bg-emerald-50 border-emerald-400' : 'bg-white border-amber-300'} hover:shadow-md transition cursor-pointer flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl ${isDone ? 'bg-emerald-600' : 'bg-amber-500'} text-white font-display font-bold text-lg flex items-center justify-center shrink-0">
+                            ${isDone ? '✓' : pos.id}
+                        </div>
+                        <div>
+                            <div class="text-xs font-extrabold uppercase ${isDone ? 'text-emerald-700' : 'text-amber-700'}">${pos.year} • ${pos.location}</div>
+                            <h4 class="font-display font-bold text-base text-slate-900">${pos.title}</h4>
+                            <p class="text-xs text-slate-600 mt-1">Tokoh: ${pos.figures}</p>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            const modal = document.getElementById("modal-timeline-overview");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeTimelineOverviewModal() {
+            playSound("click");
+            const modal = document.getElementById("modal-timeline-overview");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function showCertificateScreen() {
+            playSound("fanfare");
+            closePosModal();
+            syncProgressToSpreadsheet();
+
+            document.getElementById("cert-name").textContent = appState.playerName || "Penjelajah Muda";
+            document.getElementById("cert-class").textContent = appState.playerClass;
+            document.getElementById("cert-school").textContent = `${appState.playerSchool || 'SD Nusantara'} • NPSN: ${appState.playerNpsn || '-'}`;
+            document.getElementById("cert-score").textContent = appState.score;
+
+            const count = appState.completedPos.length;
+            document.getElementById("cert-stamps").textContent = `${count} / 8`;
+
+            let rank = "Penjelajah Pemula";
+            if (count === 8) rank = "Mahaputra Sejarah ★";
+            else if (count >= 5) rank = "Patriot Nusantara";
+            else if (count >= 2) rank = "Perintis Sejarah";
+            document.getElementById("cert-rank").textContent = rank;
+
+            const grid = document.getElementById("cert-stamp-grid");
+            grid.innerHTML = HISTORI_POS.map(pos => {
+                const isDone = appState.completedPos.includes(pos.id);
+                return `
+                    <div class="p-2.5 rounded-xl border-2 text-left ${isDone ? 'bg-emerald-50 border-emerald-500 text-emerald-950' : 'bg-slate-100 border-slate-300 text-slate-400'}">
+                        <div class="flex items-center justify-between text-xs font-extrabold">
+                            <span>POS ${pos.id} (${pos.year.split(" ")[0]})</span>
+                            <span>${isDone ? '✓ LULUS' : 'BELUM'}</span>
+                        </div>
+                        <div class="font-display font-bold text-xs md:text-sm truncate mt-0.5">${pos.shortTitle}</div>
+                    </div>
+                `;
+            }).join("");
+
+            const missingPos = HISTORI_POS.filter(p => !appState.completedPos.includes(p.id));
+            const reviewBox = document.getElementById("cert-review-box");
+            if (missingPos.length === 0) {
+                reviewBox.innerHTML = `<strong>🌟 Catatan Evaluasi Guru:</strong> Sangat memuaskan! Siswa telah menguasai seluruh rangkaian kronologi sejarah Indonesia mulai dari kedatangan bangsa Eropa (1511), perjuangan pahlawan daerah, Kebangkitan Nasional, hingga Proklamasi Kemerdekaan 17 Agustus 1945.`;
+            } else {
+                const titles = missingPos.map(m => `Pos ${m.id} (${m.shortTitle})`).join(", ");
+                reviewBox.innerHTML = `<strong>📖 Materi yang Perlu Dipelajari Kembali:</strong> Ayo kunjungi dan selesaikan tantangan pada <em>${titles}</em> di peta 3D untuk melengkapi seluruh stempel ekspedisi!`;
+            }
+
+            const certScreen = document.getElementById("screen-certificate");
+            certScreen.classList.remove("hidden");
+            certScreen.classList.add("flex");
+            lucide.createIcons();
+        }
+
+        function backToMapFromCert() {
+            playSound("click");
+            const certScreen = document.getElementById("screen-certificate");
+            certScreen.classList.add("hidden");
+            certScreen.classList.remove("flex");
+        }
+
+        function restartNewPlayer() {
+            playSound("click");
+            appState.score = 0;
+            appState.completedPos = [];
+            appState.activePosId = null;
+            localStorage.removeItem(STORAGE_KEY_ACTIVE);
+
+            document.getElementById("login-name").value = "";
+            document.getElementById("login-password").value = "";
+            document.getElementById("auth-status-msg").classList.add("hidden");
+
+            document.getElementById("screen-certificate").classList.add("hidden");
+            document.getElementById("screen-certificate").classList.remove("flex");
+            document.getElementById("screen-hud").classList.add("hidden");
+            document.getElementById("screen-hud").classList.remove("flex");
+            document.getElementById("screen-home").classList.remove("hidden");
+
+            isHomePreview = true;
+            refreshPinVisualStates();
+        }
+
+        /**
+         * UNDUH SERTIFIKAT & RAPOR PDF BERWARNA PENUH (MENGGUNAKAN JSPDF)
+         */
+        function downloadAttractivePdfReport() {
+            playSound("fanfare");
+
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showToast("Pustaka PDF sedang dimuat, silakan gunakan tombol Cetak.", "amber");
+                window.print();
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            // Format A4 Landscape (297mm x 210mm)
+            const doc = new jsPDF({
+                orientation: "landscape",
+                unit: "mm",
+                format: "a4"
+            });
+
+            const dateStr = new Date().toLocaleDateString("id-ID", {
+                day: "numeric", month: "long", year: "numeric"
+            });
+
+            const doneCount = appState.completedPos.length;
+            let rank = "Penjelajah Pemula";
+            if (doneCount === 8) rank = "Mahaputra Sejarah Nusantara";
+            else if (doneCount >= 5) rank = "Patriot Nusantara";
+            else if (doneCount >= 2) rank = "Perintis Sejarah";
+
+            // 1. Background Krem Perkamen Hangat
+            doc.setFillColor(253, 248, 236);
+            doc.rect(0, 0, 297, 210, "F");
+
+            // 2. Bingkai Ornamen Ganda Emas & Zamrud
+            doc.setDrawColor(217, 119, 6); // Emas
+            doc.setLineWidth(3.2);
+            doc.roundedRect(8, 8, 281, 194, 6, 6, "S");
+
+            doc.setDrawColor(5, 150, 105); // Hijau Zamrud
+            doc.setLineWidth(1.2);
+            doc.roundedRect(12, 12, 273, 186, 4, 4, "S");
+
+            // Ornamen Sudut Emas
+            doc.setFillColor(217, 119, 6);
+            doc.circle(14, 14, 2.5, "F");
+            doc.circle(283, 14, 2.5, "F");
+            doc.circle(14, 196, 2.5, "F");
+            doc.circle(283, 196, 2.5, "F");
+
+            // 3. Pita Header Atas
+            doc.setFillColor(180, 83, 9);
+            doc.roundedRect(58, 17, 181, 12, 3, 3, "F");
+            doc.setTextColor(255, 251, 235);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text("SERTIFIKAT & RAPOR EKSPEDISI SEJARAH INDONESIA", 148.5, 24.8, { align: "center" });
+
+            // 4. Judul Utama
+            doc.setTextColor(120, 53, 15);
+            doc.setFontSize(24);
+            doc.text("JEJAK NUSANTARA 3D: EKSPEDISI KEMERDEKAAN", 148.5, 38, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(11);
+            doc.setTextColor(71, 85, 105);
+            doc.text("Diberikan sebagai apresiasi capaian belajar Sejarah Bangsa Indonesia (1511 - 1945) kepada:", 148.5, 46, { align: "center" });
+
+            // 5. Nama Siswa & Lencana Sekolah/NPSN
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22);
+            doc.setTextColor(5, 150, 105);
+            doc.text((appState.playerName || "Penjelajah Muda").toUpperCase(), 148.5, 57, { align: "center" });
+
+            // Garis bawah nama emas
+            doc.setDrawColor(245, 158, 11);
+            doc.setLineWidth(0.8);
+            doc.line(85, 60, 212, 60);
+
+            // Box Identitas Sekolah, NPSN, dan Kelas
+            doc.setFillColor(254, 243, 199);
+            doc.setDrawColor(245, 158, 11);
+            doc.roundedRect(45, 64, 207, 11, 2.5, 2.5, "FD");
+            doc.setFontSize(10.5);
+            doc.setTextColor(146, 64, 14);
+            const schoolInfo = `Sekolah: ${appState.playerSchool || "-"}   |   NPSN: ${appState.playerNpsn || "-"}   |   Kelas: ${appState.playerClass}`;
+            doc.text(schoolInfo, 148.5, 71, { align: "center" });
+
+            // 6. Tiga Kartu Statistik Utama (Skor, Stempel, Predikat)
+            // Kartu 1: Total Skor
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(217, 119, 6);
+            doc.roundedRect(35, 79, 68, 22, 3, 3, "FD");
+            doc.setFontSize(9);
+            doc.setTextColor(180, 83, 9);
+            doc.text("TOTAL SKOR POIN", 69, 85.5, { align: "center" });
+            doc.setFontSize(16);
+            doc.setTextColor(120, 53, 15);
+            doc.text(`${appState.score} / 1000`, 69, 95.5, { align: "center" });
+
+            // Kartu 2: Stempel Pos
+            doc.setFillColor(236, 253, 245);
+            doc.setDrawColor(16, 185, 129);
+            doc.roundedRect(114.5, 79, 68, 22, 3, 3, "FD");
+            doc.setFontSize(9);
+            doc.setTextColor(4, 120, 87);
+            doc.text("STEMPEL POS SEJARAH", 148.5, 85.5, { align: "center" });
+            doc.setFontSize(16);
+            doc.setTextColor(6, 95, 70);
+            doc.text(`${doneCount} dari 8 Pos`, 148.5, 95.5, { align: "center" });
+
+            // Kartu 3: Predikat
+            doc.setFillColor(240, 249, 255);
+            doc.setDrawColor(14, 165, 233);
+            doc.roundedRect(194, 79, 68, 22, 3, 3, "FD");
+            doc.setFontSize(9);
+            doc.setTextColor(3, 105, 161);
+            doc.text("PREDIKAT KELULUSAN", 228, 85.5, { align: "center" });
+            doc.setFontSize(11.5);
+            doc.setTextColor(12, 74, 110);
+            doc.text(rank, 228, 95, { align: "center" });
+
+            // 7. Tabel Berwarna Rincian 8 Pos Sejarah (2 Kolom x 4 Baris)
+            doc.setFontSize(10.5);
+            doc.setTextColor(120, 53, 15);
+            doc.text("RINCIAN CAPAIAN EKSPEDISI 8 POS SEJARAH NUSANTARA:", 22, 109);
+
+            const colWidth = 124;
+            const rowHeight = 14;
+            const startXLeft = 22;
+            const startXRight = 151;
+            const startY = 113;
+
+            HISTORI_POS.forEach((pos, idx) => {
+                const isDone = appState.completedPos.includes(pos.id);
+                const col = idx < 4 ? 0 : 1;
+                const row = idx % 4;
+                const x = col === 0 ? startXLeft : startXRight;
+                const y = startY + row * (rowHeight + 2.5);
+
+                if (isDone) {
+                    doc.setFillColor(209, 250, 229);
+                    doc.setDrawColor(16, 185, 129);
+                } else {
+                    doc.setFillColor(241, 245, 249);
+                    doc.setDrawColor(203, 213, 225);
+                }
+                doc.roundedRect(x, y, colWidth, rowHeight, 2, 2, "FD");
+
+                // Badge Nomor Pos
+                if (isDone) {
+                    doc.setFillColor(5, 150, 105);
+                } else {
+                    doc.setFillColor(148, 163, 184);
+                }
+                doc.roundedRect(x + 2, y + 2, 18, rowHeight - 4, 1.5, 1.5, "F");
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8.5);
+                doc.text(`POS ${pos.id}`, x + 11, y + 8.5, { align: "center" });
+
+                // Judul & Tahun Pos
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(isDone ? 6 : 71, isDone ? 78 : 85, isDone ? 59 : 105);
+                doc.text(`${pos.year} - ${pos.shortTitle}`, x + 23, y + 6.2);
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7.8);
+                doc.setTextColor(100, 116, 139);
+                doc.text(pos.location, x + 23, y + 11.2);
+
+                // Status Lulus / Belum
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8);
+                if (isDone) {
+                    doc.setTextColor(5, 150, 105);
+                    doc.text("TUNTAS (+125)", x + colWidth - 4, y + 8.5, { align: "right" });
+                } else {
+                    doc.setTextColor(148, 163, 184);
+                    doc.text("BELUM", x + colWidth - 4, y + 8.5, { align: "right" });
+                }
+            });
+
+            // 8. Footer Tanggal & Pengesahan Digital
+            doc.setDrawColor(217, 119, 6);
+            doc.setLineWidth(0.4);
+            doc.line(22, 183, 275, 183);
+
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Dicetak otomatis melalui aplikasi Jejak Nusantara 3D pada ${dateStr}`, 22, 190);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(180, 83, 9);
+            doc.text("Tersinkronisasi dengan Database Cloud Google Spreadsheet", 275, 190, { align: "right" });
+
+            const safeName = (appState.playerName || "Siswa").replace(/[^a-zA-Z0-9]/g, "_");
+            doc.save(`Sertifikat_Rapor_JejakNusantara_${safeName}.pdf`);
+            showToast("Sertifikat & Rapor PDF Berwarna berhasil diunduh!", "emerald");
+        }
+
+        /* ----------------------------------------------------------
+         * 9. SINKRONISASI SPREADSHEET & PAPAN SKOR CLOUD
+         * ---------------------------------------------------------- */
+        async function syncProgressToSpreadsheet() {
+            if (!appState.playerName) return;
+            const badge = document.getElementById("cloud-sync-badge");
+            if (badge) {
+                badge.textContent = "☁️ Menyimpan...";
+                badge.classList.remove("hidden");
+            }
+
+            try {
+                await callAppsScript({
+                    action: "saveProgress",
+                    nama: appState.playerName,
+                    password: appState.playerPassword,
+                    sekolah: appState.playerSchool,
+                    npsn: appState.playerNpsn,
+                    kelas: appState.playerClass,
+                    skor: appState.score,
+                    stempel: appState.completedPos.length,
+                    completedPos: appState.completedPos
+                });
+                if (badge) {
+                    badge.textContent = "☁️ Tersimpan di Cloud";
+                }
+            } catch (e) {
+                if (badge) {
+                    badge.textContent = "💾 Tersimpan Lokal";
+                }
+            }
+        }
+
+        function saveLocalUserAccount() {
+            try {
+                const raw = localStorage.getItem("jejak_nusantara_users_local_v1");
+                const users = raw ? JSON.parse(raw) : [];
+                const idx = users.findIndex(u => u.nama.toLowerCase() === appState.playerName.toLowerCase());
+                const userObj = {
+                    nama: appState.playerName,
+                    password: appState.playerPassword,
+                    sekolah: appState.playerSchool,
+                    npsn: appState.playerNpsn,
+                    kelas: appState.playerClass,
+                    skor: appState.score,
+                    completedPos: appState.completedPos
+                };
+                if (idx >= 0) users[idx] = userObj;
+                else users.push(userObj);
+                localStorage.setItem("jejak_nusantara_users_local_v1", JSON.stringify(users));
+            } catch (e) {}
+        }
+
+        function tryLocalAuthFallback(mode, data) {
+            try {
+                const raw = localStorage.getItem("jejak_nusantara_users_local_v1");
+                const users = raw ? JSON.parse(raw) : [];
+                const found = users.find(
+                    u => u.nama.toLowerCase() === data.nama.toLowerCase() && u.password === data.password
+                );
+                if (found) {
+                    appState.playerName = found.nama;
+                    appState.playerPassword = found.password;
+                    appState.playerSchool = found.sekolah || "-";
+                    appState.playerNpsn = found.npsn || "-";
+                    appState.playerClass = found.kelas || "Kelas 5 SD";
+                    appState.score = found.skor || 0;
+                    appState.completedPos = found.completedPos || [];
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function saveActiveSession() {
+            try {
+                localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify({
+                    playerName: appState.playerName,
+                    playerPassword: appState.playerPassword,
+                    playerSchool: appState.playerSchool,
+                    playerNpsn: appState.playerNpsn,
+                    playerClass: appState.playerClass,
+                    score: appState.score,
+                    completedPos: appState.completedPos
+                }));
+                saveLocalUserAccount();
+            } catch (e) {}
+        }
+
+        function loadActiveSession() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_ACTIVE);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (data && data.playerName) {
+                    document.getElementById("login-name").value = data.playerName;
+                    appState.playerName = data.playerName;
+                    appState.playerPassword = data.playerPassword || "";
+                    appState.playerSchool = data.playerSchool || "";
+                    appState.playerNpsn = data.playerNpsn || "";
+                    appState.playerClass = data.playerClass || "Kelas 5 SD";
+                    appState.score = data.score || 0;
+                    appState.completedPos = Array.isArray(data.completedPos) ? data.completedPos : [];
+                    selectClass(appState.playerClass);
+                }
+            } catch (e) {}
+        }
+
+        function saveRecordToLeaderboard() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_RECORDS);
+                let records = raw ? JSON.parse(raw) : [];
+                const existingIdx = records.findIndex(
+                    r => r.name.toLowerCase() === appState.playerName.toLowerCase()
+                );
+
+                const entry = {
+                    name: appState.playerName,
+                    school: appState.playerSchool || "-",
+                    npsn: appState.playerNpsn || "-",
+                    playerClass: appState.playerClass,
+                    score: appState.score,
+                    stamps: appState.completedPos.length,
+                    updatedAt: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+                };
+
+                if (existingIdx >= 0) {
+                    if (entry.score >= records[existingIdx].score) {
+                        records[existingIdx] = entry;
+                    }
+                } else {
+                    records.push(entry);
+                }
+
+                records.sort((a, b) => b.score - a.score);
+                localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(records.slice(0, 50)));
+            } catch (e) {}
+        }
+
+        async function openLeaderboardModal(forceRefresh = false) {
+            playSound("click");
+            const modal = document.getElementById("modal-leaderboard");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+
+            const listEl = document.getElementById("leaderboard-list");
+            listEl.innerHTML = `
+                <div class="text-center py-8 text-amber-900">
+                    <p class="font-display font-bold text-base animate-pulse">☁️ Mengambil data Papan Skor dari Google Spreadsheet...</p>
+                </div>
+            `;
+
+            let records = [];
+            try {
+                const res = await callAppsScript({ action: "leaderboard" });
+                if (res && res.success && Array.isArray(res.records)) {
+                    records = res.records;
+                    localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(records));
+                }
+            } catch (e) {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY_RECORDS);
+                    records = raw ? JSON.parse(raw) : [];
+                } catch (err) {}
+            }
+
+            if (records.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-8 text-slate-500">
+                        <p class="font-bold text-base">Belum ada data penjelajah di Papan Skor Spreadsheet.</p>
+                        <p class="text-xs mt-1">Daftar dan selesaikan misi pos sejarah untuk menjadi peringkat #1!</p>
+                    </div>
+                `;
+            } else {
+                listEl.innerHTML = records.map((r, idx) => `
+                    <div class="flex items-center justify-between p-3.5 rounded-2xl bg-white border-2 ${idx === 0 ? 'border-amber-500 bg-amber-50/50' : 'border-amber-300'} shadow-xs">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl ${idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-900'} font-display font-bold flex items-center justify-center shrink-0">
+                                #${idx + 1}
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900 text-sm md:text-base">${r.name}</div>
+                                <div class="text-xs text-slate-600 font-semibold">${r.school || '-'} (NPSN: ${r.npsn || '-'})</div>
+                                <div class="text-[11px] text-emerald-700 font-bold">${r.playerClass || 'SD'} • ${r.stamps || 0}/8 Stempel</div>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <div class="font-display font-bold text-lg text-emerald-700">${r.score || 0} Poin</div>
+                            <div class="text-[10px] text-slate-400">${r.updatedAt ? String(r.updatedAt).slice(0, 16) : 'Cloud'}</div>
+                        </div>
+                    </div>
+                `).join("");
+            }
+            lucide.createIcons();
+        }
+
+        function closeLeaderboardModal() {
+            playSound("click");
+            const modal = document.getElementById("modal-leaderboard");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function clearLeaderboard() {
+            playSound("wrong");
+            localStorage.removeItem(STORAGE_KEY_RECORDS);
+            openLeaderboardModal();
+        }
+
+        /* ----------------------------------------------------------
+         * 10. TOAST NOTIFICATION & INITIALIZATION
+         * ---------------------------------------------------------- */
+        let toastTimer = null;
+        function showToast(message, colorType = "amber") {
+            const toast = document.getElementById("toast-notification");
+            const textEl = document.getElementById("toast-text");
+            textEl.textContent = message;
+
+            const bgMap = {
+                amber: "bg-amber-600 border-2 border-amber-200",
+                emerald: "bg-emerald-600 border-2 border-emerald-200",
+                rose: "bg-rose-600 border-2 border-rose-200"
+            };
+            toast.className = `fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl font-display font-bold text-white text-sm md:text-base transition-all ${bgMap[colorType] || bgMap.amber}`;
+
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add("hidden");
+                toast.classList.remove("flex");
+            }, 3800);
+        }
+
+        window.onload = function () {
+            lucide.createIcons();
+            loadActiveSession();
+            init3DScene();
+        };
+    </script>
+</body>
+</html>
