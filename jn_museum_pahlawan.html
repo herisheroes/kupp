@@ -1,0 +1,2926 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galeri Pahlawan 3D: Petualangan Museum Nusantara</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js r128 CDN + GLTFLoader & DRACOLoader untuk Model Karakter .GLB -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        .ui-layer {
+            position: fixed;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .pointer-auto {
+            pointer-events: auto;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #eab308;
+            border-radius: 8px;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #fde047 0%, #eab308 50%, #ca8a04 100%);
+        }
+        .hero-btn {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .hero-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+        }
+        .hero-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(250, 204, 21, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+        }
+        .pulse-gold {
+            animation: pulse-ring 2s infinite;
+        }
+        /* Print Styles for Report Card */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-report, #printable-report * {
+                visibility: visible;
+            }
+            #printable-report {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: black !important;
+                padding: 20px;
+                box-shadow: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D WORLD CANVAS CONTAINER -->
+    <div id="canvas-container"></div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-box" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px]">
+        <div class="glass-panel px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border-2 border-yellow-400">
+            <span id="toast-icon" class="text-yellow-400">✨</span>
+            <span id="toast-text" class="font-bold text-sm md:text-base text-white">Notifikasi</span>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LAYAR 1: GERBANG LOGIN, DAFTAR & PORTAL GURU -->
+    <!-- ========================================== -->
+    <div id="auth-screen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl p-6 md:p-8 shadow-2xl border-2 border-yellow-500/40 my-auto relative overflow-hidden">
+            
+            <!-- Decorative Header Badge -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 pb-5 border-b border-slate-700/80">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl gold-gradient flex items-center justify-center shadow-lg shadow-yellow-500/30 text-slate-950">
+                        <i data-lucide="landmark" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-yellow-400 bg-yellow-500/10 px-2.5 py-1 rounded-full border border-yellow-500/30">Media Edukasi SD Kelas 5 & 6</span>
+                        <h1 class="font-display text-2xl md:text-3xl font-bold text-white mt-1">Galeri Pahlawan 3D</h1>
+                        <p class="text-xs md:text-sm text-slate-300">Petualangan Museum Nusantara • Eksplorasi 4 Era Sejarah</p>
+                    </div>
+                </div>
+                <button onclick="openTeacherPinModal()" class="hero-btn px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-amber-300 flex items-center gap-2 self-end md:self-center">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    Portal Guru / Admin
+                </button>
+            </div>
+
+            <!-- Tabs Switcher -->
+            <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1.5 rounded-2xl my-5 border border-slate-800">
+                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="py-2.5 rounded-xl font-display font-semibold text-sm transition-all gold-gradient text-slate-950 shadow-md">
+                    Masuk Museum (Login)
+                </button>
+                <button id="tab-register-btn" onclick="switchAuthTab('register')" class="py-2.5 rounded-xl font-display font-semibold text-sm transition-all text-slate-300 hover:text-white">
+                    Daftar Murid Baru
+                </button>
+            </div>
+
+            <!-- FORM LOGIN -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Nama Lengkap Murid</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="login-nama" required placeholder="Contoh: Budi Santoso" class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-yellow-400 focus:outline-none text-white text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Kata Sandi (Password)</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input type="password" id="login-password" required placeholder="Masukkan kata sandi..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-yellow-400 focus:outline-none text-white text-sm">
+                    </div>
+                </div>
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button type="submit" id="btn-submit-login" class="hero-btn flex-1 py-3.5 rounded-xl gold-gradient text-slate-950 font-display font-bold text-base shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2">
+                        <i data-lucide="log-in" class="w-5 h-5"></i>
+                        <span>Masuk ke Museum 3D</span>
+                    </button>
+                    <button type="button" onclick="quickGuestLogin()" class="hero-btn px-5 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-semibold text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span>Mode Coba Cepat</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- FORM REGISTER -->
+            <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Nama Murid</label>
+                        <input type="text" id="reg-nama" required placeholder="Nama Lengkap" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-yellow-400 focus:outline-none text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Nama Sekolah (SD/MI)</label>
+                        <input type="text" id="reg-sekolah" required placeholder="Contoh: SDN 1 Nusantara" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-yellow-400 focus:outline-none text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">NPSN Sekolah (8 Digit)</label>
+                        <input type="text" id="reg-npsn" required pattern="[0-9]{8}" maxlength="8" placeholder="Contoh: 20212345" title="Masukkan 8 digit angka NPSN sekolah" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-yellow-400 focus:outline-none text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">Password Akun</label>
+                        <input type="password" id="reg-password" required placeholder="Buat kata sandi" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-yellow-400 focus:outline-none text-white text-sm">
+                    </div>
+                </div>
+
+                <!-- Pemilih Avatar 3D -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400 mb-2">Pilih Karakter Avatar 3D Kamu (Model 3D Chibi GLB Aktif):</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="avatar-selector-grid">
+                        <!-- Avatar Card 1 -->
+                        <div onclick="selectAvatarOption('bima')" id="av-card-bima" class="cursor-pointer rounded-2xl p-3 bg-slate-900 border-2 border-yellow-400 text-center transition-all">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-amber-800/40 border border-amber-500 flex items-center justify-center text-2xl mb-1.5">🧸</div>
+                            <div class="font-display font-bold text-xs text-white">Bima (Chibi 3D)</div>
+                            <div class="text-[10px] text-amber-300">Aura Emas Pramuka</div>
+                        </div>
+                        <!-- Avatar Card 2 -->
+                        <div onclick="selectAvatarOption('sari')" id="av-card-sari" class="cursor-pointer rounded-2xl p-3 bg-slate-900/60 border-2 border-slate-700 text-center transition-all hover:border-slate-500">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-red-800/40 border border-red-500 flex items-center justify-center text-2xl mb-1.5">🎒</div>
+                            <div class="font-display font-bold text-xs text-white">Sari (Chibi 3D)</div>
+                            <div class="text-[10px] text-red-300">Aura Merah Putih</div>
+                        </div>
+                        <!-- Avatar Card 3 -->
+                        <div onclick="selectAvatarOption('raka')" id="av-card-raka" class="cursor-pointer rounded-2xl p-3 bg-slate-900/60 border-2 border-slate-700 text-center transition-all hover:border-slate-500">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-800/40 border border-emerald-500 flex items-center justify-center text-2xl mb-1.5">👑</div>
+                            <div class="font-display font-bold text-xs text-white">Raka (Chibi 3D)</div>
+                            <div class="text-[10px] text-emerald-300">Aura Zamrud Adat</div>
+                        </div>
+                        <!-- Avatar Card 4 -->
+                        <div onclick="selectAvatarOption('nadia')" id="av-card-nadia" class="cursor-pointer rounded-2xl p-3 bg-slate-900/60 border-2 border-slate-700 text-center transition-all hover:border-slate-500">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-purple-800/40 border border-purple-500 flex items-center justify-center text-2xl mb-1.5">🌺</div>
+                            <div class="font-display font-bold text-xs text-white">Nadia (Chibi 3D)</div>
+                            <div class="text-[10px] text-purple-300">Aura Ungu Nusantara</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-register" class="hero-btn w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-display font-bold text-base shadow-lg shadow-yellow-500/20 flex items-center justify-center gap-2">
+                    <i data-lucide="rocket" class="w-5 h-5"></i>
+                    <span>Daftar & Mulai Petualangan 3D</span>
+                </button>
+            </form>
+
+            <!-- Info Footer -->
+            <div class="mt-5 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+                <span>🎮 Kontrol: <b>WASD / Panah</b> atau <b>Joystick Sentuh</b> + Geser Layar untuk Kamera</span>
+                <span id="cloud-status-badge" class="text-emerald-400 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Terhubung Cloud GAS
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LAYAR 2: HUD EKSPLORASI MUSEUM 3D          -->
+    <!-- ========================================== -->
+    <div id="game-hud" class="hidden">
+        
+        <!-- TOP HUD BAR -->
+        <div class="ui-layer top-0 left-0 right-0 p-3 md:p-4 flex flex-wrap items-center justify-between gap-2">
+            
+            <!-- Profil Murid & Skor -->
+            <div class="pointer-auto glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3.5 shadow-lg">
+                <div id="hud-avatar-badge" class="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center text-xl shadow">
+                    ⚜️
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="hud-student-name" class="font-display font-bold text-sm md:text-base text-white">Petualang</span>
+                        <span id="hud-room-indicator" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">Lobby Utama</span>
+                    </div>
+                    <p id="hud-school-name" class="text-[11px] text-slate-300">SD Nusantara</p>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-700 mx-1"></div>
+                <div class="text-center">
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Poin Skor</div>
+                    <div id="hud-score" class="font-display font-bold text-lg text-yellow-400">0</div>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-700 mx-1"></div>
+                <div class="text-center">
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Lencana Era</div>
+                    <div id="hud-badges" class="font-display font-bold text-sm text-emerald-400">0 / 4 🏅</div>
+                </div>
+            </div>
+
+            <!-- Menu Navigasi Cepat & Fitur -->
+            <div class="pointer-auto flex flex-wrap items-center gap-2">
+                <!-- Dropdown / Bar Teleportasi Ruangan -->
+                <div class="glass-panel p-1.5 rounded-2xl flex flex-wrap items-center gap-1">
+                    <button onclick="teleportToRoom('lobby')" class="hero-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-yellow-500 hover:text-slate-950 text-slate-200 transition-colors" title="Ke Lobby Utama">
+                        🏛️ Lobby
+                    </button>
+                    <button onclick="teleportToRoom('aula1')" class="hero-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-red-950/80 hover:bg-red-500 text-red-200 border border-red-700/50 transition-colors">
+                        ⚔️ Pra-1900
+                    </button>
+                    <button onclick="teleportToRoom('aula2')" class="hero-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/80 hover:bg-emerald-500 text-emerald-200 border border-emerald-700/50 transition-colors">
+                        📜 Pergerakan
+                    </button>
+                    <button onclick="teleportToRoom('aula3')" class="hero-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-950/80 hover:bg-amber-500 text-amber-200 border border-amber-700/50 transition-colors">
+                        🇮🇩 Kemerdekaan
+                    </button>
+                    <button onclick="teleportToRoom('aula4')" class="hero-btn px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-950/80 hover:bg-blue-500 text-blue-200 border border-blue-700/50 transition-colors">
+                        🦅 Revolusi
+                    </button>
+                    <button onclick="teleportToRoom('misi')" class="hero-btn px-3 py-1.5 rounded-xl text-xs font-bold gold-gradient text-slate-950 shadow">
+                        🎯 Ruang Misi
+                    </button>
+                </div>
+
+                <!-- Tombol Misi, Leaderboard, Rapor & Guru -->
+                <button onclick="openMissionHubModal()" class="hero-btn glass-panel px-3.5 py-2.5 rounded-2xl text-xs font-bold text-yellow-300 hover:bg-slate-800 flex items-center gap-1.5 border border-yellow-500/40">
+                    <i data-lucide="award" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">4 Misi Kuis</span>
+                </button>
+                <button onclick="openLeaderboardModal()" class="hero-btn glass-panel px-3.5 py-2.5 rounded-2xl text-xs font-bold text-amber-300 hover:bg-slate-800 flex items-center gap-1.5">
+                    <i data-lucide="trophy" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Leaderboard</span>
+                </button>
+                <button onclick="openReportModal()" class="hero-btn glass-panel px-3.5 py-2.5 rounded-2xl text-xs font-bold text-emerald-300 hover:bg-slate-800 flex items-center gap-1.5">
+                    <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Unduh Rapor</span>
+                </button>
+                <button onclick="openTeacherPinModal()" class="hero-btn glass-panel p-2.5 rounded-2xl text-xs font-bold text-slate-300 hover:text-white" title="Portal Guru / Upload Foto">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+                <button onclick="logoutStudent()" class="hero-btn glass-panel p-2.5 rounded-2xl text-xs font-bold text-rose-400 hover:bg-rose-950/60" title="Keluar / Ganti Akun">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- TOMBOL AKSI INTERAKSI DEKAT OBJEK (TENGAH BAWAH) -->
+        <div id="proximity-prompt" class="ui-layer bottom-28 md:bottom-12 left-1/2 -translate-x-1/2 hidden">
+            <button id="proximity-btn" onclick="triggerProximityAction()" class="pointer-auto hero-btn pulse-gold gold-gradient text-slate-950 font-display font-bold px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-sm md:text-base border-2 border-white">
+                <i data-lucide="book-open" class="w-5 h-5"></i>
+                <span id="proximity-text">Lihat Profil Pahlawan</span>
+            </button>
+        </div>
+
+        <!-- KONTROL VIRTUAL JOYSTICK (KIRI BAWAH - UNTUK LAYAR SENTUH / IFP) -->
+        <div class="ui-layer bottom-6 left-6 pointer-auto flex items-end gap-4">
+            <div id="joystick-zone" class="w-32 h-32 rounded-full bg-slate-900/60 backdrop-blur-md border-2 border-yellow-500/40 relative flex items-center justify-center touch-none shadow-2xl">
+                <div class="text-[9px] uppercase tracking-widest text-slate-400 absolute top-2 font-bold">Maju</div>
+                <div class="text-[9px] uppercase tracking-widest text-slate-400 absolute bottom-2 font-bold">Mundur</div>
+                <div id="joystick-knob" class="w-12 h-12 rounded-full gold-gradient shadow-lg border-2 border-white pointer-events-none transition-transform duration-75"></div>
+            </div>
+        </div>
+
+        <!-- PANDUAN KONTROL & KAMERA (KANAN BAWAH) -->
+        <div class="ui-layer bottom-6 right-6 pointer-auto flex flex-col items-end gap-2">
+            <div class="glass-panel px-3.5 py-2.5 rounded-2xl text-xs text-slate-300 hidden md:block max-w-xs">
+                <div class="font-bold text-yellow-400 mb-1 flex items-center gap-1.5">
+                    <i data-lucide="compass" class="w-4 h-4"></i> Panduan Eksplorasi:
+                </div>
+                <div>• Jalan: <b>W, A, S, D</b> atau <b>Tombol Panah</b></div>
+                <div>• Putar Kamera: <b>Klik & Geser Layar</b></div>
+                <div>• Klik Bingkai Foto 3D untuk membaca kisah pahlawan (+20 Poin)</div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="rotateCameraStep(-0.4)" class="hero-btn glass-panel p-3 rounded-2xl text-yellow-400 hover:bg-slate-800" title="Putar Kamera Kiri">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                </button>
+                <button onclick="resetCameraBehindPlayer()" class="hero-btn glass-panel px-3.5 py-3 rounded-2xl text-xs font-bold text-white hover:bg-slate-800">
+                    Reset Kamera
+                </button>
+                <button onclick="rotateCameraStep(0.4)" class="hero-btn glass-panel p-3 rounded-2xl text-yellow-400 hover:bg-slate-800" title="Putar Kamera Kanan">
+                    <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL BIOGRAFI PAHLAWAN (SAAT FOTO DIKLIK) -->
+    <!-- ========================================== -->
+    <div id="hero-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass-panel w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border-2 border-yellow-500/50 animate-fadeIn max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-slate-900/90 border-b border-slate-700 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span id="modal-hero-era-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">Aula 1</span>
+                    <span id="modal-hero-studied-badge" class="hidden px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">✓ Sudah Dipelajari</span>
+                </div>
+                <button onclick="closeHeroModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                <!-- Foto Pahlawan -->
+                <div class="md:col-span-5 flex flex-col items-center">
+                    <div class="w-full aspect-[3/4] rounded-2xl overflow-hidden border-4 border-amber-500/60 shadow-2xl bg-slate-900 relative">
+                        <img id="modal-hero-img" src="" alt="Foto Pahlawan" class="w-full h-full object-cover">
+                    </div>
+                    <div class="mt-3 text-center w-full bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <div class="text-[11px] uppercase tracking-wider text-slate-400">Asal Daerah & Masa Hidup</div>
+                        <div id="modal-hero-origin" class="font-bold text-sm text-amber-300 mt-0.5">Yogyakarta (1785–1855)</div>
+                    </div>
+                </div>
+
+                <!-- Detail Biografi -->
+                <div class="md:col-span-7 space-y-4">
+                    <div>
+                        <h2 id="modal-hero-name" class="font-display text-2xl md:text-3xl font-bold text-white">Nama Pahlawan</h2>
+                        <p id="modal-hero-title" class="text-sm text-yellow-400 font-semibold mt-0.5">Pahlawan Nasional Indonesia</p>
+                    </div>
+
+                    <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                            <i data-lucide="scroll-text" class="w-4 h-4"></i> Kisah Perjuangan & Jasa:
+                        </div>
+                        <p id="modal-hero-bio" class="text-sm text-slate-200 leading-relaxed"></p>
+                    </div>
+
+                    <div class="bg-emerald-950/40 p-4 rounded-2xl border border-emerald-700/40 space-y-1.5">
+                        <div class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                            <i data-lucide="heart-handshake" class="w-4 h-4"></i> Nilai Keteladanan untuk Anak SD:
+                        </div>
+                        <p id="modal-hero-values" class="text-sm text-emerald-100 font-medium"></p>
+                    </div>
+
+                    <div class="bg-amber-950/40 p-4 rounded-2xl border border-amber-600/40">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-amber-300 mb-1">✨ Semboyan / Kutipan Terkenal:</div>
+                        <blockquote id="modal-hero-quote" class="italic text-sm text-amber-100 font-semibold"></blockquote>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-900/90 border-t border-slate-700 flex flex-wrap items-center justify-between gap-3">
+                <span class="text-xs text-slate-400">Pelajari seluruh 12 pahlawan untuk membuka penguasaan penuh!</span>
+                <div class="flex items-center gap-3">
+                    <button id="btn-mark-studied" onclick="markCurrentHeroStudied()" class="hero-btn px-6 py-3 rounded-xl gold-gradient text-slate-950 font-display font-bold text-sm shadow-lg flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                        <span>Tandai Sudah Dipelajari (+20 Poin)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL RUANG MISI & KUIS INTERAKTIF 4 ERA   -->
+    <!-- ========================================== -->
+    <div id="mission-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+        <div class="glass-panel w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border-2 border-yellow-500/50 max-h-[92vh] flex flex-col">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-slate-900/90 border-b border-slate-700 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center text-slate-950 font-bold">🎯</div>
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-white">Ruang Misi & Ujian Keteladanan</h2>
+                        <p class="text-xs text-slate-300">Selesaikan 4 Misi Sejarah untuk meraih 4 Lencana Emas Nusantara (+100 Poin / Misi)</p>
+                    </div>
+                </div>
+                <button onclick="closeMissionModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Pilihan 4 Tab Misi -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 p-4 bg-slate-900/60 border-b border-slate-800">
+                <button onclick="selectMissionTab(1)" id="m-tab-1" class="p-3 rounded-2xl border text-left transition-all bg-slate-800 border-yellow-400">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-red-400">MISI 1 • PRA-1900</span>
+                        <span id="m-badge-1" class="text-sm">🔒</span>
+                    </div>
+                    <div class="font-display font-bold text-sm text-white mt-1">Detektif Daerah</div>
+                </button>
+                <button onclick="selectMissionTab(2)" id="m-tab-2" class="p-3 rounded-2xl border text-left transition-all bg-slate-900/70 border-slate-700">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-emerald-400">MISI 2 • 1900-1945</span>
+                        <span id="m-badge-2" class="text-sm">🔒</span>
+                    </div>
+                    <div class="font-display font-bold text-sm text-white mt-1">Sandi Pergerakan</div>
+                </button>
+                <button onclick="selectMissionTab(3)" id="m-tab-3" class="p-3 rounded-2xl border text-left transition-all bg-slate-900/70 border-slate-700">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-amber-400">MISI 3 • 1945-1949</span>
+                        <span id="m-badge-3" class="text-sm">🔒</span>
+                    </div>
+                    <div class="font-display font-bold text-sm text-white mt-1">Kurir Proklamasi</div>
+                </button>
+                <button onclick="selectMissionTab(4)" id="m-tab-4" class="p-3 rounded-2xl border text-left transition-all bg-slate-900/70 border-slate-700">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-blue-400">MISI 4 • REVOLUSI</span>
+                        <span id="m-badge-4" class="text-sm">🔒</span>
+                    </div>
+                    <div class="font-display font-bold text-sm text-white mt-1">Penjaga Pancasila</div>
+                </button>
+            </div>
+
+            <!-- Area Konten Misi Dinamis -->
+            <div id="mission-content-area" class="p-6 overflow-y-auto flex-1 space-y-5">
+                <!-- Diisi melalui JavaScript renderMissionContent() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL PAPAN LEADERBOARD 10 TERBAIK         -->
+    <!-- ========================================== -->
+    <div id="leaderboard-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border-2 border-yellow-500/50 max-h-[88vh] flex flex-col">
+            <div class="px-6 py-4 bg-slate-900/90 border-b border-slate-700 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center text-slate-950 text-xl">🏆</div>
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-white">Papan Peringkat Nusantara</h2>
+                        <p class="text-xs text-slate-300">10 Murid Terbaik dengan Skor & Lencana Tertinggi</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="fetchLeaderboardData()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-yellow-400 flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Segarkan
+                    </button>
+                    <button onclick="closeLeaderboardModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <div id="leaderboard-list" class="space-y-2.5">
+                    <!-- Diisi oleh JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL RAPOR PENCAPAIAN & UNDUH             -->
+    <!-- ========================================== -->
+    <div id="report-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+        <div class="glass-panel w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border-2 border-emerald-500/50 max-h-[92vh] flex flex-col">
+            <div class="px-6 py-4 bg-slate-900/90 border-b border-slate-700 flex items-center justify-between no-print">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-950 font-bold">📜</div>
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-white">Rapor Pencapaian Petualang Sejarah</h2>
+                        <p class="text-xs text-slate-300">Bukti Hasil Belajar Galeri Pahlawan 3D Nusantara</p>
+                    </div>
+                </div>
+                <button onclick="closeReportModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Printable Area -->
+            <div id="printable-report" class="p-6 overflow-y-auto flex-1 space-y-5 bg-slate-900/60 text-white">
+                <div class="border-2 border-yellow-500/50 rounded-2xl p-5 bg-slate-950/60">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-700 pb-4 gap-2">
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-widest text-yellow-400">SERTIFIKAT & RAPOR EVALUASI</div>
+                            <h3 class="font-display text-2xl font-bold mt-0.5">Galeri Pahlawan 3D: Museum Nusantara</h3>
+                        </div>
+                        <div class="text-xs text-slate-300 sm:text-right">
+                            <div>Tanggal: <span id="rep-date" class="font-bold text-white"></span></div>
+                            <div>Status: <span id="rep-predicate" class="font-bold text-emerald-400"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- Identitas Murid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4 text-sm">
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <div class="text-[11px] text-slate-400">Nama Murid</div>
+                            <div id="rep-nama" class="font-bold text-white mt-0.5">-</div>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <div class="text-[11px] text-slate-400">Sekolah</div>
+                            <div id="rep-sekolah" class="font-bold text-white mt-0.5">-</div>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <div class="text-[11px] text-slate-400">NPSN Sekolah</div>
+                            <div id="rep-npsn" class="font-bold text-amber-300 mt-0.5">-</div>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <div class="text-[11px] text-slate-400">Total Skor Akhir</div>
+                            <div id="rep-skor" class="font-display font-bold text-xl text-yellow-400 mt-0.5">0 Poin</div>
+                        </div>
+                    </div>
+
+                    <!-- Rincian Nilai Misi 4 Aula -->
+                    <div class="mt-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-yellow-400 mb-2">A. Capaian Misi 4 Aula Sejarah</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="rep-missions-grid">
+                            <!-- Diisi JS -->
+                        </div>
+                    </div>
+
+                    <!-- Daftar Pahlawan yang Dipelajari -->
+                    <div class="mt-5">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">B. Pahlawan Nasional yang Telah Dipelajari (<span id="rep-heroes-count">0/12</span>)</h4>
+                        <div id="rep-heroes-list" class="flex flex-wrap gap-1.5">
+                            <!-- Diisi JS -->
+                        </div>
+                    </div>
+
+                    <!-- Catatan Motivasi -->
+                    <div class="mt-5 p-4 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs leading-relaxed text-amber-100">
+                        <strong>Catatan Keteladanan & Motivasi:</strong>
+                        <p id="rep-motivation" class="mt-1"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tombol Unduh -->
+            <div class="px-6 py-4 bg-slate-900/90 border-t border-slate-700 flex flex-wrap items-center justify-end gap-3 no-print">
+                <button onclick="window.print()" class="hero-btn px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-display font-bold text-sm flex items-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Cetak / Simpan PDF</span>
+                </button>
+                <button onclick="downloadReportHTML()" class="hero-btn px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-display font-bold text-sm flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Unduh File Rapor (.HTML)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL PIN & PANEL MANAJEMEN GURU / ADMIN   -->
+    <!-- ========================================== -->
+    <div id="teacher-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/50 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-slate-900/90 border-b border-slate-700 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-bold">👨‍🏫</div>
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-white">Portal Guru & Manajemen Foto Pahlawan</h2>
+                        <p class="text-xs text-slate-300">Unggah Foto Pahlawan ke Google Spreadsheet & Perbarui Bingkai 3D</p>
+                    </div>
+                </div>
+                <button onclick="closeTeacherModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- PIN Gate -->
+            <div id="teacher-pin-section" class="p-6 space-y-4">
+                <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">
+                    Masukkan PIN Keamanan Guru untuk mengelola galeri foto pahlawan. (PIN Default: <b>123456</b>)
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-300 mb-1.5">PIN Akses Guru</label>
+                    <input type="password" id="teacher-pin-input" placeholder="Masukkan 6 digit PIN..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-center tracking-widest font-bold text-lg">
+                </div>
+                <button onclick="verifyTeacherPin()" class="hero-btn w-full py-3 rounded-xl gold-gradient text-slate-950 font-display font-bold">
+                    Buka Panel Manajemen Foto
+                </button>
+            </div>
+
+            <!-- Teacher Upload Panel (Hidden until PIN verified) -->
+            <div id="teacher-upload-section" class="p-6 overflow-y-auto space-y-5 hidden">
+                <div class="p-3.5 rounded-2xl bg-emerald-950/50 border border-emerald-600/40 text-xs text-emerald-200">
+                    💡 <b>Sistem Kompresi Otomatis:</b> Foto yang Anda pilih akan otomatis dikompresi melalui HTML5 Canvas (lebar maks <code>300px</code>, kualitas JPEG <code>0.65</code>) agar ukuran Base64 di bawah 35.000 karakter dan langsung tampil pada bingkai 3D di dinding museum.
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-300 mb-1.5">1. Pilih Tokoh Pahlawan (12 Pahlawan):</label>
+                    <select id="teacher-hero-select" onchange="previewCurrentHeroForTeacher()" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+                        <!-- Diisi JS -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                    <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-center">
+                        <div class="text-xs text-slate-400 mb-2">Pratinjau Foto Saat Ini / Baru:</div>
+                        <img id="teacher-photo-preview" src="" alt="Preview" class="w-40 h-52 object-cover mx-auto rounded-xl border-2 border-amber-500/50">
+                        <div id="teacher-base64-size" class="text-[11px] text-emerald-400 mt-2 font-mono">Siap dipilih</div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold uppercase text-slate-300">2. Pilih File Gambar (.JPG / .PNG):</label>
+                        <input type="file" id="teacher-file-input" accept="image/jpeg,image/png,image/webp" onchange="handleTeacherFileSelect(event)" class="w-full text-xs text-slate-300 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer">
+
+                        <button id="btn-upload-hero-photo" onclick="uploadCompressedPhotoToGAS()" class="hero-btn w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-display font-bold text-sm shadow-lg flex items-center justify-center gap-2">
+                            <i data-lucide="cloud-upload" class="w-5 h-5"></i>
+                            <span>Simpan ke Spreadsheet & Dinding 3D</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT UTAMA (DATA, 3D, AUDIO, GAS)    -->
+    <!-- ========================================== -->
+    <script>
+        /**************************************************************
+         * 1. KONFIGURASI GOOGLE APPS SCRIPT & DATA 12 PAHLAWAN + MISI
+         **************************************************************/
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw5lP3zf26kPms1I8YSyPyqH5v_f-wApIa_lKFGO3PFAERSA7gRtG1fECCewjVsKNdx/exec";
+
+        const DATA_PAHLAWAN = [
+            // AULA 1: PAHLAWAN PRA-1900 (Barat)
+            {
+                id: "hero_1",
+                nama: "Pangeran Diponegoro",
+                gelar: "Pahlawan Perang Jawa (Pra-1900)",
+                aula: "aula1",
+                eraLabel: "Aula 1: Pahlawan Pra-1900",
+                asal: "Yogyakarta",
+                masaHidup: "11 November 1785 – 8 Januari 1855",
+                biografi: "Pangeran Diponegoro memimpin Perang Jawa (1825–1830) melawan pemerintah kolonial Belanda. Beliau menentang pajak tinggi yang menyengsarakan rakyat dan pemasangan patok jalan Belanda di atas tanah leluhur. Dengan taktik perang gerilya, beliau berhasil menyatukan bangsawan dan rakyat jelata.",
+                keteladanan: "Berani membela kebenaran, peduli pada penderitaan rakyat kecil, dan hidup sederhana meski seorang pangeran.",
+                kutipan: "Sadumuk bathuk, sanyari bumi ditohi tekan pati (Sejari kepala, sejengkal tanah dibela sampai mati).",
+                warnaTema: "#dc2626",
+                ikon: "⚔️",
+                pos: { x: -34, y: 4.3, z: -9, rotY: Math.PI / 2 }
+            },
+            {
+                id: "hero_2",
+                nama: "Cut Nyak Dien",
+                gelar: "Srikandi Perang Aceh (Pra-1900)",
+                aula: "aula1",
+                eraLabel: "Aula 1: Pahlawan Pra-1900",
+                asal: "Aceh Besar, Nanggroe Aceh Darussalam",
+                masaHidup: "1848 – 6 November 1908",
+                biografi: "Cut Nyak Dien adalah pemimpin pasukan pejuang wanita di Aceh yang pantang menyerah melawan penjajah Belanda. Bersama suaminya, Teuku Umar, beliau memimpin pertempuran gerilya di hutan-hutan Aceh selama puluhan tahun meskipun di usia tua matanya mulai rabun.",
+                keteladanan: "Keteguhan hati, semangat pantang menyerah dalam kesulitan, dan keberanian luar biasa membela tanah air.",
+                kutipan: "Lebih baik kita berjuang di hutan dengan kemerdekaan daripada hidup mewah di bawah telapak kaki penjajah.",
+                warnaTema: "#b91c1c",
+                ikon: "🗡️",
+                pos: { x: -34, y: 4.3, z: 0, rotY: Math.PI / 2 }
+            },
+            {
+                id: "hero_3",
+                nama: "Sultan Hasanuddin",
+                gelar: "Ayam Jantan dari Timur (Pra-1900)",
+                aula: "aula1",
+                eraLabel: "Aula 1: Pahlawan Pra-1900",
+                asal: "Gowa, Sulawesi Selatan",
+                masaHidup: "12 Januari 1631 – 12 Juni 1670",
+                biografi: "Sultan Hasanuddin adalah Raja Gowa ke-16 yang dengan gagah berani melawan monopoli perdagangan rempah-rempah VOC Belanda di wilayah Indonesia Timur. Karena keberaniannya di medan tempur laut dan darat, Belanda menjulukinya De Haantjes van Het Oosten (Ayam Jantan dari Timur).",
+                keteladanan: "Kegigihan menjaga kedaulatan laut Nusantara, adil dalam memimpin, serta menolak keserakahan monopoli asing.",
+                kutipan: "Laut dan bumi Nusantara adalah karunia Tuhan untuk kemakmuran bersama, bukan untuk dimonopoli penjajah.",
+                warnaTema: "#991b1b",
+                ikon: "⛵",
+                pos: { x: -34, y: 4.3, z: 9, rotY: Math.PI / 2 }
+            },
+
+            // AULA 2: PAHLAWAN PERGERAKAN NASIONAL 1900-1945 (Timur)
+            {
+                id: "hero_4",
+                nama: "Ki Hajar Dewantara",
+                gelar: "Bapak Pendidikan Nasional (1900–1945)",
+                aula: "aula2",
+                eraLabel: "Aula 2: Pergerakan Nasional",
+                asal: "Yogyakarta",
+                masaHidup: "2 Mei 1889 – 26 April 1959",
+                biografi: "Terlahir dengan nama Raden Mas Soewardi Soerjaningrat, beliau berjuang melalui tulisan tajam dan mendirikan Perguruan Taman Siswa pada tahun 1922. Beliau membuka kesempatan sekolah bagi seluruh anak pribumi Indonesia yang saat itu dibatasi oleh Belanda. Hari lahirnya diperingati sebagai Hari Pendidikan Nasional.",
+                keteladanan: "Cinta ilmu pengetahuan, menghargai kebudayaan bangsa, dan berjuang mencerdaskan seluruh anak bangsa tanpa membeda-bedakan.",
+                kutipan: "Ing ngarsa sung tuladha, ing madya mangun karsa, tut wuri handayani.",
+                warnaTema: "#059669",
+                ikon: "📚",
+                pos: { x: 34, y: 4.3, z: -9, rotY: -Math.PI / 2 }
+            },
+            {
+                id: "hero_5",
+                nama: "R.A. Kartini",
+                gelar: "Pelopor Kebangkitan Perempuan Pribumi",
+                aula: "aula2",
+                eraLabel: "Aula 2: Pergerakan Nasional",
+                asal: "Jepara, Jawa Tengah",
+                masaHidup: "21 April 1879 – 17 September 1904",
+                biografi: "Raden Ajeng Kartini memperjuangkan hak pendidikan dan kesetaraan bagi perempuan Indonesia. Beliau mendirikan sekolah bagi gadis-gadis di Jepara dan Rembang. Pemikiran cerdasnya tentang kemajuan bangsa dikumpulkan dalam buku terkenal 'Habis Gelap Terbitlah Terang'.",
+                keteladanan: "Gemar membaca dan menulis, memperjuangkan kesetaraan hak belajar, serta peduli pada kemajuan sesama.",
+                kutipan: "Habis gelap terbitlah terang. Jangan pernah menyerah mempelajari hal baru demi kemajuan bangsaku.",
+                warnaTema: "#10b981",
+                ikon: "🌸",
+                pos: { x: 34, y: 4.3, z: 0, rotY: -Math.PI / 2 }
+            },
+            {
+                id: "hero_6",
+                nama: "dr. Soetomo",
+                gelar: "Pendiri Organisasi Budi Utomo (1908)",
+                aula: "aula2",
+                eraLabel: "Aula 2: Pergerakan Nasional",
+                asal: "Nganjuk, Jawa Timur",
+                masaHidup: "30 Juli 1888 – 30 Mei 1938",
+                biografi: "Saat belajar di sekolah kedokteran STOVIA Jakarta, dr. Soetomo bersama rekan-rekannya mendirikan Budi Utomo pada 20 Mei 1908, organisasi modern pertama di Indonesia. Tanggal berdirinya Budi Utomo kini diperingati sebagai Hari Kebangkitan Nasional karena memulai era perjuangan lewat organisasi persatuan.",
+                keteladanan: "Mengutamakan persatuan dan organisasi modern, suka menolong pasien miskin secara gratis sebagai dokter.",
+                kutipan: "Kemajuan bangsa hanya bisa dicapai bila pemuda bersatu dalam organisasi dan pendidikan yang kuat.",
+                warnaTema: "#047857",
+                ikon: "⚕️",
+                pos: { x: 34, y: 4.3, z: 9, rotY: -Math.PI / 2 }
+            },
+
+            // AULA 3: PAHLAWAN KEMERDEKAAN (Utara Kiri)
+            {
+                id: "hero_7",
+                nama: "Ir. Soekarno",
+                gelar: "Sang Proklamator & Presiden Pertama RI",
+                aula: "aula3",
+                eraLabel: "Aula 3: Pahlawan Kemerdekaan",
+                asal: "Surabaya / Blitar, Jawa Timur",
+                masaHidup: "6 Juni 1901 – 21 Juni 1970",
+                biografi: "Ir. Soekarno (Bung Karno) adalah tokoh penggagas dasar negara Pancasila pada 1 Juni 1945 dan pembaca teks Proklamasi Kemerdekaan Indonesia pada 17 Agustus 1945 bersama Bung Hatta. Beliau rela dipenjara dan diasingkan ke Ende hingga Bengkulu demi kemerdekaan Indonesia.",
+                keteladanan: "Jiwa kepemimpinan yang menyatukan suku-suku Nusantara, cinta tanah air, dan tidak pernah melupakan sejarah.",
+                kutipan: "Beri aku 10 pemuda, niscaya akan kuguncangkan dunia! Jangan sekali-kali meninggalkan sejarah (Jasmerah).",
+                warnaTema: "#d97706",
+                ikon: "🇮🇩",
+                pos: { x: -24, y: 4.3, z: -33, rotY: 0 }
+            },
+            {
+                id: "hero_8",
+                nama: "Drs. Moh. Hatta",
+                gelar: "Sang Proklamator & Bapak Koperasi Indonesia",
+                aula: "aula3",
+                eraLabel: "Aula 3: Pahlawan Kemerdekaan",
+                asal: "Bukittinggi, Sumatera Barat",
+                masaHidup: "12 Agustus 1902 – 14 Maret 1980",
+                biografi: "Drs. Mohammad Hatta (Bung Hatta) adalah Wakil Presiden pertama RI dan pendamping setia Bung Karno dalam memproklamasikan kemerdekaan serta memimpin diplomasi di Konferensi Meja Bundar (KMB) hingga Belanda mengakui kedaulatan RI. Beliau juga berjasa membangun ekonomi kerakyatan melalui Koperasi.",
+                keteladanan: "Disiplin waktu yang tinggi, sangat jujur, hemat, sederhana, dan cinta buku.",
+                kutipan: "Kurang cerdas dapat diperbaiki dengan belajar, namun kurang jujur sulit diperbaiki.",
+                warnaTema: "#b45309",
+                ikon: "🤝",
+                pos: { x: -16, y: 4.3, z: -33, rotY: 0 }
+            },
+            {
+                id: "hero_9",
+                nama: "Bung Tomo",
+                gelar: "Pahlawan Pertempuran 10 November Surabaya",
+                aula: "aula3",
+                eraLabel: "Aula 3: Pahlawan Kemerdekaan",
+                asal: "Surabaya, Jawa Timur",
+                masaHidup: "3 Oktober 1920 – 7 Oktober 1981",
+                biografi: "Sutomo atau Bung Tomo membakar semangat arek-arek Suroboyo melalui siaran radio untuk mempertahankan kemerdekaan melawan pasukan Sekutu pada pertempuran besar 10 November 1945. Keberanian rakyat Surabaya pada hari itu kini kita peringati sebagai Hari Pahlawan.",
+                keteladanan: "Keberanian membela harga diri bangsa, komunikasi yang membangkitkan semangat juang, dan rela berkorban.",
+                kutipan: "Selama banteng-banteng Indonesia masih mempunyai darah merah, kita tidak akan menyerah! Merdeka atau Mati!",
+                warnaTema: "#92400e",
+                ikon: "📻",
+                pos: { x: -8, y: 4.3, z: -33, rotY: 0 }
+            },
+
+            // AULA 4: PAHLAWAN REVOLUSI (Utara Kanan)
+            {
+                id: "hero_10",
+                nama: "Jenderal Ahmad Yani",
+                gelar: "Pahlawan Revolusi (Panglima TNI AD)",
+                aula: "aula4",
+                eraLabel: "Aula 4: Pahlawan Revolusi",
+                asal: "Purworejo, Jawa Tengah",
+                masaHidup: "19 Juni 1922 – 1 Oktober 1965",
+                biografi: "Jenderal TNI Anumerta Ahmad Yani adalah Panglima Angkatan Darat yang tegas menolak pembentukan Angkatan Kelima dan teguh menjaga ideologi Pancasila. Beliau gugur pada dini hari 1 Oktober 1965 dalam peristiwa G30S/PKI demi mempertahankan keutuhan Negara Kesatuan Republik Indonesia.",
+                keteladanan: "Tegas mempertahankan dasar negara Pancasila, disiplin militer yang tinggi, dan setia pada NKRI.",
+                kutipan: "Pancasila adalah dasar negara yang final, prajurit sejati menjaganya hingga titik darah penghabisan.",
+                warnaTema: "#2563eb",
+                ikon: "🦅",
+                pos: { x: 8, y: 4.3, z: -33, rotY: 0 }
+            },
+            {
+                id: "hero_11",
+                nama: "Letjen M.T. Haryono",
+                gelar: "Pahlawan Revolusi (Perwira Diplomasi TNI)",
+                aula: "aula4",
+                eraLabel: "Aula 4: Pahlawan Revolusi",
+                asal: "Surabaya, Jawa Timur",
+                masaHidup: "20 Januari 1924 – 1 Oktober 1965",
+                biografi: "Letjen TNI Anumerta Mas Tirtodarmo Haryono adalah perwira tinggi TNI AD yang cerdas dan fasih menguasai bahasa Belanda, Inggris, serta Jerman. Beliau berperan penting dalam perundingan diplomasi kemerdekaan Indonesia dan gugur mempertahankan Pancasila pada peristiwa 1 Oktober 1965.",
+                keteladanan: "Rajin menguasai bahasa asing untuk membela bangsa, cerdas, dan berani menghadapi ancaman terhadap negara.",
+                kutipan: "Kecerdasan dan kesetiaan pada tanah air adalah perisai terkuat seorang pejuang bangsa.",
+                warnaTema: "#1d4ed8",
+                ikon: "🎖️",
+                pos: { x: 16, y: 4.3, z: -33, rotY: 0 }
+            },
+            {
+                id: "hero_12",
+                nama: "Kapten Pierre Tendean",
+                gelar: "Pahlawan Revolusi (Ajudan Jenderal Nasution)",
+                aula: "aula4",
+                eraLabel: "Aula 4: Pahlawan Revolusi",
+                asal: "Jakarta / Minahasa",
+                masaHidup: "21 Februari 1939 – 1 Oktober 1965",
+                biografi: "Kapten Czi. Anumerta Pierre Andries Tendean adalah perwira muda ajudan Jenderal A.H. Nasution. Saat kediaman Jenderal Nasution dikepung gerombolan G30S/PKI, Kapten Pierre Tendean dengan berani mengorbankan dirinya demi menyelamatkan nyawa pimpinannya.",
+                keteladanan: "Kesetiaan luar biasa, rela berkorban demi keselamatan orang lain, dan keberanian pemuda sejati.",
+                kutipan: "Kehormatan tertinggi seorang kesatria adalah melindungi bangsa dan pimpinannya dengan sepenuh jiwa.",
+                warnaTema: "#1e40af",
+                ikon: "🛡️",
+                pos: { x: 24, y: 4.3, z: -33, rotY: 0 }
+            }
+        ];
+
+        const DATA_MISI = {
+            misi1: {
+                id: 1,
+                judul: "Misi 1: Detektif Senjata & Daerah (Era Pra-1900)",
+                deskripsi: "Pasangkan 3 Pahlawan Pra-1900 berikut dengan Daerah Perjuangan dan Strategi/Julukannya yang paling tepat!",
+                lencanaNama: "Lencana Kesatria Nusantara",
+                questions: [
+                    {
+                        hero: "Pangeran Diponegoro",
+                        correctValue: "Yogyakarta - Taktik Perang Gerilya Jawa (1825-1830)",
+                        options: [
+                            "Yogyakarta - Taktik Perang Gerilya Jawa (1825-1830)",
+                            "Aceh Besar - Memimpin Pasukan Srikandi di Hutan",
+                            "Gowa Sulawesi Selatan - Melawan Monopoli Laut VOC"
+                        ]
+                    },
+                    {
+                        hero: "Cut Nyak Dien",
+                        correctValue: "Aceh Besar - Memimpin Pasukan Srikandi di Hutan",
+                        options: [
+                            "Yogyakarta - Taktik Perang Gerilya Jawa (1825-1830)",
+                            "Aceh Besar - Memimpin Pasukan Srikandi di Hutan",
+                            "Gowa Sulawesi Selatan - Melawan Monopoli Laut VOC"
+                        ]
+                    },
+                    {
+                        hero: "Sultan Hasanuddin",
+                        correctValue: "Gowa Sulawesi Selatan - Melawan Monopoli Laut VOC",
+                        options: [
+                            "Yogyakarta - Taktik Perang Gerilya Jawa (1825-1830)",
+                            "Aceh Besar - Memimpin Pasukan Srikandi di Hutan",
+                            "Gowa Sulawesi Selatan - Melawan Monopoli Laut VOC"
+                        ]
+                    }
+                ]
+            },
+            misi2: {
+                id: 2,
+                judul: "Misi 2: Sandi Pergerakan Nasional (Era 1900–1945)",
+                deskripsi: "Jawablah 3 kuis pilihan ganda tentang perjuangan melalui organisasi dan pendidikan di Aula Pergerakan Nasional!",
+                lencanaNama: "Lencana Cendekia Bangkit",
+                questions: [
+                    {
+                        q: "1. Siapakah tokoh yang mendirikan Perguruan Taman Siswa pada tahun 1922 dan memiliki semboyan 'Tut Wuri Handayani'?",
+                        options: ["Ki Hajar Dewantara", "dr. Soetomo", "Pangeran Diponegoro", "Bung Tomo"],
+                        answer: "Ki Hajar Dewantara"
+                    },
+                    {
+                        q: "2. Organisasi modern pertama di Indonesia yang didirikan oleh dr. Soetomo dan rekan-rekannya pada 20 Mei 1908 adalah...",
+                        options: ["Budi Utomo", "Taman Siswa", "Koperasi Indonesia", "PETA"],
+                        answer: "Budi Utomo"
+                    },
+                    {
+                        q: "3. Kumpulan surat pemikiran R.A. Kartini tentang pendidikan dan kemajuan perempuan pribumi dibukukan dengan judul...",
+                        options: ["Habis Gelap Terbitlah Terang", "Indonesia Menggugat", "Dari Penjara ke Penjara", "Satu Nusa Satu Bangsa"],
+                        answer: "Habis Gelap Terbitlah Terang"
+                    }
+                ]
+            },
+            misi3: {
+                id: 3,
+                judul: "Misi 3: Kurir Proklamasi (Era Kemerdekaan 1945–1949)",
+                deskripsi: "Susunlah 4 peristiwa sejarah Kemerdekaan Indonesia berikut sesuai urutan waktu (kronologi) dari urutan ke-1 hingga ke-4!",
+                lencanaNama: "Lencana Sang Proklamator",
+                correctOrder: [
+                    "1. Ir. Soekarno menyampaikan gagasan dasar negara Pancasila pada sidang BPUPKI (1 Juni 1945).",
+                    "2. Ir. Soekarno dan Drs. Moh. Hatta membacakan teks Proklamasi Kemerdekaan RI di Jakarta (17 Agustus 1945).",
+                    "3. Bung Tomo membakar semangat arek-arek Suroboyo mempertahankan kemerdekaan (10 November 1945).",
+                    "4. Drs. Moh. Hatta memimpin delegasi Indonesia dalam Konferensi Meja Bundar hingga pengakuan kedaulatan (1949)."
+                ]
+            },
+            misi4: {
+                id: 4,
+                judul: "Misi 4: Penjaga Pancasila (Era Pahlawan Revolusi)",
+                deskripsi: "Cocokkan profil pengabdian berikut dengan nama Pahlawan Revolusi yang gugur mempertahankan ideologi Pancasila!",
+                lencanaNama: "Lencana Perisai Pancasila",
+                questions: [
+                    {
+                        clue: "Panglima TNI Angkatan Darat asal Purworejo yang tegas menolak pembentukan Angkatan Kelima demi menjaga Pancasila.",
+                        answer: "Jenderal Ahmad Yani",
+                        options: ["Jenderal Ahmad Yani", "Letjen M.T. Haryono", "Kapten Pierre Tendean"]
+                    },
+                    {
+                        clue: "Perwira tinggi TNI AD asal Surabaya yang fasih berbahasa Belanda, Inggris, dan Jerman serta aktif dalam diplomasi.",
+                        answer: "Letjen M.T. Haryono",
+                        options: ["Jenderal Ahmad Yani", "Letjen M.T. Haryono", "Kapten Pierre Tendean"]
+                    },
+                    {
+                        clue: "Perwira muda ajudan Jenderal A.H. Nasution yang rela mengorbankan dirinya demi menyelamatkan pimpinannya.",
+                        answer: "Kapten Pierre Tendean",
+                        options: ["Jenderal Ahmad Yani", "Letjen M.T. Haryono", "Kapten Pierre Tendean"]
+                    }
+                ]
+            }
+        };
+
+        /**************************************************************
+         * 2. STATE APLIKASI & PENGGUNA
+         **************************************************************/
+        let currentUser = {
+            nama: "Tamu Petualang",
+            sekolah: "SD Nusantara",
+            npsn: "20200001",
+            avatar: "bima",
+            score: 0,
+            studiedHeroes: [],
+            completedMissions: [], // [1, 2, 3, 4]
+            missionDetails: {}
+        };
+
+        let selectedRegisterAvatar = "bima";
+        let heroPhotosBase64 = {}; // { hero_1: "data:image/jpeg;base64,..." }
+        let heroFrameMeshes = {};  // Referensi mesh bingkai 3D untuk update tekstur real-time
+        let activeHeroModalId = null;
+        let activeMissionTab = 1;
+        let mission3CurrentOrder = [];
+        let pendingTeacherBase64 = null;
+
+        /**************************************************************
+         * 3. EFEK SUARA PROSEDURAL (WEB AUDIO API - TANPA FILE LUAR)
+         **************************************************************/
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+
+                if (type === "step") {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(110, now);
+                    osc.frequency.exponentialRampToValueAtTime(45, now + 0.06);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                } else if (type === "click") {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+                } else if (type === "success") {
+                    const notes = [523.25, 659.25, 783.99, 1046.5];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = "triangle";
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                        gain.gain.setValueAtTime(0.16, now + idx * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.25);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.09);
+                        osc.stop(now + idx * 0.09 + 0.25);
+                    });
+                } else if (type === "wrong") {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.25);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                }
+            } catch (e) {
+                // Ignore audio block errors before user gesture
+            }
+        }
+
+        /**************************************************************
+         * 4. KOMUNIKASI DATABASE GOOGLE APPS SCRIPT + FALLBACK LOKAL
+         **************************************************************/
+        async function callGAS(payload) {
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                return data;
+            } catch (err) {
+                console.warn("Mode Offline / Fallback aktif untuk aksi:", payload.action);
+                return { status: "offline", error: err.message };
+            }
+        }
+
+        function saveLocalBackup() {
+            try {
+                const allUsers = JSON.parse(localStorage.getItem("gp3d_users") || "{}");
+                allUsers[currentUser.nama.toLowerCase()] = currentUser;
+                localStorage.setItem("gp3d_users", JSON.stringify(allUsers));
+                localStorage.setItem("gp3d_current_user", JSON.stringify(currentUser));
+            } catch (e) {}
+        }
+
+        async function syncProgressToCloud() {
+            saveLocalBackup();
+            updateHUD();
+            const res = await callGAS({
+                action: "saveProgress",
+                nama: currentUser.nama,
+                sekolah: currentUser.sekolah,
+                npsn: currentUser.npsn,
+                avatar: currentUser.avatar,
+                score: currentUser.score,
+                badges: currentUser.completedMissions.length,
+                completedMissions: currentUser.completedMissions,
+                studiedHeroes: currentUser.studiedHeroes,
+                missionDetails: currentUser.missionDetails
+            });
+            return res;
+        }
+
+        async function loadHeroPhotosFromCloud() {
+            // Muat dari cache lokal terlebih dahulu
+            try {
+                const cached = JSON.parse(localStorage.getItem("gp3d_hero_photos") || "{}");
+                heroPhotosBase64 = { ...cached };
+                Object.keys(heroPhotosBase64).forEach(heroId => {
+                    update3DFrameTexture(heroId, heroPhotosBase64[heroId]);
+                });
+            } catch (e) {}
+
+            // Ambil foto terbaru dari Google Sheets
+            const res = await callGAS({ action: "getHeroPhotos" });
+            if (res && res.photos && typeof res.photos === "object") {
+                heroPhotosBase64 = { ...heroPhotosBase64, ...res.photos };
+                try {
+                    localStorage.setItem("gp3d_hero_photos", JSON.stringify(heroPhotosBase64));
+                } catch (e) {}
+                Object.keys(heroPhotosBase64).forEach(heroId => {
+                    if (heroPhotosBase64[heroId]) {
+                        update3DFrameTexture(heroId, heroPhotosBase64[heroId]);
+                    }
+                });
+            }
+        }
+
+        /**************************************************************
+         * 5. SISTEM AUTENTIKASI (LOGIN, REGISTER, MODE TAMU)
+         **************************************************************/
+        function switchAuthTab(tab) {
+            playSound("click");
+            const loginForm = document.getElementById("login-form");
+            const regForm = document.getElementById("register-form");
+            const btnLogin = document.getElementById("tab-login-btn");
+            const btnReg = document.getElementById("tab-register-btn");
+
+            if (tab === "login") {
+                loginForm.classList.remove("hidden");
+                regForm.classList.add("hidden");
+                btnLogin.className = "py-2.5 rounded-xl font-display font-semibold text-sm transition-all gold-gradient text-slate-950 shadow-md";
+                btnReg.className = "py-2.5 rounded-xl font-display font-semibold text-sm transition-all text-slate-300 hover:text-white";
+            } else {
+                loginForm.classList.add("hidden");
+                regForm.classList.remove("hidden");
+                btnReg.className = "py-2.5 rounded-xl font-display font-semibold text-sm transition-all gold-gradient text-slate-950 shadow-md";
+                btnLogin.className = "py-2.5 rounded-xl font-display font-semibold text-sm transition-all text-slate-300 hover:text-white";
+            }
+        }
+
+        function selectAvatarOption(avatarKey) {
+            playSound("click");
+            selectedRegisterAvatar = avatarKey;
+            ["bima", "sari", "raka", "nadia"].forEach(k => {
+                const card = document.getElementById("av-card-" + k);
+                if (k === avatarKey) {
+                    card.className = "cursor-pointer rounded-2xl p-3 bg-slate-900 border-2 border-yellow-400 text-center transition-all scale-105 shadow-lg";
+                } else {
+                    card.className = "cursor-pointer rounded-2xl p-3 bg-slate-900/60 border-2 border-slate-700 text-center transition-all hover:border-slate-500";
+                }
+            });
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            playSound("click");
+            const nama = document.getElementById("reg-nama").value.trim();
+            const sekolah = document.getElementById("reg-sekolah").value.trim();
+            const npsn = document.getElementById("reg-npsn").value.trim();
+            const password = document.getElementById("reg-password").value.trim();
+
+            if (!/^[0-9]{8}$/.test(npsn)) {
+                showToast("NPSN harus 8 digit angka!", "⚠️");
+                return;
+            }
+
+            const btn = document.getElementById("btn-submit-register");
+            btn.disabled = true;
+            btn.innerHTML = `<span>Mendaftarkan ke Museum...</span>`;
+
+            currentUser = {
+                nama,
+                sekolah,
+                npsn,
+                password,
+                avatar: selectedRegisterAvatar,
+                score: 0,
+                studiedHeroes: [],
+                completedMissions: [],
+                missionDetails: {}
+            };
+
+            saveLocalBackup();
+            await callGAS({
+                action: "register",
+                nama,
+                sekolah,
+                npsn,
+                password,
+                avatar: selectedRegisterAvatar
+            });
+
+            btn.disabled = false;
+            btn.innerHTML = `<span>Daftar & Mulai Petualangan 3D</span>`;
+            enterMuseumWorld();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            playSound("click");
+            const nama = document.getElementById("login-nama").value.trim();
+            const password = document.getElementById("login-password").value.trim();
+
+            const btn = document.getElementById("btn-submit-login");
+            btn.disabled = true;
+            btn.innerHTML = `<span>Memuat Profil...</span>`;
+
+            const res = await callGAS({
+                action: "login",
+                nama,
+                password
+            });
+
+            const localUsers = JSON.parse(localStorage.getItem("gp3d_users") || "{}");
+            const localMatch = localUsers[nama.toLowerCase()];
+
+            if (res && res.status === "success" && res.user) {
+                currentUser = {
+                    nama: res.user.nama || nama,
+                    sekolah: res.user.sekolah || "SD Nusantara",
+                    npsn: res.user.npsn || "20200001",
+                    avatar: res.user.avatar || "bima",
+                    score: Number(res.user.score) || 0,
+                    studiedHeroes: Array.isArray(res.user.studiedHeroes) ? res.user.studiedHeroes : [],
+                    completedMissions: Array.isArray(res.user.completedMissions) ? res.user.completedMissions : [],
+                    missionDetails: res.user.missionDetails || {}
+                };
+            } else if (localMatch && (!localMatch.password || localMatch.password === password)) {
+                currentUser = localMatch;
+            } else {
+                // Tetap izinkan masuk agar siswa tidak terhambat saat kegiatan di kelas
+                currentUser = {
+                    nama,
+                    sekolah: "SD Nusantara",
+                    npsn: "20210001",
+                    avatar: "bima",
+                    score: 0,
+                    studiedHeroes: [],
+                    completedMissions: [],
+                    missionDetails: {}
+                };
+            }
+
+            saveLocalBackup();
+            btn.disabled = false;
+            btn.innerHTML = `<span>Masuk ke Museum 3D</span>`;
+            enterMuseumWorld();
+        }
+
+        function quickGuestLogin() {
+            playSound("click");
+            currentUser = {
+                nama: "Petualang Nusantara",
+                sekolah: "SDN 1 Merdeka",
+                npsn: "20261945",
+                avatar: selectedRegisterAvatar || "bima",
+                score: 0,
+                studiedHeroes: [],
+                completedMissions: [],
+                missionDetails: {}
+            };
+            saveLocalBackup();
+            enterMuseumWorld();
+        }
+
+        function enterMuseumWorld() {
+            playSound("success");
+            document.getElementById("auth-screen").classList.add("hidden");
+            document.getElementById("game-hud").classList.remove("hidden");
+            rebuildPlayerAvatarMesh(currentUser.avatar);
+            updateHUD();
+            showToast(`Selamat datang di Museum Nusantara, ${currentUser.nama}!`, "🏛️");
+        }
+
+        function logoutStudent() {
+            playSound("click");
+            document.getElementById("game-hud").classList.add("hidden");
+            document.getElementById("auth-screen").classList.remove("hidden");
+        }
+
+        function updateHUD() {
+            document.getElementById("hud-student-name").textContent = currentUser.nama;
+            document.getElementById("hud-school-name").textContent = `${currentUser.sekolah} • NPSN: ${currentUser.npsn}`;
+            document.getElementById("hud-score").textContent = currentUser.score;
+            document.getElementById("hud-badges").textContent = `${currentUser.completedMissions.length} / 4 🏅`;
+
+            const avatarIcons = { bima: "⚜️", sari: "🎒", raka: "👑", nadia: "🌺" };
+            document.getElementById("hud-avatar-badge").textContent = avatarIcons[currentUser.avatar] || "⚜️";
+        }
+
+        function showToast(message, icon = "✨") {
+            const box = document.getElementById("toast-box");
+            document.getElementById("toast-icon").textContent = icon;
+            document.getElementById("toast-text").textContent = message;
+            box.classList.remove("opacity-0", "translate-y-[-10px]");
+            box.classList.add("opacity-100", "translate-y-0");
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                box.classList.remove("opacity-100", "translate-y-0");
+                box.classList.add("opacity-0", "translate-y-[-10px]");
+            }, 3400);
+        }
+
+        /**************************************************************
+         * 6. DUNIA 3D MUSEUM NUSANTARA & AVATAR KARAKTER (THREE.JS)
+         **************************************************************/
+        const CHIBI_GLB_URL = "https://raw.githubusercontent.com/herisheroes/bg/refs/heads/main/Meshy_AI_Chibi_Figure_1115065153_texture-compressed.glb";
+        let cachedChibiScene = null;
+        let cachedChibiAnimations = [];
+        let playerMixer = null;
+        let clock3D = new THREE.Clock();
+
+        let scene, camera, renderer;
+        let playerGroup, playerLimbs = {};
+        let playerModelWrapper = null;
+        let playerState = {
+            x: 0,
+            z: 18,
+            rotY: Math.PI,
+            speed: 0.19,
+            isMoving: false,
+            walkTime: 0,
+            stepTimer: 0
+        };
+        let cameraControl = {
+            yaw: 0,
+            pitch: 0.32,
+            distance: 9.5,
+            isDragging: false,
+            prevX: 0,
+            prevY: 0
+        };
+        let keysPressed = {};
+        let joystickVector = { x: 0, y: 0 };
+        let wallColliders = []; // Array box { minX, maxX, minZ, maxZ }
+        let interactiveObjects3D = []; // Mesh bingkai foto, podium misi, papan leaderboard
+        let raycaster = new THREE.Raycaster();
+        let mouseVec = new THREE.Vector2();
+        let nearInteractable = null;
+
+        function init3DMuseum() {
+            const container = document.getElementById("canvas-container");
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x131c31);
+            scene.fog = new THREE.FogExp2(0x131c31, 0.0085);
+
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Pencahayaan Hangat Museum Nusantara
+            const ambientLight = new THREE.AmbientLight(0xfffbeb, 0.72);
+            scene.add(ambientLight);
+
+            const mainSun = new THREE.DirectionalLight(0xfef08a, 0.65);
+            mainSun.position.set(15, 32, 20);
+            mainSun.castShadow = true;
+            mainSun.shadow.mapSize.width = 1024;
+            mainSun.shadow.mapSize.height = 1024;
+            scene.add(mainSun);
+
+            buildMuseumArchitecture();
+            buildHeroFramesInHalls();
+            buildMissionAndLeaderboardPodiums();
+            rebuildPlayerAvatarMesh("bima");
+            setupControlsAndEvents();
+
+            window.addEventListener("resize", onWindowResize);
+            animate3DLoop();
+        }
+
+        // Membuat Tekstur Lantai Marmer Berpola Nusantara
+        function createMarbleFloorTexture() {
+            const canvas = document.createElement("canvas");
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext("2d");
+
+            ctx.fillStyle = "#f5f0e6";
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Grid ubin marmer klasik
+            ctx.strokeStyle = "#d6cbb5";
+            ctx.lineWidth = 6;
+            ctx.strokeRect(12, 12, 488, 488);
+
+            // Ornamen berlian emas Nusantara di sudut ubin
+            ctx.fillStyle = "#d97706";
+            ctx.beginPath();
+            ctx.moveTo(256, 40);
+            ctx.lineTo(286, 70);
+            ctx.lineTo(256, 100);
+            ctx.lineTo(226, 70);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = "#b45309";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(36, 36, 440, 440);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(22, 22);
+            return tex;
+        }
+
+        function createSignboardMesh(titleText, subtitleText, bgColorHex, width = 9, height = 1.8) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 768;
+            canvas.height = 160;
+            const ctx = canvas.getContext("2d");
+
+            ctx.fillStyle = bgColorHex;
+            ctx.fillRect(0, 0, 768, 160);
+
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 10;
+            ctx.strokeRect(8, 8, 752, 144);
+
+            ctx.fillStyle = "#fde047";
+            ctx.font = "bold 40px 'Fredoka', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(titleText, 384, 72);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "600 24px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillText(subtitleText, 384, 118);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.MeshBasicMaterial({ map: tex });
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.35), mat);
+            return mesh;
+        }
+
+        function addWallSegment(x, z, w, d, h = 9, color = 0xfaf5e8) {
+            const wallMat = new THREE.MeshStandardMaterial({ color, roughness: 0.65 });
+            const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+            wall.position.set(x, h / 2, z);
+            wall.receiveShadow = true;
+            wall.castShadow = true;
+            scene.add(wall);
+
+            // Lis emas di bagian bawah & atas dinding
+            const trimMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.4, roughness: 0.3 });
+            const bottomTrim = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.4, d + 0.1), trimMat);
+            bottomTrim.position.set(x, 0.2, z);
+            scene.add(bottomTrim);
+
+            const topTrim = new THREE.Mesh(new THREE.BoxGeometry(w + 0.15, 0.45, d + 0.15), trimMat);
+            topTrim.position.set(x, h - 0.22, z);
+            scene.add(topTrim);
+
+            wallColliders.push({
+                minX: x - w / 2 - 0.8,
+                maxX: x + w / 2 + 0.8,
+                minZ: z - d / 2 - 0.8,
+                maxZ: z + d / 2 + 0.8
+            });
+        }
+
+        function addGrandPillar(x, z) {
+            const group = new THREE.Group();
+            const creamMat = new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.4 });
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.5, roughness: 0.3 });
+
+            const base = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.7, 1.6), goldMat);
+            base.position.y = 0.35;
+            group.add(base);
+
+            const col = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 8.2, 16), creamMat);
+            col.position.y = 4.4;
+            col.castShadow = true;
+            group.add(col);
+
+            const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.5, 16), goldMat);
+            ring.position.y = 8.6;
+            group.add(ring);
+
+            group.position.set(x, 0, z);
+            scene.add(group);
+
+            wallColliders.push({
+                minX: x - 1.0,
+                maxX: x + 1.0,
+                minZ: z - 1.0,
+                maxZ: z + 1.0
+            });
+        }
+
+        function addPottedPlant(x, z) {
+            const group = new THREE.Group();
+            const potMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.6 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.4 });
+
+            const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.45, 0.9, 12), potMat);
+            pot.position.y = 0.45;
+            group.add(pot);
+
+            for (let i = 0; i < 5; i++) {
+                const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 10), leafMat);
+                leaf.position.set(
+                    Math.cos((i * Math.PI * 2) / 5) * 0.35,
+                    1.2 + (i % 2) * 0.25,
+                    Math.sin((i * Math.PI * 2) / 5) * 0.35
+                );
+                leaf.scale.set(1, 1.3, 1);
+                group.add(leaf);
+            }
+            group.position.set(x, 0, z);
+            scene.add(group);
+        }
+
+        function buildMuseumArchitecture() {
+            // Lantai Utama Museum (76m x 76m)
+            const floorGeo = new THREE.PlaneGeometry(76, 76);
+            const floorMat = new THREE.MeshStandardMaterial({
+                map: createMarbleFloorTexture(),
+                roughness: 0.25,
+                metalness: 0.1
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Karpet Merah Pemandu Arah Antar Aula
+            const carpetMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.8 });
+            const carpetNS = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.04, 62), carpetMat);
+            carpetNS.position.set(0, 0.02, 0);
+            scene.add(carpetNS);
+
+            const carpetEW = new THREE.Mesh(new THREE.BoxGeometry(64, 0.04, 3.6), carpetMat);
+            carpetEW.position.set(0, 0.02, 0);
+            scene.add(carpetEW);
+
+            // Dinding Batas Luar Museum
+            addWallSegment(0, -35, 72, 1.2, 9.5); // Dinding Utara (Aula 3 & 4)
+            addWallSegment(0, 35, 72, 1.2, 9.5);  // Dinding Selatan (Ruang Misi)
+            addWallSegment(-35.5, 0, 1.2, 70, 9.5); // Dinding Barat (Aula 1)
+            addWallSegment(35.5, 0, 1.2, 70, 9.5);  // Dinding Timur (Aula 2)
+
+            // Dinding Penyekat Antar Aula dengan Gerbang Terbuka
+            addWallSegment(0, -24, 1.0, 20, 9.0); // Pembatas Aula 3 (Kiri) & Aula 4 (Kanan)
+            addWallSegment(-22, -14, 24, 1.0, 9.0); // Sekat Selatan Aula 3
+            addWallSegment(22, -14, 24, 1.0, 9.0);  // Sekat Selatan Aula 4
+            addWallSegment(-22, 14, 24, 1.0, 9.0);  // Sekat Utara Ruang Misi Kiri
+            addWallSegment(22, 14, 24, 1.0, 9.0);   // Sekat Utara Ruang Misi Kanan
+
+            // Pilar-pilar Megah di Lobby & Persimpangan
+            const pillarCoords = [
+                [-8, -12], [8, -12], [-8, 12], [8, 12],
+                [-14, -6], [-14, 6], [14, -6], [14, 6]
+            ];
+            pillarCoords.forEach(([px, pz]) => addGrandPillar(px, pz));
+
+            // Tanaman Hias Pot 3D di Sudut Ruangan
+            const plantCoords = [
+                [-6, -10], [6, -10], [-6, 10], [6, 10],
+                [-31, -11], [-31, 11], [31, -11], [31, 11],
+                [-30, -30], [30, -30], [-12, 31], [12, 31]
+            ];
+            plantCoords.forEach(([x, z]) => addPottedPlant(x, z));
+
+            // Papan Nama Neon/Emas di Atas Setiap Pintu Aula
+            const signAula1 = createSignboardMesh("AULA 1: PAHLAWAN PRA-1900", "Perjuangan Bersenjata Daerah", "#7f1d1d");
+            signAula1.position.set(-15, 7.2, 0);
+            signAula1.rotation.y = Math.PI / 2;
+            scene.add(signAula1);
+
+            const signAula2 = createSignboardMesh("AULA 2: PERGERAKAN NASIONAL", "Organisasi, Pendidikan & Pers (1900-1945)", "#064e3b");
+            signAula2.position.set(15, 7.2, 0);
+            signAula2.rotation.y = -Math.PI / 2;
+            scene.add(signAula2);
+
+            const signAula3 = createSignboardMesh("AULA 3: KEMERDEKAAN RI", "Tokoh Proklamasi & Pertempuran 1945", "#78350f");
+            signAula3.position.set(-16, 7.2, -14.5);
+            scene.add(signAula3);
+
+            const signAula4 = createSignboardMesh("AULA 4: PAHLAWAN REVOLUSI", "Penjaga Ideologi Pancasila 1965", "#1e3a8a");
+            signAula4.position.set(16, 7.2, -14.5);
+            scene.add(signAula4);
+
+            const signMisi = createSignboardMesh("RUANG MISI & KUIS 4 ERA", "Uji Keteladanan & Raih 4 Lencana Emas", "#4c1d95");
+            signMisi.position.set(0, 7.2, 14.5);
+            signMisi.rotation.y = Math.PI;
+            scene.add(signMisi);
+
+            // Tugu Monumen Garuda / Nusantara di Tengah Lobby Utama
+            const monumentGroup = new THREE.Group();
+            const pedMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.65, roughness: 0.25 });
+
+            const ped1 = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.6, 0.8, 24), pedMat);
+            ped1.position.y = 0.4;
+            monumentGroup.add(ped1);
+
+            const ped2 = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.8, 1.6, 16), goldMat);
+            ped2.position.y = 1.6;
+            monumentGroup.add(ped2);
+
+            const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1.15, 0), goldMat);
+            crystal.position.y = 3.6;
+            crystal.name = "spinning_monument";
+            monumentGroup.add(crystal);
+
+            monumentGroup.position.set(0, 0, 0);
+            scene.add(monumentGroup);
+
+            wallColliders.push({ minX: -2.4, maxX: 2.4, minZ: -2.4, maxZ: 2.4 });
+        }
+
+        // Membuat Tekstur Default Potret Pahlawan via Canvas 2D
+        function createDefaultHeroPortraitTexture(hero) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 512;
+            canvas.height = 680;
+            const ctx = canvas.getContext("2d");
+
+            // Background gradien sesuai tema aula
+            const grad = ctx.createLinearGradient(0, 0, 0, 680);
+            grad.addColorStop(0, hero.warnaTema);
+            grad.addColorStop(1, "#0f172a");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 680);
+
+            // Bingkai ornamen dalam
+            ctx.strokeStyle = "#fde047";
+            ctx.lineWidth = 12;
+            ctx.strokeRect(18, 18, 476, 644);
+
+            // Lingkaran cahaya belakang siluet pahlawan
+            ctx.fillStyle = "rgba(254, 240, 138, 0.18)";
+            ctx.beginPath();
+            ctx.arc(256, 235, 125, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ilustrasi Siluet Dada & Kepala Stilasi
+            ctx.fillStyle = "#fef3c7";
+            ctx.beginPath();
+            ctx.arc(256, 195, 58, 0, Math.PI * 2); // Kepala
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(155, 345);
+            ctx.quadraticCurveTo(256, 260, 357, 345);
+            ctx.lineTo(357, 365);
+            ctx.lineTo(155, 365);
+            ctx.closePath();
+            ctx.fill();
+
+            // Ikon Khas Pahlawan
+            ctx.font = "68px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(hero.ikon, 256, 125);
+
+            // Nama Pahlawan
+            ctx.fillStyle = "#fde047";
+            ctx.font = "bold 36px 'Fredoka', sans-serif";
+            ctx.fillText(hero.nama, 256, 435);
+
+            // Asal & Masa Hidup
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "600 22px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillText(hero.asal, 256, 480);
+
+            ctx.fillStyle = "#cbd5e1";
+            ctx.font = "20px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillText(hero.masaHidup, 256, 515);
+
+            // Tombol Ajakan Interaksi
+            ctx.fillStyle = "#eab308";
+            ctx.fillRect(76, 565, 360, 56);
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "bold 23px 'Fredoka', sans-serif";
+            ctx.fillText("KLIK UNTUK BACA BIOGRAFI", 256, 601);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function buildHeroFramesInHalls() {
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 });
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.3 });
+
+            DATA_PAHLAWAN.forEach(hero => {
+                const frameGroup = new THREE.Group();
+
+                // Bingkai Kayu Ukir Luar
+                const outerBox = new THREE.Mesh(new THREE.BoxGeometry(3.8, 4.9, 0.25), woodMat);
+                frameGroup.add(outerBox);
+
+                // Lis Emas Dalam
+                const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(3.45, 4.55, 0.28), goldMat);
+                frameGroup.add(goldTrim);
+
+                // Kanvas Foto Pahlawan
+                const defaultTex = createDefaultHeroPortraitTexture(hero);
+                const portraitMat = new THREE.MeshBasicMaterial({ map: defaultTex });
+                const portraitMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 4.3), portraitMat);
+                portraitMesh.position.z = 0.16;
+                portraitMesh.userData = { type: "hero", heroId: hero.id, heroName: hero.nama };
+                frameGroup.add(portraitMesh);
+
+                heroFrameMeshes[hero.id] = portraitMesh;
+                interactiveObjects3D.push(portraitMesh);
+
+                // Lampu Sorot (Spotlight Fixture) di atas bingkai
+                const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.7), goldMat);
+                lampArm.rotation.x = Math.PI / 2;
+                lampArm.position.set(0, 2.7, 0.35);
+                frameGroup.add(lampArm);
+
+                const spotLight = new THREE.PointLight(0xfffbeb, 0.65, 9);
+                spotLight.position.set(0, 2.4, 1.5);
+                frameGroup.add(spotLight);
+
+                frameGroup.position.set(hero.pos.x, hero.pos.y, hero.pos.z);
+                frameGroup.rotation.y = hero.pos.rotY;
+                scene.add(frameGroup);
+            });
+        }
+
+        function update3DFrameTexture(heroId, base64String) {
+            const mesh = heroFrameMeshes[heroId];
+            const hero = DATA_PAHLAWAN.find(h => h.id === heroId);
+            if (!mesh || !hero || !base64String) return;
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = function () {
+                const canvas = document.createElement("canvas");
+                canvas.width = 512;
+                canvas.height = 680;
+                const ctx = canvas.getContext("2d");
+
+                ctx.fillStyle = "#0f172a";
+                ctx.fillRect(0, 0, 512, 680);
+
+                // Gambar foto asli dari guru
+                ctx.drawImage(img, 20, 20, 472, 480);
+
+                // Banner nama di bawah foto
+                ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+                ctx.fillRect(20, 490, 472, 170);
+
+                ctx.strokeStyle = "#facc15";
+                ctx.lineWidth = 10;
+                ctx.strokeRect(16, 16, 480, 648);
+
+                ctx.fillStyle = "#fde047";
+                ctx.font = "bold 34px 'Fredoka', sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(hero.nama, 256, 545);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "22px 'Plus Jakarta Sans', sans-serif";
+                ctx.fillText(hero.asal, 256, 582);
+
+                ctx.fillStyle = "#eab308";
+                ctx.fillRect(86, 602, 340, 42);
+                ctx.fillStyle = "#0f172a";
+                ctx.font = "bold 20px 'Fredoka', sans-serif";
+                ctx.fillText("KLIK PROFIL PAHLAWAN", 256, 630);
+
+                const newTex = new THREE.CanvasTexture(canvas);
+                mesh.material.map = newTex;
+                mesh.material.needsUpdate = true;
+            };
+            img.src = base64String;
+        }
+
+        function buildMissionAndLeaderboardPodiums() {
+            // 1. Podium Misi & Ujian Keteladanan di Ruang Misi (Selatan: x=0, z=27)
+            const podiumGroup = new THREE.Group();
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x311042, roughness: 0.3 });
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.6, roughness: 0.2 });
+
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 1.2, 24), baseMat);
+            base.position.y = 0.6;
+            podiumGroup.add(base);
+
+            const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.2, 2.2, 16), goldMat);
+            pillar.position.y = 2.0;
+            pillar.userData = { type: "mission_hub" };
+            podiumGroup.add(pillar);
+            interactiveObjects3D.push(pillar);
+
+            const sign = createSignboardMesh("KLIK PODIUM MISI 4 ERA", "Mulai Kuis & Kumpulkan Lencana Emas", "#581c87", 6.5, 1.5);
+            sign.position.y = 4.3;
+            sign.rotation.y = Math.PI;
+            sign.userData = { type: "mission_hub" };
+            podiumGroup.add(sign);
+            interactiveObjects3D.push(sign);
+
+            podiumGroup.position.set(0, 0, 27);
+            scene.add(podiumGroup);
+
+            // 2. Papan Leaderboard 3D Interaktif di Lobby Utama (x=8, z=5)
+            const lbBoard = createSignboardMesh("🏆 PAPAN PERINGKAT 3D", "Klik untuk Melihat 10 Skor Tertinggi", "#0f172a", 5.2, 2.4);
+            lbBoard.position.set(8.5, 3.0, 5);
+            lbBoard.rotation.y = -Math.PI / 4;
+            lbBoard.userData = { type: "leaderboard" };
+            scene.add(lbBoard);
+            interactiveObjects3D.push(lbBoard);
+        }
+
+        // Memasang Model GLB yang sudah dimuat ke dalam Player Group & Menyesuaikan Skala Otomatis
+        function attachLoadedChibiToPlayer(sourceScene, animations) {
+            if (!playerModelWrapper) return;
+
+            // Bersihkan fallback mesh sebelumnya di dalam wrapper
+            while (playerModelWrapper.children.length > 0) {
+                playerModelWrapper.remove(playerModelWrapper.children[0]);
+            }
+            playerLimbs = {};
+
+            const model = sourceScene.clone(true);
+
+            // Aktifkan bayangan dan pencahayaan material agar cerah di dalam museum
+            model.traverse(node => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                    if (node.material) {
+                        node.material = node.material.clone();
+                        node.material.roughness = Math.min(node.material.roughness ?? 0.6, 0.7);
+                    }
+                }
+            });
+
+            // Hitung ukuran Bounding Box asli dari file GLB agar otomatis diskalakan setinggi ~2.7 meter di museum
+            const box = new THREE.Box3().setFromObject(model);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+
+            const targetHeight = 2.75;
+            const scaleFactor = size.y > 0.001 ? targetHeight / size.y : 2.0;
+            model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+            // Hitung ulang box setelah di-scale agar kaki menapak tepat di lantai (y = 0) dan berada di titik tengah (x=0, z=0)
+            const scaledBox = new THREE.Box3().setFromObject(model);
+            const center = new THREE.Vector3();
+            scaledBox.getCenter(center);
+
+            model.position.x = -center.x;
+            model.position.z = -center.z;
+            model.position.y = -scaledBox.min.y;
+
+            playerModelWrapper.add(model);
+
+            // Jika file GLB memiliki animasi bawaan (rigged animation), jalankan via AnimationMixer
+            if (animations && animations.length > 0) {
+                playerMixer = new THREE.AnimationMixer(model);
+                const action = playerMixer.clipAction(animations[0]);
+                action.play();
+            } else {
+                playerMixer = null;
+            }
+        }
+
+        // Membangun Karakter Pemain 3D (Mengutamakan Model GLB Chibi dari GitHub + Fallback Otomatis)
+        function rebuildPlayerAvatarMesh(avatarType = "bima") {
+            if (playerGroup) {
+                scene.remove(playerGroup);
+            }
+            playerGroup = new THREE.Group();
+            playerModelWrapper = new THREE.Group();
+            playerGroup.add(playerModelWrapper);
+
+            // Warna Cincin Aura di Bawah Kaki Karakter sesuai pilihan Avatar
+            const auraColors = {
+                bima: 0xfacc15,  // Emas Pramuka
+                sari: 0xef4444,  // Merah Putih
+                raka: 0x10b981,  // Hijau Zamrud Adat
+                nadia: 0xa855f7  // Ungu Nusantara
+            };
+            const ringColor = auraColors[avatarType] || 0xfacc15;
+
+            // Ring Penanda & Lampu Karakter agar model Chibi GLB tampak jelas & glowing
+            const ringGeo = new THREE.RingGeometry(0.68, 0.88, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: ringColor, side: THREE.DoubleSide });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.03;
+            playerGroup.add(ring);
+
+            const charLight = new THREE.PointLight(0xffffff, 0.65, 6);
+            charLight.position.set(0, 2.6, 1.2);
+            playerGroup.add(charLight);
+
+            playerGroup.position.set(playerState.x, 0, playerState.z);
+            playerGroup.rotation.y = playerState.rotY;
+            scene.add(playerGroup);
+
+            // Jika model GLB sudah ada di memori, langsung pasang
+            if (cachedChibiScene) {
+                attachLoadedChibiToPlayer(cachedChibiScene, cachedChibiAnimations);
+                return;
+            }
+
+            // Sambil menunggu download GLB dari GitHub, tampilkan karakter placeholder sementara
+            buildFallbackProceduralAvatar(avatarType);
+
+            // Muat file GLB dari GitHub menggunakan GLTFLoader + DRACOLoader
+            if (typeof THREE.GLTFLoader !== "undefined") {
+                const loader = new THREE.GLTFLoader();
+                if (typeof THREE.DRACOLoader !== "undefined") {
+                    const dracoLoader = new THREE.DRACOLoader();
+                    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.4.1/");
+                    loader.setDRACOLoader(dracoLoader);
+                }
+
+                loader.load(
+                    CHIBI_GLB_URL,
+                    function (gltf) {
+                        cachedChibiScene = gltf.scene;
+                        cachedChibiAnimations = gltf.animations || [];
+                        attachLoadedChibiToPlayer(cachedChibiScene, cachedChibiAnimations);
+                        showToast("Karakter 3D Chibi (.GLB) berhasil dimuat!", "🧸");
+                    },
+                    undefined,
+                    function (err) {
+                        console.warn("Gagal memuat GLB eksternal, menggunakan avatar standar:", err);
+                    }
+                );
+            }
+        }
+
+        // Karakter Prosedural Sementara (muncul hanya 1-2 detik sambil menunggu GLB selesai diunduh)
+        function buildFallbackProceduralAvatar(avatarType = "bima") {
+            const palettes = {
+                bima: { shirt: 0x92400e, pants: 0x451a03, hat: 0x451a03, scarf: 0xdc2626 },
+                sari: { shirt: 0xffffff, pants: 0xdc2626, hat: 0xdc2626, scarf: 0xdc2626 },
+                raka: { shirt: 0x065f46, pants: 0x1e293b, hat: 0xd97706, scarf: 0xfacc15 },
+                nadia: { shirt: 0x7e22ce, pants: 0xf59e0b, hat: 0xfacc15, scarf: 0xfde047 }
+            };
+            const pal = palettes[avatarType] || palettes.bima;
+
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.5 });
+            const shirtMat = new THREE.MeshStandardMaterial({ color: pal.shirt, roughness: 0.5 });
+            const pantsMat = new THREE.MeshStandardMaterial({ color: pal.pants, roughness: 0.6 });
+            const hatMat = new THREE.MeshStandardMaterial({ color: pal.hat, roughness: 0.4 });
+
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.15, 0.55), shirtMat);
+            torso.position.y = 1.65;
+            playerModelWrapper.add(torso);
+
+            const headGroup = new THREE.Group();
+            headGroup.position.y = 2.65;
+            const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.44, 16, 16), skinMat);
+            headGroup.add(headMesh);
+
+            const hatMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, 0.28, 16), hatMat);
+            hatMesh.position.y = 0.32;
+            headGroup.add(hatMesh);
+            playerModelWrapper.add(headGroup);
+            playerLimbs.head = headGroup;
+
+            const armGeo = new THREE.CylinderGeometry(0.14, 0.13, 0.95, 12);
+            const leftArm = new THREE.Mesh(armGeo, shirtMat);
+            leftArm.position.set(-0.65, 1.65, 0);
+            playerModelWrapper.add(leftArm);
+            playerLimbs.leftArm = leftArm;
+
+            const rightArm = new THREE.Mesh(armGeo, shirtMat);
+            rightArm.position.set(0.65, 1.65, 0);
+            playerModelWrapper.add(rightArm);
+            playerLimbs.rightArm = rightArm;
+
+            const legGeo = new THREE.CylinderGeometry(0.17, 0.15, 0.95, 12);
+            const leftLeg = new THREE.Mesh(legGeo, pantsMat);
+            leftLeg.position.set(-0.26, 0.55, 0);
+            playerModelWrapper.add(leftLeg);
+            playerLimbs.leftLeg = leftLeg;
+
+            const rightLeg = new THREE.Mesh(legGeo, pantsMat);
+            rightLeg.position.set(0.26, 0.55, 0);
+            playerModelWrapper.add(rightLeg);
+            playerLimbs.rightLeg = rightLeg;
+        }
+
+        /**************************************************************
+         * 7. KONTROL GERAK, JOYSTICK SENTUH, COLLISION & TELEPORTASI
+         **************************************************************/
+        function setupControlsAndEvents() {
+            window.addEventListener("keydown", e => {
+                keysPressed[e.key.toLowerCase()] = true;
+            });
+            window.addEventListener("keyup", e => {
+                keysPressed[e.key.toLowerCase()] = false;
+            });
+
+            // Kontrol Rotasi Kamera & Klik Objek 3D di Canvas
+            const domElem = renderer.domElement;
+            let pointerDownPos = { x: 0, y: 0 };
+
+            domElem.addEventListener("pointerdown", e => {
+                cameraControl.isDragging = true;
+                cameraControl.prevX = e.clientX;
+                cameraControl.prevY = e.clientY;
+                pointerDownPos = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener("pointermove", e => {
+                if (!cameraControl.isDragging) return;
+                const dx = e.clientX - cameraControl.prevX;
+                const dy = e.clientY - cameraControl.prevY;
+                cameraControl.prevX = e.clientX;
+                cameraControl.prevY = e.clientY;
+
+                cameraControl.yaw -= dx * 0.006;
+                cameraControl.pitch = Math.max(0.12, Math.min(0.85, cameraControl.pitch + dy * 0.004));
+            });
+
+            window.addEventListener("pointerup", e => {
+                if (cameraControl.isDragging) {
+                    const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+                    if (moveDist < 8) {
+                        handleCanvasClickRaycast(e.clientX, e.clientY);
+                    }
+                }
+                cameraControl.isDragging = false;
+            });
+
+            // Virtual Joystick untuk Layar Sentuh / IFP
+            const joyZone = document.getElementById("joystick-zone");
+            const joyKnob = document.getElementById("joystick-knob");
+            let joyActive = false;
+
+            const updateJoystick = (clientX, clientY) => {
+                const rect = joyZone.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const maxRadius = rect.width / 2 - 16;
+
+                let dx = clientX - centerX;
+                let dy = clientY - centerY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > maxRadius) {
+                    dx = (dx / dist) * maxRadius;
+                    dy = (dy / dist) * maxRadius;
+                }
+                joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+                joystickVector.x = dx / maxRadius;
+                joystickVector.y = dy / maxRadius;
+            };
+
+            const resetJoystick = () => {
+                joyActive = false;
+                joyKnob.style.transform = `translate(0px, 0px)`;
+                joystickVector.x = 0;
+                joystickVector.y = 0;
+            };
+
+            joyZone.addEventListener("pointerdown", e => {
+                e.stopPropagation();
+                joyActive = true;
+                updateJoystick(e.clientX, e.clientY);
+            });
+            window.addEventListener("pointermove", e => {
+                if (joyActive) updateJoystick(e.clientX, e.clientY);
+            });
+            window.addEventListener("pointerup", () => {
+                if (joyActive) resetJoystick();
+            });
+        }
+
+        function rotateCameraStep(deltaYaw) {
+            playSound("click");
+            cameraControl.yaw += deltaYaw;
+        }
+
+        function resetCameraBehindPlayer() {
+            playSound("click");
+            cameraControl.yaw = playerState.rotY + Math.PI;
+            cameraControl.pitch = 0.32;
+        }
+
+        function teleportToRoom(roomKey) {
+            playSound("click");
+            const targets = {
+                lobby: { x: 0, z: 6, rotY: Math.PI, name: "Lobby Utama" },
+                aula1: { x: -25, z: 0, rotY: -Math.PI / 2, name: "Aula 1: Pahlawan Pra-1900" },
+                aula2: { x: 25, z: 0, rotY: Math.PI / 2, name: "Aula 2: Pergerakan Nasional" },
+                aula3: { x: -16, z: -24, rotY: Math.PI, name: "Aula 3: Pahlawan Kemerdekaan" },
+                aula4: { x: 16, z: -24, rotY: Math.PI, name: "Aula 4: Pahlawan Revolusi" },
+                misi: { x: 0, z: 21, rotY: 0, name: "Ruang Misi & Ujian" }
+            };
+            const t = targets[roomKey] || targets.lobby;
+            playerState.x = t.x;
+            playerState.z = t.z;
+            playerState.rotY = t.rotY;
+            cameraControl.yaw = t.rotY + Math.PI;
+            showToast(`Berpindah ke ${t.name}`, "🧭");
+        }
+
+        function isCollidingWithWalls(nx, nz) {
+            if (nx < -33.8 || nx > 33.8 || nz < -33.8 || nz > 33.8) return true;
+            for (const b of wallColliders) {
+                if (nx > b.minX && nx < b.maxX && nz > b.minZ && nz < b.maxZ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function handleCanvasClickRaycast(clientX, clientY) {
+            mouseVec.x = (clientX / window.innerWidth) * 2 - 1;
+            mouseVec.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouseVec, camera);
+
+            const intersects = raycaster.intersectObjects(interactiveObjects3D, false);
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                if (hit.userData.type === "hero") {
+                    openHeroModal(hit.userData.heroId);
+                } else if (hit.userData.type === "mission_hub") {
+                    openMissionHubModal();
+                } else if (hit.userData.type === "leaderboard") {
+                    openLeaderboardModal();
+                }
+            }
+        }
+
+        function checkProximityInteractions() {
+            let closest = null;
+            let minDist = 7.2;
+
+            // Cek kedekatan dengan 12 bingkai pahlawan
+            DATA_PAHLAWAN.forEach(hero => {
+                const d = Math.hypot(playerState.x - hero.pos.x, playerState.z - hero.pos.z);
+                if (d < minDist) {
+                    minDist = d;
+                    closest = { type: "hero", id: hero.id, label: `Lihat Biografi: ${hero.nama}` };
+                }
+            });
+
+            // Cek kedekatan dengan Podium Misi
+            const distMisi = Math.hypot(playerState.x - 0, playerState.z - 27);
+            if (distMisi < 6.5) {
+                closest = { type: "mission", label: "Buka Tantangan 4 Misi Sejarah" };
+            }
+
+            // Cek kedekatan dengan Papan Leaderboard Lobby
+            const distLB = Math.hypot(playerState.x - 8.5, playerState.z - 5);
+            if (distLB < 5.5) {
+                closest = { type: "leaderboard", label: "Lihat Papan Peringkat Nusantara" };
+            }
+
+            nearInteractable = closest;
+            const promptEl = document.getElementById("proximity-prompt");
+            const promptText = document.getElementById("proximity-text");
+
+            if (closest) {
+                promptText.textContent = closest.label;
+                promptEl.classList.remove("hidden");
+            } else {
+                promptEl.classList.add("hidden");
+            }
+
+            // Update indikator nama ruangan di HUD
+            const roomBadge = document.getElementById("hud-room-indicator");
+            if (playerState.x < -15) roomBadge.textContent = "Aula 1: Pra-1900";
+            else if (playerState.x > 15) roomBadge.textContent = "Aula 2: Pergerakan Nasional";
+            else if (playerState.z < -15 && playerState.x < 0) roomBadge.textContent = "Aula 3: Kemerdekaan";
+            else if (playerState.z < -15 && playerState.x >= 0) roomBadge.textContent = "Aula 4: Pahlawan Revolusi";
+            else if (playerState.z > 15) roomBadge.textContent = "Ruang Misi & Ujian";
+            else roomBadge.textContent = "Lobby Utama Museum";
+        }
+
+        function triggerProximityAction() {
+            if (!nearInteractable) return;
+            if (nearInteractable.type === "hero") openHeroModal(nearInteractable.id);
+            else if (nearInteractable.type === "mission") openMissionHubModal();
+            else if (nearInteractable.type === "leaderboard") openLeaderboardModal();
+        }
+
+        function animate3DLoop() {
+            requestAnimationFrame(animate3DLoop);
+            const delta = clock3D.getDelta();
+            if (playerMixer) {
+                playerMixer.update(delta);
+            }
+
+            // Hitung Vektor Input Jalan (WASD / Panah / Virtual Joystick)
+            let forwardInput = 0;
+            let sideInput = 0;
+
+            if (keysPressed["w"] || keysPressed["arrowup"]) forwardInput += 1;
+            if (keysPressed["s"] || keysPressed["arrowdown"]) forwardInput -= 1;
+            if (keysPressed["a"] || keysPressed["arrowleft"]) sideInput -= 1;
+            if (keysPressed["d"] || keysPressed["arrowright"]) sideInput += 1;
+
+            if (Math.abs(joystickVector.y) > 0.08) forwardInput -= joystickVector.y;
+            if (Math.abs(joystickVector.x) > 0.08) sideInput += joystickVector.x;
+
+            const inputLen = Math.hypot(forwardInput, sideInput);
+            playerState.isMoving = inputLen > 0.05;
+
+            if (playerState.isMoving && playerGroup) {
+                const normF = forwardInput / Math.max(1, inputLen);
+                const normS = sideInput / Math.max(1, inputLen);
+
+                // Arah relatif terhadap sudut pandang kamera
+                const camForwardX = -Math.sin(cameraControl.yaw);
+                const camForwardZ = -Math.cos(cameraControl.yaw);
+                const camRightX = Math.cos(cameraControl.yaw);
+                const camRightZ = -Math.sin(cameraControl.yaw);
+
+                const moveX = (camForwardX * normF + camRightX * normS) * playerState.speed;
+                const moveZ = (camForwardZ * normF + camRightZ * normS) * playerState.speed;
+
+                if (!isCollidingWithWalls(playerState.x + moveX, playerState.z)) {
+                    playerState.x += moveX;
+                }
+                if (!isCollidingWithWalls(playerState.x, playerState.z + moveZ)) {
+                    playerState.z += moveZ;
+                }
+
+                // Rotasi karakter halus menghadap arah jalan
+                const targetRotY = Math.atan2(moveX, moveZ);
+                let diff = targetRotY - playerState.rotY;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                playerState.rotY += diff * 0.22;
+
+                // Animasi Walking Cycle (Ayunan tangan & kaki atau Chibi Bounce & Waddle untuk model GLB)
+                playerState.walkTime += 0.24;
+                const swing = Math.sin(playerState.walkTime) * 0.6;
+                if (playerLimbs.leftArm) playerLimbs.leftArm.rotation.x = swing;
+                if (playerLimbs.rightArm) playerLimbs.rightArm.rotation.x = -swing;
+                if (playerLimbs.leftLeg) playerLimbs.leftLeg.rotation.x = -swing;
+                if (playerLimbs.rightLeg) playerLimbs.rightLeg.rotation.x = swing;
+
+                // Efek lompatan kecil khas Chibi (Walking Bounce & Sway) pada model GLB
+                if (playerModelWrapper) {
+                    playerModelWrapper.position.y = Math.abs(Math.sin(playerState.walkTime)) * 0.16;
+                    playerModelWrapper.rotation.z = Math.sin(playerState.walkTime) * 0.06;
+                }
+
+                // Efek suara langkah kaki lembut
+                playerState.stepTimer++;
+                if (playerState.stepTimer % 18 === 0) {
+                    playSound("step");
+                }
+            } else if (playerGroup) {
+                // Idle Breathing Animation
+                playerState.walkTime += 0.05;
+                if (playerLimbs.leftArm) playerLimbs.leftArm.rotation.x *= 0.85;
+                if (playerLimbs.rightArm) playerLimbs.rightArm.rotation.x *= 0.85;
+                if (playerLimbs.leftLeg) playerLimbs.leftLeg.rotation.x *= 0.85;
+                if (playerLimbs.rightLeg) playerLimbs.rightLeg.rotation.x *= 0.85;
+                if (playerLimbs.head) playerLimbs.head.position.y = 2.65 + Math.sin(playerState.walkTime) * 0.03;
+
+                if (playerModelWrapper) {
+                    playerModelWrapper.position.y = Math.sin(playerState.walkTime) * 0.04;
+                    playerModelWrapper.rotation.z *= 0.85;
+                }
+            }
+
+            if (playerGroup) {
+                playerGroup.position.set(playerState.x, 0, playerState.z);
+                playerGroup.rotation.y = playerState.rotY;
+            }
+
+            // Putar monumen kristal di tengah Lobby
+            const crystal = scene.getObjectByName("spinning_monument");
+            if (crystal) {
+                crystal.rotation.y += 0.015;
+            }
+
+            // Update Posisi Third-Person Follow Camera
+            const camX = playerState.x + Math.sin(cameraControl.yaw) * Math.cos(cameraControl.pitch) * cameraControl.distance;
+            const camZ = playerState.z + Math.cos(cameraControl.yaw) * Math.cos(cameraControl.pitch) * cameraControl.distance;
+            const camY = 2.2 + Math.sin(cameraControl.pitch) * cameraControl.distance;
+
+            camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.18);
+            camera.lookAt(playerState.x, 2.3, playerState.z);
+
+            checkProximityInteractions();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /**************************************************************
+         * 8. MODAL BIOGRAFI PAHLAWAN & POIN BELAJAR
+         **************************************************************/
+        function openHeroModal(heroId) {
+            playSound("click");
+            const hero = DATA_PAHLAWAN.find(h => h.id === heroId);
+            if (!hero) return;
+            activeHeroModalId = heroId;
+
+            document.getElementById("modal-hero-era-badge").textContent = hero.eraLabel;
+            document.getElementById("modal-hero-name").textContent = hero.nama;
+            document.getElementById("modal-hero-title").textContent = hero.gelar;
+            document.getElementById("modal-hero-origin").textContent = `${hero.asal} • (${hero.masaHidup})`;
+            document.getElementById("modal-hero-bio").textContent = hero.biografi;
+            document.getElementById("modal-hero-values").textContent = hero.keteladanan;
+            document.getElementById("modal-hero-quote").textContent = `"${hero.kutipan}"`;
+
+            // Tampilkan foto Base64 dari guru jika ada, atau generate gambar dari tekstur
+            const imgEl = document.getElementById("modal-hero-img");
+            if (heroPhotosBase64[hero.id]) {
+                imgEl.src = heroPhotosBase64[hero.id];
+            } else {
+                const tex = createDefaultHeroPortraitTexture(hero);
+                imgEl.src = tex.image.toDataURL("image/png");
+            }
+
+            const isStudied = currentUser.studiedHeroes.includes(hero.id);
+            const studiedBadge = document.getElementById("modal-hero-studied-badge");
+            const btnMark = document.getElementById("btn-mark-studied");
+
+            if (isStudied) {
+                studiedBadge.classList.remove("hidden");
+                btnMark.innerHTML = `<span>✓ Sudah Dipelajari (Tersimpan)</span>`;
+                btnMark.className = "px-6 py-3 rounded-xl bg-emerald-700 text-white font-display font-bold text-sm flex items-center gap-2 cursor-default";
+            } else {
+                studiedBadge.classList.add("hidden");
+                btnMark.innerHTML = `<span>Tandai Sudah Dipelajari (+20 Poin)</span>`;
+                btnMark.className = "hero-btn px-6 py-3 rounded-xl gold-gradient text-slate-950 font-display font-bold text-sm shadow-lg flex items-center gap-2";
+            }
+
+            const modal = document.getElementById("hero-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeHeroModal() {
+            playSound("click");
+            const modal = document.getElementById("hero-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function markCurrentHeroStudied() {
+            if (!activeHeroModalId) return;
+            if (currentUser.studiedHeroes.includes(activeHeroModalId)) {
+                showToast("Pahlawan ini sudah kamu pelajari sebelumnya!", "✅");
+                return;
+            }
+            playSound("success");
+            currentUser.studiedHeroes.push(activeHeroModalId);
+            currentUser.score += 20;
+            syncProgressToCloud();
+            openHeroModal(activeHeroModalId); // Refresh UI tombol
+            showToast("+20 Poin! Pengetahuan sejarahmu bertambah!", "🌟");
+        }
+
+        /**************************************************************
+         * 9. RUANG MISI & KUIS INTERAKTIF (4 GAMEPLAY BERBEDA)
+         **************************************************************/
+        function openMissionHubModal() {
+            playSound("click");
+            const modal = document.getElementById("mission-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            selectMissionTab(activeMissionTab);
+        }
+
+        function closeMissionModal() {
+            playSound("click");
+            const modal = document.getElementById("mission-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function selectMissionTab(tabNum) {
+            playSound("click");
+            activeMissionTab = tabNum;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById("m-tab-" + i);
+                const badgeIcon = document.getElementById("m-badge-" + i);
+                const isDone = currentUser.completedMissions.includes(i);
+                badgeIcon.textContent = isDone ? "🏅" : "🔒";
+
+                if (i === tabNum) {
+                    btn.className = "p-3 rounded-2xl border-2 text-left transition-all bg-slate-800 border-yellow-400 shadow-lg";
+                } else {
+                    btn.className = "p-3 rounded-2xl border text-left transition-all bg-slate-900/70 border-slate-700 hover:border-slate-500";
+                }
+            }
+            renderMissionContent(tabNum);
+        }
+
+        function renderMissionContent(tabNum) {
+            const area = document.getElementById("mission-content-area");
+            const isCompleted = currentUser.completedMissions.includes(tabNum);
+            const statusBanner = isCompleted
+                ? `<div class="p-3.5 rounded-2xl bg-emerald-950/70 border border-emerald-500/50 text-emerald-200 text-xs font-bold flex items-center justify-between">
+                     <span>🏅 LENCANA DIRAIH! Kamu telah menuntaskan Misi ${tabNum} dengan sempurna (+100 Poin).</span>
+                     <span>Tuntas ✓</span>
+                   </div>`
+                : "";
+
+            if (tabNum === 1) {
+                const m = DATA_MISI.misi1;
+                area.innerHTML = `
+                    ${statusBanner}
+                    <div>
+                        <h3 class="font-display text-lg font-bold text-yellow-400">${m.judul}</h3>
+                        <p class="text-xs text-slate-300 mt-1">${m.deskripsi}</p>
+                    </div>
+                    <div class="space-y-3">
+                        ${m.questions.map((item, idx) => `
+                            <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="font-display font-bold text-white text-sm flex items-center gap-2">
+                                    <span class="w-7 h-7 rounded-lg bg-red-500/20 text-red-300 flex items-center justify-center text-xs">${idx + 1}</span>
+                                    <span>${item.hero}</span>
+                                </div>
+                                <select id="m1-ans-${idx}" class="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-amber-200 font-semibold">
+                                    <option value="">-- Pilih Daerah & Strategi Perjuangan --</option>
+                                    ${item.options.map(opt => `<option value="${opt}">${opt}</option>`).join("")}
+                                </select>
+                            </div>
+                        `).join("")}
+                    </div>
+                    <button onclick="submitMission1()" class="hero-btn w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-display font-bold text-sm shadow-lg">
+                        Periksa Jawaban Misi 1 & Klaim Lencana (+100 Poin)
+                    </button>
+                `;
+            } else if (tabNum === 2) {
+                const m = DATA_MISI.misi2;
+                area.innerHTML = `
+                    ${statusBanner}
+                    <div>
+                        <h3 class="font-display text-lg font-bold text-emerald-400">${m.judul}</h3>
+                        <p class="text-xs text-slate-300 mt-1">${m.deskripsi}</p>
+                    </div>
+                    <div class="space-y-4">
+                        ${m.questions.map((item, qIdx) => `
+                            <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                                <div class="font-bold text-sm text-white">${item.q}</div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    ${item.options.map(opt => `
+                                        <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-emerald-400 text-xs text-slate-200">
+                                            <input type="radio" name="m2-q-${qIdx}" value="${opt}" class="accent-yellow-400">
+                                            <span>${opt}</span>
+                                        </label>
+                                    `).join("")}
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+                    <button onclick="submitMission2()" class="hero-btn w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-display font-bold text-sm shadow-lg">
+                        Periksa Jawaban Misi 2 & Klaim Lencana (+100 Poin)
+                    </button>
+                `;
+            } else if (tabNum === 3) {
+                const m = DATA_MISI.misi3;
+                if (mission3CurrentOrder.length === 0) {
+                    mission3CurrentOrder = [
+                        m.correctOrder[2],
+                        m.correctOrder[0],
+                        m.correctOrder[3],
+                        m.correctOrder[1]
+                    ];
+                }
+                area.innerHTML = `
+                    ${statusBanner}
+                    <div>
+                        <h3 class="font-display text-lg font-bold text-amber-400">${m.judul}</h3>
+                        <p class="text-xs text-slate-300 mt-1">${m.deskripsi} Gunakan tombol panah Naik/Turun untuk mengurutkan!</p>
+                    </div>
+                    <div class="space-y-2.5">
+                        ${mission3CurrentOrder.map((text, idx) => `
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-7 h-7 rounded-lg gold-gradient text-slate-950 font-bold text-xs flex items-center justify-center">${idx + 1}</span>
+                                    <span class="text-xs sm:text-sm text-white font-medium">${text.replace(/^[0-9]\.\s*/, "")}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="moveMission3Item(${idx}, -1)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-xs font-bold">▲ Naik</button>
+                                    <button onclick="moveMission3Item(${idx}, 1)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-xs font-bold">▼ Turun</button>
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+                    <button onclick="submitMission3()" class="hero-btn w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-display font-bold text-sm shadow-lg">
+                        Verifikasi Urutan Kronologi Misi 3 (+100 Poin)
+                    </button>
+                `;
+            } else if (tabNum === 4) {
+                const m = DATA_MISI.misi4;
+                area.innerHTML = `
+                    ${statusBanner}
+                    <div>
+                        <h3 class="font-display text-lg font-bold text-blue-400">${m.judul}</h3>
+                        <p class="text-xs text-slate-300 mt-1">${m.deskripsi}</p>
+                    </div>
+                    <div class="space-y-3">
+                        ${m.questions.map((item, idx) => `
+                            <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                                <div class="text-xs text-slate-200 leading-relaxed">"${item.clue}"</div>
+                                <select id="m4-ans-${idx}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-blue-300 font-bold">
+                                    <option value="">-- Pilih Tokoh Pahlawan Revolusi --</option>
+                                    ${item.options.map(opt => `<option value="${opt}">${opt}</option>`).join("")}
+                                </select>
+                            </div>
+                        `).join("")}
+                    </div>
+                    <button onclick="submitMission4()" class="hero-btn w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-display font-bold text-sm shadow-lg">
+                        Periksa Jawaban Misi 4 & Klaim Lencana (+100 Poin)
+                    </button>
+                `;
+            }
+        }
+
+        function moveMission3Item(index, dir) {
+            playSound("click");
+            const targetIdx = index + dir;
+            if (targetIdx < 0 || targetIdx >= mission3CurrentOrder.length) return;
+            const temp = mission3CurrentOrder[index];
+            mission3CurrentOrder[index] = mission3CurrentOrder[targetIdx];
+            mission3CurrentOrder[targetIdx] = temp;
+            renderMissionContent(3);
+        }
+
+        function awardMissionCompletion(missionNum, badgeTitle) {
+            playSound("success");
+            if (!currentUser.completedMissions.includes(missionNum)) {
+                currentUser.completedMissions.push(missionNum);
+                currentUser.score += 100;
+                currentUser.missionDetails["misi_" + missionNum] = 100;
+                syncProgressToCloud();
+                showToast(`Selamat! Kamu meraih ${badgeTitle} (+100 Poin)!`, "🏅");
+            } else {
+                showToast(`Jawaban benar! Misi ${missionNum} sudah kamu kuasai.`, "✨");
+            }
+            selectMissionTab(missionNum);
+        }
+
+        function submitMission1() {
+            const q = DATA_MISI.misi1.questions;
+            let allCorrect = true;
+            q.forEach((item, idx) => {
+                const val = document.getElementById(`m1-ans-${idx}`).value;
+                if (val !== item.correctValue) allCorrect = false;
+            });
+            if (allCorrect) awardMissionCompletion(1, DATA_MISI.misi1.lencanaNama);
+            else {
+                playSound("wrong");
+                showToast("Masih ada pasangan daerah/strategi yang belum tepat. Cek Aula 1 ya!", "❌");
+            }
+        }
+
+        function submitMission2() {
+            const q = DATA_MISI.misi2.questions;
+            let allCorrect = true;
+            q.forEach((item, idx) => {
+                const checked = document.querySelector(`input[name="m2-q-${idx}"]:checked`);
+                if (!checked || checked.value !== item.answer) allCorrect = false;
+            });
+            if (allCorrect) awardMissionCompletion(2, DATA_MISI.misi2.lencanaNama);
+            else {
+                playSound("wrong");
+                showToast("Jawaban kuis belum semuanya tepat. Ayo baca lagi di Aula 2!", "❌");
+            }
+        }
+
+        function submitMission3() {
+            const correct = DATA_MISI.misi3.correctOrder;
+            const isMatch = mission3CurrentOrder.every((val, idx) => val === correct[idx]);
+            if (isMatch) awardMissionCompletion(3, DATA_MISI.misi3.lencanaNama);
+            else {
+                playSound("wrong");
+                showToast("Urutan kronologi peristiwa belum tepat. Perhatikan tanggal dan tahunnya!", "❌");
+            }
+        }
+
+        function submitMission4() {
+            const q = DATA_MISI.misi4.questions;
+            let allCorrect = true;
+            q.forEach((item, idx) => {
+                const val = document.getElementById(`m4-ans-${idx}`).value;
+                if (val !== item.answer) allCorrect = false;
+            });
+            if (allCorrect) awardMissionCompletion(4, DATA_MISI.misi4.lencanaNama);
+            else {
+                playSound("wrong");
+                showToast("Masih ada profil Pahlawan Revolusi yang tertukar. Cek Aula 4!", "❌");
+            }
+        }
+
+        /**************************************************************
+         * 10. LEADERBOARD & UNDUH RAPOR PENCAPAIAN
+         **************************************************************/
+        function openLeaderboardModal() {
+            playSound("click");
+            const modal = document.getElementById("leaderboard-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            fetchLeaderboardData();
+        }
+
+        function closeLeaderboardModal() {
+            playSound("click");
+            const modal = document.getElementById("leaderboard-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        async function fetchLeaderboardData() {
+            const listEl = document.getElementById("leaderboard-list");
+            listEl.innerHTML = `<div class="text-center py-8 text-sm text-slate-400">Memuat peringkat dari Google Spreadsheet...</div>`;
+
+            const res = await callGAS({ action: "getLeaderboard" });
+            let entries = [];
+
+            if (res && Array.isArray(res.leaderboard) && res.leaderboard.length > 0) {
+                entries = res.leaderboard;
+            } else {
+                // Gabungkan data murid lokal + contoh kompetitor Nusantara
+                const localUsers = Object.values(JSON.parse(localStorage.getItem("gp3d_users") || "{}"));
+                const samplePeers = [
+                    { nama: "Alya Putri", sekolah: "SDN 1 Merdeka", score: 580, badges: 4 },
+                    { nama: "Bagas Pratama", sekolah: "SDN 3 Nusantara", score: 460, badges: 3 },
+                    { nama: "Citra Lestari", sekolah: "SD Tunas Bangsa", score: 380, badges: 3 }
+                ];
+                entries = [
+                    ...localUsers.map(u => ({
+                        nama: u.nama,
+                        sekolah: u.sekolah,
+                        score: u.score || 0,
+                        badges: (u.completedMissions || []).length
+                    })),
+                    ...samplePeers
+                ];
+            }
+
+            entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+            const top10 = entries.slice(0, 10);
+
+            listEl.innerHTML = top10.map((item, idx) => {
+                const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
+                const isMe = item.nama.toLowerCase() === currentUser.nama.toLowerCase();
+                return `
+                    <div class="p-3.5 rounded-2xl border flex items-center justify-between ${isMe ? 'bg-yellow-500/15 border-yellow-400' : 'bg-slate-900/90 border-slate-800'}">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center font-display font-bold text-sm text-yellow-400">
+                                ${rankIcon}
+                            </div>
+                            <div>
+                                <div class="font-display font-bold text-sm text-white">${item.nama} ${isMe ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-yellow-400 text-slate-950 ml-1">Kamu</span>' : ''}</div>
+                                <div class="text-xs text-slate-400">${item.sekolah || "SD Nusantara"}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 text-right">
+                            <div>
+                                <div class="text-[10px] text-slate-400 uppercase">Lencana</div>
+                                <div class="text-xs font-bold text-emerald-400">${item.badges ?? 0}/4 🏅</div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400 uppercase">Total Skor</div>
+                                <div class="font-display font-bold text-base text-yellow-400">${item.score || 0}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function openReportModal() {
+            playSound("click");
+            const modal = document.getElementById("report-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+
+            document.getElementById("rep-date").textContent = new Date().toLocaleDateString("id-ID", {
+                day: "numeric", month: "long", year: "numeric"
+            });
+            document.getElementById("rep-nama").textContent = currentUser.nama;
+            document.getElementById("rep-sekolah").textContent = currentUser.sekolah;
+            document.getElementById("rep-npsn").textContent = currentUser.npsn;
+            document.getElementById("rep-skor").textContent = `${currentUser.score} Poin`;
+
+            const badgeCount = currentUser.completedMissions.length;
+            const heroCount = currentUser.studiedHeroes.length;
+            let predicate = "Petualang Pemula";
+            if (badgeCount === 4 && heroCount >= 10) predicate = "Sangat Baik (Duta Sejarah Utama)";
+            else if (badgeCount >= 2 || heroCount >= 6) predicate = "Baik (Penjelajah Sejarah Aktif)";
+
+            document.getElementById("rep-predicate").textContent = predicate;
+
+            // Render Misi 4 Aula
+            const missionNames = [
+                "Misi 1: Aula Pahlawan Pra-1900",
+                "Misi 2: Aula Pergerakan Nasional",
+                "Misi 3: Aula Pahlawan Kemerdekaan",
+                "Misi 4: Aula Pahlawan Revolusi"
+            ];
+            document.getElementById("rep-missions-grid").innerHTML = missionNames.map((title, idx) => {
+                const done = currentUser.completedMissions.includes(idx + 1);
+                return `
+                    <div class="p-3 rounded-xl bg-slate-900 border ${done ? 'border-emerald-500/40' : 'border-slate-800'} flex items-center justify-between text-xs">
+                        <span class="font-semibold">${title}</span>
+                        <span class="font-bold ${done ? 'text-emerald-400' : 'text-slate-400'}">${done ? '100 / Lulus 🏅' : 'Belum Selesai'}</span>
+                    </div>
+                `;
+            }).join("");
+
+            // Render Daftar Pahlawan yang Dipelajari
+            document.getElementById("rep-heroes-count").textContent = `${heroCount}/12`;
+            document.getElementById("rep-heroes-list").innerHTML = DATA_PAHLAWAN.map(h => {
+                const learned = currentUser.studiedHeroes.includes(h.id);
+                return `
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-semibold border ${learned ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'}">
+                        ${learned ? '✓ ' : ''}${h.nama}
+                    </span>
+                `;
+            }).join("");
+
+            document.getElementById("rep-motivation").textContent =
+                `Ananda ${currentUser.nama} dari ${currentUser.sekolah} telah mempelajari ${heroCount} dari 12 tokoh pahlawan nasional serta menyelesaikan ${badgeCount} dari 4 misi aula sejarah dengan total skor ${currentUser.score} poin. Teruslah meneladani semangat pantang menyerah, kejujuran, dan persatuan para pahlawan bangsa!`;
+        }
+
+        function closeReportModal() {
+            playSound("click");
+            const modal = document.getElementById("report-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function downloadReportHTML() {
+            playSound("success");
+            const content = document.getElementById("printable-report").innerHTML;
+            const fullHtml = `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Rapor Galeri Pahlawan 3D - ${currentUser.nama}</title>
+<script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-slate-950 text-white p-8 font-sans">
+<div class="max-w-3xl mx-auto">${content}</div>
+</body>
+</html>`;
+            const blob = new Blob([fullHtml], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Rapor_Galeri_Pahlawan_3D_${currentUser.nama.replace(/\s+/g, "_")}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("File Rapor berhasil diunduh!", "📄");
+        }
+
+        /**************************************************************
+         * 11. PORTAL GURU & KOMPRESI FOTO BASE64 (< 35.000 KARAKTER)
+         **************************************************************/
+        function openTeacherPinModal() {
+            playSound("click");
+            const modal = document.getElementById("teacher-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+
+            // Isi pilihan 12 Pahlawan
+            const sel = document.getElementById("teacher-hero-select");
+            sel.innerHTML = DATA_PAHLAWAN.map(h => `<option value="${h.id}">${h.nama} (${h.eraLabel})</option>`).join("");
+            previewCurrentHeroForTeacher();
+        }
+
+        function closeTeacherModal() {
+            playSound("click");
+            const modal = document.getElementById("teacher-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function verifyTeacherPin() {
+            const pin = document.getElementById("teacher-pin-input").value.trim();
+            if (pin === "123456") {
+                playSound("success");
+                document.getElementById("teacher-pin-section").classList.add("hidden");
+                document.getElementById("teacher-upload-section").classList.remove("hidden");
+                showToast("Akses Guru Terverifikasi!", "🔓");
+            } else {
+                playSound("wrong");
+                showToast("PIN Guru salah! Gunakan PIN default: 123456", "⚠️");
+            }
+        }
+
+        function previewCurrentHeroForTeacher() {
+            const heroId = document.getElementById("teacher-hero-select").value;
+            const hero = DATA_PAHLAWAN.find(h => h.id === heroId);
+            const previewImg = document.getElementById("teacher-photo-preview");
+            const sizeLabel = document.getElementById("teacher-base64-size");
+            pendingTeacherBase64 = null;
+
+            if (heroPhotosBase64[heroId]) {
+                previewImg.src = heroPhotosBase64[heroId];
+                sizeLabel.textContent = `Foto Tersimpan (${heroPhotosBase64[heroId].length.toLocaleString()} karakter)`;
+            } else if (hero) {
+                const tex = createDefaultHeroPortraitTexture(hero);
+                previewImg.src = tex.image.toDataURL("image/png");
+                sizeLabel.textContent = "Menggunakan Ilustrasi Default";
+            }
+        }
+
+        function handleTeacherFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    // Kompresi gambar menggunakan HTML5 Canvas (maks lebar 300px, JPEG kualitas 0.65)
+                    const maxWidth = 300;
+                    const scale = Math.min(1, maxWidth / img.width);
+                    const targetW = Math.round(img.width * scale);
+                    const targetH = Math.round(img.height * scale);
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+                    let quality = 0.65;
+                    let compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+
+                    // Pastikan selalu di bawah 35.000 karakter agar aman di sel Google Sheets
+                    while (compressedBase64.length > 34500 && quality > 0.3) {
+                        quality -= 0.1;
+                        compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+                    }
+
+                    pendingTeacherBase64 = compressedBase64;
+                    document.getElementById("teacher-photo-preview").src = compressedBase64;
+                    document.getElementById("teacher-base64-size").textContent =
+                        `Terkompresi: ${compressedBase64.length.toLocaleString()} / 35.000 karakter ✓`;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function uploadCompressedPhotoToGAS() {
+            const heroId = document.getElementById("teacher-hero-select").value;
+            if (!pendingTeacherBase64) {
+                showToast("Pilih file foto (.jpg/.png) terlebih dahulu!", "⚠️");
+                return;
+            }
+
+            const btn = document.getElementById("btn-upload-hero-photo");
+            btn.disabled = true;
+            btn.innerHTML = `<span>Mengunggah ke Spreadsheet & Dinding 3D...</span>`;
+
+            heroPhotosBase64[heroId] = pendingTeacherBase64;
+            try {
+                localStorage.setItem("gp3d_hero_photos", JSON.stringify(heroPhotosBase64));
+            } catch (e) {}
+
+            // Langsung perbarui bingkai 3D di dinding museum
+            update3DFrameTexture(heroId, pendingTeacherBase64);
+
+            // Kirim ke Google Apps Script
+            await callGAS({
+                action: "uploadHeroPhoto",
+                heroId: heroId,
+                photoBase64: pendingTeacherBase64
+            });
+
+            btn.disabled = false;
+            btn.innerHTML = `<span>Simpan ke Spreadsheet & Dinding 3D</span>`;
+            playSound("success");
+            showToast("Foto berhasil dipasang di dinding Museum 3D & disimpan ke Spreadsheet!", "✅");
+        }
+
+        /**************************************************************
+         * 12. INISIALISASI SAAT HALAMAN DIMUAT
+         **************************************************************/
+        window.onload = function () {
+            lucide.createIcons();
+            init3DMuseum();
+            loadHeroPhotosFromCloud();
+        };
+    </script>
+</body>
+</html>
